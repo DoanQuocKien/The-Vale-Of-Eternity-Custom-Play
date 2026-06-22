@@ -1,26 +1,13 @@
 import React from 'react';
 import { Sparkles, FolderOpen, Plus } from 'lucide-react';
 
-// Reusable component to render family icons from public assets, with SVG fallback for missing Water icon
+// Reusable component to render family icons from public assets, with fallback in case of errors
 function ElementIcon({ name }) {
   const [hasError, setHasError] = React.useState(false);
 
-  if (name === 'Water' || hasError) {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        width="20"
-        height="20"
-        fill="currentColor"
-        style={{
-          display: 'block',
-          color: 'var(--family-water)',
-          filter: 'drop-shadow(0 0 4px rgba(56, 189, 248, 0.4))'
-        }}
-      >
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-      </svg>
-    );
+  if (hasError) {
+    const emojis = { Fire: '🔥', Water: '💧', Earth: '🌿', Wind: '💨', Dragon: '🐉' };
+    return <span style={{ fontSize: '1.1rem' }}>{emojis[name] || '❓'}</span>;
   }
 
   return (

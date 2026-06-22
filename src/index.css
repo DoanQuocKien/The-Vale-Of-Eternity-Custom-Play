@@ -1,3 +1,39 @@
+/* Custom Game Fonts loading */
+@font-face {
+  font-family: 'NorseBold';
+  src: url('/fonts/NorseBold-2Kge.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'TitanOne';
+  src: url('/fonts/TitanOne-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'MerriweatherSans';
+  src: url('/fonts/MerriweatherSans-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'MerriweatherSans';
+  src: url('/fonts/MerriweatherSans-Italic-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/RobotoCondensed-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
 /* Design Tokens & Theme Variables */
 :root {
   /* Dark Mode Color Palette */
@@ -42,8 +78,12 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* Font Family */
+  /* Font Family Mapping */
   --font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-price: 'NorseBold', sans-serif;
+  --font-card-name: 'TitanOne', sans-serif;
+  --font-effect: 'MerriweatherSans', sans-serif;
+  --font-credit: 'Roboto', sans-serif;
 }
 
 /* Global Reset */
