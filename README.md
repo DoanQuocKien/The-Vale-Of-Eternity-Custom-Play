@@ -4,6 +4,27 @@ A desktop application for designing, managing, and printing custom creature card
 
 ---
 
+## ⬇️ Download & Install (For Players)
+
+> **You don't need to know anything about coding to use this.** Just download and run!
+
+1. Go to the **[Releases page](../../releases/latest)** of this repository (look for the "Releases" section on the right side of the GitHub page, or click the link above).
+2. Under **Assets**, download one of the following:
+
+| File | When to use |
+|---|---|
+| `The Vale of Eternity - Card Creator Setup X.X.X.exe` | **Recommended** — Installs the app with a Start Menu shortcut and Desktop icon. |
+| `The Vale of Eternity - Card Creator X.X.X.exe` | **Portable** — No installation needed. Just double-click and run from anywhere. |
+
+3. **If Windows shows a security warning** ("Windows protected your PC"), click **More info** → **Run anyway**. This is normal for apps that don't have a paid code-signing certificate — the app is safe.
+
+4. That's it! The app will open. Your cards and packs are saved automatically on your computer.
+
+> **First-time AI features** (background removal & upscaling) require an internet connection to download the AI model files (~30–50 MB total). This only happens once — after that, everything works offline.
+
+---
+
+
 ## 📖 Game Context
 
 Based on the official rules of *The Vale of Eternity*, each creature card follows a strict mechanical and visual anatomy:
