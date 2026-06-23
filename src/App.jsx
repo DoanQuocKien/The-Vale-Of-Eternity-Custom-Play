@@ -11,8 +11,14 @@ import {
   Upload, 
   HelpCircle,
   RefreshCw,
-  ImagePlus
+  ImagePlus,
+  Trash2,
+  Sliders,
+  Printer,
+  X
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import ArtImporter from './ArtImporter.jsx';
 
 // Default layout configuration in percentage coordinates relative to the card container
@@ -153,6 +159,29 @@ const getPriceColor = (elementKey, family, layoutState) => {
   
   return defaultColors[family] || '#ffffff';
 };
+
+// Global helper to convert background elements to matching template paths
+const getBackgroundPath = (family) => {
+  const mapping = {
+    Fire: 'FireCard.png',
+    Water: 'WaterCard.png',
+    Earth: 'EarthCard.png',
+    Wind: 'AirCard.png',
+    Dragon: 'DragonCard.png'
+  };
+  return `/img/Background/${mapping[family] || 'WaterCard.png'}`;
+};
+
+// Image loader utility that returns a Promise resolving to an Image object
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(e);
+    img.src = src;
+  });
+}
 
 
 // Preset card contents for verification and calibration testing
@@ -478,6 +507,505 @@ async function seedDefaultData() {
   }
 }
 
+// Static card component strictly used for offscreen layout rendering
+const CardPrintView = React.forwardRef(({ card, defaultLayout }, ref) => {
+  const { name, cost, family, credit, effect, artImageData, layout } = card;
+  const cardLayout = layout || defaultLayout;
+  
+  const resolvedPriceTL = getResolvedElementLayout('priceTL', family, cardLayout);
+  const resolvedPriceBR = getResolvedElementLayout('priceBR', family, cardLayout);
+  const resolvedCredit = getResolvedElementLayout('credit', family, cardLayout);
+  
+  const priceColorTL = getPriceColor('priceTL', family, cardLayout);
+  const priceColorBR = getPriceColor('priceBR', family, cardLayout);
+
+  const renderStaticEffectPanels = () => {
+    const lines = (effect || '').split('\n');
+    const iconSize = cardLayout.effectIcon?.size ?? cardLayout.effect?.iconSize ?? 6.0;
+    const iconOffset = cardLayout.effectIcon?.top ?? cardLayout.effect?.iconOffset ?? 0.2;
+    const iconLeft = cardLayout.effectIcon?.left ?? 0;
+
+    const panelHeight = cardLayout.effect.panelHeight ?? 8.5;
+    const panelGap = cardLayout.effect.panelGap ?? 1.5;
+    const textLeft = cardLayout.effect.textLeft ?? 10.0;
+    const textTop = cardLayout.effect.textTop ?? 1.5;
+    const textWidth = cardLayout.effect.textWidth ?? 80;
+    const textHeight = cardLayout.effect.textHeight ?? 70;
+
+    return lines.map((line, idx) => {
+      if (!line.trim()) return null;
+      const { icon, text } = getTimingIcon(line);
+      
+      return (
+        <div key={idx} style={{
+          position: 'relative',
+          width: '100%',
+          height: `${panelHeight}cqw`,
+          marginBottom: idx < lines.length - 1 ? `${panelGap}cqw` : 0
+        }}>
+          <div style={{
+            width: '100%',
+            height: '100%',
+            background: `rgba(${parseInt(cardLayout.effect.bgColor.slice(1, 3), 16)}, ${parseInt(cardLayout.effect.bgColor.slice(3, 5), 16)}, ${parseInt(cardLayout.effect.bgColor.slice(5, 7), 16)}, ${cardLayout.effect.bgOpacity})`,
+            color: cardLayout.effect.color,
+            fontSize: `${cardLayout.effect.fontSize}cqw`,
+            fontFamily: 'var(--font-effect)',
+            borderRadius: `${cardLayout.effect.borderRadius}cqw`,
+            borderLeft: `2.5px solid var(--family-${family.toLowerCase()})`,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            position: 'relative',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{
+              position: 'absolute',
+              left: `${textLeft}cqw`,
+              top: `${textTop}cqw`,
+              width: `${textWidth}%`,
+              height: `${textHeight}%`,
+              textAlign: 'left',
+              lineHeight: 1.35,
+              boxSizing: 'border-box',
+              overflow: 'visible'
+            }}>
+              {parseEffectText(text)}
+            </div>
+          </div>
+          {icon && (
+            <img 
+              src={icon} 
+              alt="Timing" 
+              style={{
+                position: 'absolute',
+                left: `${iconLeft}cqw`,
+                top: `${iconOffset}cqw`,
+                width: `${iconSize}cqw`,
+                height: `${iconSize}cqw`,
+                objectFit: 'contain',
+                zIndex: 5
+              }}
+            />
+          )}
+        </div>
+      );
+    });
+  };
+
+  return (
+    <div 
+      ref={ref}
+      style={{
+        position: 'relative',
+        width: '450px',
+        height: '628px',
+        background: '#030712',
+        borderRadius: '26px',
+        overflow: 'hidden',
+        containerType: 'inline-size',
+        boxSizing: 'border-box'
+      }}
+    >
+      <img 
+        src={getBackgroundPath(family)} 
+        alt="Card Background" 
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+        }}
+      />
+
+      {artImageData?.dataUrl && (
+        <img
+          src={artImageData.dataUrl}
+          alt="Card Art"
+          style={{
+            position: 'absolute',
+            left: `${artImageData.transform?.x ?? 50}%`,
+            top: `${artImageData.transform?.y ?? 47.7}%`,
+            width: `${artImageData.transform?.scale ?? 60}%`,
+            transform: `translate(-50%, -50%) rotate(${artImageData.transform?.rotation ?? 0}deg)`,
+            zIndex: 1,
+          }}
+        />
+      )}
+
+      <div style={{
+        position: 'absolute',
+        left: `${resolvedPriceTL.left}%`,
+        top: `${resolvedPriceTL.top}%`,
+        fontSize: `${resolvedPriceTL.fontSize}cqw`,
+        fontFamily: 'var(--font-price)',
+        color: priceColorTL,
+        lineHeight: 1,
+        transform: 'translate(-50%, -50%)',
+        zIndex: 2,
+        textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+      }}>
+        {cost}
+      </div>
+
+      <div style={{
+        position: 'absolute',
+        left: `${resolvedPriceBR.left}%`,
+        top: `${resolvedPriceBR.top}%`,
+        fontSize: `${resolvedPriceBR.fontSize}cqw`,
+        fontFamily: 'var(--font-price)',
+        color: priceColorBR,
+        lineHeight: 1,
+        transform: 'translate(-50%, -50%)',
+        zIndex: 2,
+        textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+      }}>
+        {cost}
+      </div>
+
+      <div style={{
+        position: 'absolute',
+        left: `${cardLayout.name.left}%`,
+        top: `${cardLayout.name.top}%`,
+        width: `${cardLayout.name.width}%`,
+        fontSize: `${cardLayout.name.fontSize}cqw`,
+        fontFamily: 'var(--font-card-name)',
+        color: cardLayout.name.color,
+        textAlign: 'center',
+        transform: 'translate(0, -50%)',
+        zIndex: 2,
+        letterSpacing: '0.02em',
+        textShadow: '0 2px 8px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 0, 0, 0.7)'
+      }}>
+        {name}
+      </div>
+
+      <div style={{
+        position: 'absolute',
+        left: `${cardLayout.effect.left}%`,
+        top: `${cardLayout.effect.top}%`,
+        width: `${cardLayout.effect.width}%`,
+        zIndex: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box'
+      }}>
+        {renderStaticEffectPanels()}
+      </div>
+
+      <div style={{
+        position: 'absolute',
+        left: `${resolvedCredit.left}%`,
+        top: `${resolvedCredit.top}%`,
+        width: `${resolvedCredit.width}%`,
+        fontSize: `${resolvedCredit.fontSize}cqw`,
+        fontFamily: 'var(--font-credit)',
+        color: cardLayout.credit.color,
+        textAlign: 'center',
+        transform: 'translate(0, -50%)',
+        zIndex: 2,
+        textShadow: '0 1px 3px rgba(0,0,0,0.8)'
+      }}>
+        {credit}
+      </div>
+    </div>
+  );
+});
+
+// Modal Dialog to configure and run the PDF generation pipeline
+const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => {
+  const [includeBackside, setIncludeBackside] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [statusText, setStatusText] = useState('');
+  const [progress, setProgress] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [printingCards, setPrintingCards] = useState([]);
+  const refs = useRef([]);
+
+  if (!isOpen) return null;
+
+  const handleStartExport = async () => {
+    setIsGenerating(true);
+    setStatusText('Preparing cards...');
+    setProgress(0);
+    setTotal(cards.length);
+    setPrintingCards(cards);
+    refs.current = [];
+
+    try {
+      // Bounded wait for React offscreen render and asset loading
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 1200));
+
+      let backsideImg = null;
+      if (includeBackside) {
+        setStatusText('Loading backside template...');
+        backsideImg = await loadImage('/img/Backside/Backside.png');
+      }
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const cardWidth = 63.5;
+      const cardHeight = 88.0;
+      const gapX = 2.0; // 2mm margin/gap between cards horizontally
+      const gapY = 2.0; // 2mm margin/gap between cards vertically
+      const xStart = (210 - (cardWidth * 3 + gapX * 2)) / 2; // Centered margin: 7.75 mm
+      const yStart = (297 - (cardHeight * 3 + gapY * 2)) / 2; // Centered margin: 14.5 mm
+      const cardsPerPage = 9;
+      const totalPages = Math.ceil(cards.length / cardsPerPage);
+
+      for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+        if (pageNum > 0) {
+          pdf.addPage();
+        }
+
+        const startIdx = pageNum * cardsPerPage;
+        const endIdx = Math.min(startIdx + cardsPerPage, cards.length);
+        const pageCardsCount = endIdx - startIdx;
+
+        // 1. Draw card fronts
+        for (let i = startIdx; i < endIdx; i++) {
+          const slotIdx = i - startIdx;
+          const row = Math.floor(slotIdx / 3);
+          const col = slotIdx % 3;
+
+          const cardElement = refs.current[i];
+          if (!cardElement) continue;
+
+          setStatusText(`Capturing "${cards[i].name}" (${i + 1}/${cards.length})...`);
+          
+          const canvas = await html2canvas(cardElement, {
+            scale: 3.0,
+            useCORS: true,
+            backgroundColor: null,
+            logging: false
+          });
+
+          const imgData = canvas.toDataURL('image/png');
+          const x = xStart + col * (cardWidth + gapX);
+          const y = yStart + row * (cardHeight + gapY);
+
+          pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
+
+          // Thin cutting guide border
+          pdf.setDrawColor(220, 220, 220);
+          pdf.setLineWidth(0.05);
+          pdf.rect(x, y, cardWidth, cardHeight);
+
+          setProgress(i + 1);
+        }
+
+        // 2. Draw corresponding backsides
+        if (includeBackside && backsideImg) {
+          pdf.addPage();
+          setStatusText(`Generating backside sheet for page ${pageNum + 1}...`);
+          
+          for (let slotIdx = 0; slotIdx < pageCardsCount; slotIdx++) {
+            const row = Math.floor(slotIdx / 3);
+            const col = slotIdx % 3;
+            // Mirror columns for duplex printing
+            const mirroredCol = 2 - col;
+
+            const x = xStart + mirroredCol * (cardWidth + gapX);
+            const y = yStart + row * (cardHeight + gapY);
+
+            pdf.addImage(backsideImg, 'PNG', x, y, cardWidth, cardHeight);
+
+            // Thin cutting guide border
+            pdf.setDrawColor(220, 220, 220);
+            pdf.setLineWidth(0.05);
+            pdf.rect(x, y, cardWidth, cardHeight);
+          }
+        }
+      }
+
+      setStatusText('Saving PDF...');
+      const fileName = packName ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_pack.pdf` : 'custom_cards.pdf';
+      pdf.save(fileName);
+      
+      setIsGenerating(false);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('Error generating PDF: ' + err.message);
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 2000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'rgba(0,0,0,0.85)',
+      backdropFilter: 'blur(8px)',
+      userSelect: 'none',
+      fontFamily: 'var(--font-family)'
+    }}>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+
+      <div className="glass-panel animate-fade-in" style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-color)',
+        borderRadius: 'var(--radius-lg)',
+        width: '460px',
+        padding: '1.75rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.25rem',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+        position: 'relative'
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            🖨️ Export PDF Layout
+          </h3>
+          {!isGenerating && (
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+              <X size={20} />
+            </button>
+          )}
+        </div>
+
+        {isGenerating ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '1.5rem 0' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '3px solid rgba(99,102,241,0.2)',
+              borderTop: '3px solid var(--color-primary)',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600, textAlign: 'center' }}>
+              {statusText}
+            </span>
+            <div style={{ width: '100%', height: '8px', background: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden', marginTop: '0.5rem' }}>
+              <div style={{
+                width: `${total > 0 ? (progress / total) * 100 : 0}%`,
+                height: '100%',
+                background: 'linear-gradient(90deg, var(--color-primary), #8b5cf6)',
+                borderRadius: '4px',
+                transition: 'width 0.2s ease-out'
+              }} />
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Card {progress} of {total} processed
+            </span>
+          </div>
+        ) : (
+          <>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+              Generate a high-quality, print-ready PDF containing your cards scaled to the standard dimensions (**$63.5 \times 88$ mm**).
+            </p>
+
+            <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-main)', border: '1px solid var(--border-color)', fontSize: '0.78rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Paper Size:</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>A4 (Portrait)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Cards Grid:</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>3 × 3 (9 cards per sheet)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Total Cards:</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{cards.length} card{cards.length > 1 ? 's' : ''}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Backside Option</label>
+              
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={() => setIncludeBackside(false)}
+                  style={{
+                    flex: 1, padding: '0.75rem 0.5rem', borderRadius: 'var(--radius-sm)',
+                    border: !includeBackside ? '2px solid var(--color-primary)' : '1px solid var(--border-color)',
+                    background: !includeBackside ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                    color: !includeBackside ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>Fronts Only</span>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Print-alone backing</span>
+                </button>
+                <button
+                  onClick={() => setIncludeBackside(true)}
+                  style={{
+                    flex: 1, padding: '0.75rem 0.5rem', borderRadius: 'var(--radius-sm)',
+                    border: includeBackside ? '2px solid var(--color-primary)' : '1px solid var(--border-color)',
+                    background: includeBackside ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                    color: includeBackside ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>Duplex Backside</span>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Duplex-ready backing</span>
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <button
+                onClick={onClose}
+                style={{ flex: 1, padding: '0.55rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStartExport}
+                style={{
+                  flex: 2, padding: '0.55rem',
+                  background: 'linear-gradient(135deg, var(--color-primary), #8b5cf6)',
+                  border: 'none', borderRadius: 'var(--radius-sm)', color: 'white', fontWeight: 800, cursor: 'pointer',
+                  fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem',
+                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
+                }}
+              >
+                <Download size={14} />
+                Generate PDF
+              </button>
+            </div>
+          </>
+        )}
+
+        {printingCards.length > 0 && (
+          <div style={{
+            position: 'absolute',
+            left: '-9999px',
+            top: '-9999px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}>
+            {printingCards.map((card, idx) => (
+              <CardPrintView
+                key={card.id}
+                ref={el => refs.current[idx] = el}
+                card={card}
+                defaultLayout={defaultLayout}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [activePreset, setActivePreset] = useState(MOCK_PRESETS[0]);
   const [backgroundFamily, setBackgroundFamily] = useState('Water'); // Fire, Water, Earth, Wind, Dragon
@@ -508,6 +1036,17 @@ export default function App() {
   const [filterCost, setFilterCost] = useState('All');
   const [sortBy, setSortBy] = useState('name');
   const [editingCardId, setEditingCardId] = useState(null);
+
+  // PDF Export Modal State
+  const [pdfExportIsOpen, setPdfExportIsOpen] = useState(false);
+  const [pdfExportCards, setPdfExportCards] = useState([]);
+  const [pdfExportPackName, setPdfExportPackName] = useState('');
+
+  const handleOpenPdfExport = (cards, packName) => {
+    setPdfExportCards(cards);
+    setPdfExportPackName(packName);
+    setPdfExportIsOpen(true);
+  };
 
   const cardRef = useRef(null);
 
@@ -703,17 +1242,7 @@ export default function App() {
     setBackgroundFamily(family);
   };
 
-  // Convert background elements to matching template paths
-  const getBackgroundPath = (family) => {
-    const mapping = {
-      Fire: 'FireCard.png',
-      Water: 'WaterCard.png',
-      Earth: 'EarthCard.png',
-      Wind: 'AirCard.png',
-      Dragon: 'DragonCard.png'
-    };
-    return `/img/Background/${mapping[family] || 'WaterCard.png'}`;
-  };
+
 
   // Handle direct mouse drag positioning of active elements
   const handleDragStart = (e, elementKey) => {
@@ -1060,10 +1589,10 @@ export default function App() {
               letterSpacing: 'normal',
               WebkitTextFillColor: 'initial',
               alignSelf: 'center'
-            }}>Layout Calibrator</span>
+            }}>Card Creator</span>
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.1rem' }}>
-            Calibrate components and output precise coordinates for custom card templates.
+            Design, customize, and export custom creature cards for The Vale of Eternity.
           </p>
         </div>
         
@@ -1167,7 +1696,8 @@ export default function App() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          position: 'relative',
+          position: 'sticky',
+          top: '2rem',
           minHeight: '720px',
           background: 'rgba(5, 8, 20, 0.5)'
         }}>
@@ -1212,7 +1742,7 @@ export default function App() {
             alignItems: 'center',
             gap: '0.4rem'
           }}>
-            <HelpCircle size={14} /> Drag elements directly on the card to align coordinates.
+            <HelpCircle size={14} /> Drag elements directly on the card to reposition them.
           </div>
 
           {/* Scaled Preview Card Frame */}
@@ -1229,8 +1759,7 @@ export default function App() {
               transform: `scale(${zoomScale})`,
               transformOrigin: 'center center',
               transition: 'transform 0.1s ease-out',
-              containerType: 'inline-size', // Declares this as a Container Query root
-              border: `3px solid var(--family-${backgroundFamily.toLowerCase()})`
+              containerType: 'inline-size' // Declares this as a Container Query root
             }}
           >
             {/* Layer 1 (Bottom): Card Background Template */}
@@ -1398,26 +1927,104 @@ export default function App() {
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
                 <Sparkles size={16} /> 1. Edit Card Content
               </h3>
-              <button
-                onClick={() => setShowArtImporter(true)}
-                style={{
-                  padding: '0.35rem 0.75rem',
-                  background: artImageData ? 'rgba(236,72,153,0.15)' : 'var(--bg-surface-elevated)',
-                  border: `1px solid ${artImageData ? 'var(--color-primary)' : 'var(--border-color)'}`,
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  color: artImageData ? '#f472b6' : 'var(--text-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <ImagePlus size={13} />
-                {artImageData ? 'Edit Art' : 'Add Art'}
-              </button>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                {artImageData ? (
+                  <>
+                    <button
+                      onClick={() => setShowArtImporter(true)}
+                      style={{
+                        padding: '0.35rem 0.6rem',
+                        background: 'rgba(236,72,153,0.15)',
+                        border: '1px solid var(--color-primary)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        color: '#f472b6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        transition: 'all 0.2s'
+                      }}
+                      title="Adjust position, scale or drawing layers of existing art"
+                    >
+                      <Sliders size={12} />
+                      Edit Position
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm('Discard existing artwork and import/sketch a new one?')) {
+                          setArtImageData(null);
+                          setShowArtImporter(true);
+                        }
+                      }}
+                      style={{
+                        padding: '0.35rem 0.6rem',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        transition: 'all 0.2s'
+                      }}
+                      title="Start a new artwork (upload or sketch)"
+                    >
+                      <ImagePlus size={12} />
+                      New Art
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm('Delete the custom artwork for this card?')) {
+                          setArtImageData(null);
+                        }
+                      }}
+                      style={{
+                        padding: '0.35rem 0.5rem',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid var(--color-danger)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        color: 'var(--color-danger)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                      title="Remove custom artwork"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setShowArtImporter(true)}
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      background: 'var(--bg-surface-elevated)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      color: 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <ImagePlus size={13} />
+                    Add Art
+                  </button>
+                )}
+              </div>
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -1657,6 +2264,7 @@ export default function App() {
                     setCardCredit('Art by Tamer');
                     setCardEffectText('⚡ Instantly earn \\icon(Stone1).');
                     setLayout(DEFAULT_LAYOUT);
+                    setArtImageData(null); // Clear custom artwork for the new card!
                   }}
                   style={{
                     padding: '0.45rem',
@@ -1672,6 +2280,41 @@ export default function App() {
                   Clear/New
                 </button>
               </div>
+
+              <button
+                onClick={() => {
+                  const currentCardObject = {
+                    id: editingCardId || 'current-designer',
+                    name: cardName,
+                    cost: cardCost,
+                    family: backgroundFamily,
+                    credit: cardCredit,
+                    effect: cardEffectText,
+                    artImageData: artImageData,
+                    layout: layout
+                  };
+                  handleOpenPdfExport([currentCardObject], cardName);
+                }}
+                style={{
+                  width: '100%',
+                  marginTop: '0.75rem',
+                  padding: '0.45rem',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'rgba(99, 102, 241, 0.15)',
+                  border: '1px solid var(--color-primary)',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Printer size={13} /> Export Card to PDF
+              </button>
               
               {editingCardId && (
                 <div style={{ fontSize: '0.7rem', color: 'var(--color-warning)', textAlign: 'center', fontWeight: 500 }}>
@@ -1681,16 +2324,16 @@ export default function App() {
             </div>
           </div>
 
-          {/* Section 2: Layout calibration sliders */}
+          {/* Section 2: Element layout customizing */}
           <div className="glass-panel" style={{ padding: '1.25rem' }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Settings size={16} /> 2. Calibrate Elements
+              <Settings size={16} /> 2. Customize Layouts
             </h3>
 
-            {/* Selector for element being calibrated */}
+            {/* Selector for element being edited */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
-                Target Element
+                Select Element to Edit
               </label>
               <div style={{
                 display: 'grid',
@@ -2306,6 +2949,35 @@ export default function App() {
               >
                 <Download size={14} /> Export Active Pack JSON
               </button>
+
+              <button
+                onClick={() => {
+                  const activePack = packs.find(p => p.id === activePackId);
+                  const activePackName = activePack ? activePack.name : 'Pack';
+                  handleOpenPdfExport(explorerCards, activePackName);
+                }}
+                disabled={!activePackId || explorerCards.length === 0}
+                style={{
+                  width: '100%',
+                  padding: '0.45rem',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'linear-gradient(135deg, var(--color-primary), #8b5cf6)',
+                  border: 'none',
+                  cursor: (activePackId && explorerCards.length > 0) ? 'pointer' : 'not-allowed',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  opacity: (activePackId && explorerCards.length > 0) ? 1 : 0.5,
+                  boxShadow: (activePackId && explorerCards.length > 0) ? '0 4px 12px rgba(99, 102, 241, 0.2)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Printer size={13} /> Export Pack to PDF
+              </button>
               
               <button
                 onClick={exportEntireLibrary}
@@ -2646,6 +3318,15 @@ export default function App() {
       onArtConfirmed={(artData) => setArtImageData(artData)}
       cardFamily={backgroundFamily}
       existingArt={artImageData?.dataUrl || null}
+    />
+
+    {/* PDF Export Modal */}
+    <ExportPdfModal
+      isOpen={pdfExportIsOpen}
+      onClose={() => setPdfExportIsOpen(false)}
+      cards={pdfExportCards}
+      defaultLayout={layout}
+      packName={pdfExportPackName}
     />
     </>
   );

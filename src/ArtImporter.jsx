@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Upload, Camera, ChevronRight, ChevronLeft, Loader, Check, Sliders, ZoomIn, ZoomOut, RotateCcw, Move } from 'lucide-react';
+import { X, Upload, Camera, ChevronRight, ChevronLeft, Loader, Check, Sliders, ZoomIn, ZoomOut, RotateCcw, Move, Square, Circle as CircleIcon, Type, Paintbrush, Eraser, Trash2 } from 'lucide-react';
 
 // ─── Card art safe zone (from Card_Art_Implementation_Rules.md) ──────────────
 // Canvas: 1728×2414. Safe zone: X 18.5%–81%, Y 8.3%–87%
@@ -172,6 +172,64 @@ function applyBgRemovalMask(srcCanvas, maskBuffer, maskWidth, maskHeight) {
   return outCanvas;
 }
 
+function drawShape(ctx, type, start, end, params) {
+  const {
+    strokeColor,
+    fillColor,
+    strokeEnabled,
+    fillEnabled,
+    brushSize,
+    opacity,
+    fontSize,
+    textString
+  } = params;
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.strokeStyle = strokeColor;
+  ctx.fillStyle = fillColor;
+  ctx.lineWidth = brushSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (type === 'line') {
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    if (strokeEnabled) ctx.stroke();
+  } else if (type === 'rect') {
+    const x = Math.min(start.x, end.x);
+    const y = Math.min(start.y, end.y);
+    const w = Math.abs(start.x - end.x);
+    const h = Math.abs(start.y - end.y);
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    if (fillEnabled) ctx.fill();
+    if (strokeEnabled) ctx.stroke();
+  } else if (type === 'circle') {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const radius = Math.sqrt(dx * dx + dy * dy);
+    ctx.beginPath();
+    ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
+    if (fillEnabled) ctx.fill();
+    if (strokeEnabled) ctx.stroke();
+  } else if (type === 'text') {
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (fillEnabled) {
+      ctx.fillStyle = fillColor;
+      ctx.fillText(textString, start.x, start.y);
+    }
+    if (strokeEnabled) {
+      ctx.strokeStyle = strokeColor;
+      ctx.strokeText(textString, start.x, start.y);
+    }
+  }
+  ctx.restore();
+}
+
 // Enhance faint pencil lines before background removal
 function applyLineEnhancement(srcCanvas) {
   console.time('applyLineEnhancement');
@@ -277,6 +335,39 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
   const originalImgRef = useRef(null);
   const previewCanvasRef = useRef(null);
 
+  // Zoom & Pan state
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [panMode, setPanMode] = useState(false);
+  const isPanning = useRef(false);
+  const lastPanPos = useRef({ x: 0, y: 0 });
+
+  const handleZoomIn = () => setZoom(z => Math.min(8, z + 0.25));
+  const handleZoomOut = () => setZoom(z => Math.max(0.5, z - 0.25));
+  const handleZoomReset = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  // Creation mode state
+  const [isCreateMode, setIsCreateMode] = useState(false);
+
+  // Drawing suite state
+  const [tool, setTool] = useState('brush'); // 'brush', 'line', 'rect', 'circle', 'polygon', 'text', 'erase', 'restore', 'pan'
+  const [strokeColor, setStrokeColor] = useState('#000000');
+  const [fillColor, setFillColor] = useState('#6366f1');
+  const [strokeEnabled, setStrokeEnabled] = useState(true);
+  const [fillEnabled, setFillEnabled] = useState(true);
+  const [opacity, setOpacity] = useState(1.0);
+  const [fontSize, setFontSize] = useState(30);
+  const [textString, setTextString] = useState('Creature');
+  const [polygonPoints, setPolygonPoints] = useState([]);
+
+  // Refs for drawing preview
+  const isDrawingShape = useRef(false);
+  const startPosRef = useRef({ x: 0, y: 0 });
+  const tunedImgRef = useRef(null);
+
   // Reset on open
   useEffect(() => {
     if (isOpen) {
@@ -285,6 +376,13 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
       setDeskewedDataUrl(existingArt || null);
       setProcessedDataUrl(existingArt || null);
       setFinalDataUrl(existingArt || null);
+      setIsCreateMode(false);
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+      setTool('brush');
+      setBrushMode(null);
+      setPolygonPoints([]);
+      tunedImgRef.current = null;
     }
   }, [isOpen, existingArt]);
 
@@ -304,6 +402,8 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (evt) => {
+      setIsCreateMode(false);
+      setTool('brush');
       setRawDataUrl(evt.target.result);
       setDeskewedDataUrl(evt.target.result);
       setStage(1); // jump to deskew
@@ -318,6 +418,8 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
     if (!file || !file.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = (evt) => {
+      setIsCreateMode(false);
+      setTool('brush');
       setRawDataUrl(evt.target.result);
       setDeskewedDataUrl(evt.target.result);
       setStage(1);
@@ -348,9 +450,30 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
     webcamStream?.getTracks().forEach(t => t.stop());
     setWebcamStream(null);
     setShowWebcam(false);
+    setIsCreateMode(false);
+    setTool('brush');
     setRawDataUrl(dataUrl);
     setDeskewedDataUrl(dataUrl);
     setStage(1);
+  };
+
+  const createBlankCanvas = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1728;
+    canvas.height = 2414;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    setIsCreateMode(true);
+    setTool('brush');
+    setRawDataUrl(dataUrl);
+    setDeskewedDataUrl(dataUrl);
+    setProcessedDataUrl(dataUrl);
+    setTunedDataUrl(dataUrl);
+    setFinalDataUrl(dataUrl);
+    setStage(3); // Jump straight to drawing stage
   };
 
   // ─── Deskew (jscanify) ─────────────────────────────────────────────────────
@@ -566,8 +689,16 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
   const [tunedDataUrl, setTunedDataUrl] = useState(null);
   const tuningDebounceRef = useRef(null);
 
+  // Apply tuning when sliders change
   useEffect(() => {
     if (stage !== 3 || !processedDataUrl) return;
+    
+    if (isCreateMode) {
+      setTunedDataUrl(processedDataUrl);
+      setFinalDataUrl(processedDataUrl);
+      return;
+    }
+
     if (tuningDebounceRef.current) clearTimeout(tuningDebounceRef.current);
     tuningDebounceRef.current = setTimeout(async () => {
       const img = await loadImageFromDataUrl(processedDataUrl);
@@ -584,7 +715,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
       setTunedDataUrl(canvasToDataUrl(enhanced));
       setFinalDataUrl(canvasToDataUrl(enhanced));
     }, 200);
-  }, [tuning, processedDataUrl, stage, cardFamily]);
+  }, [tuning, processedDataUrl, stage, cardFamily, isCreateMode]);
 
   // Initialize tuned URL when entering stage 3
   useEffect(() => {
@@ -594,13 +725,32 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
     }
   }, [stage, processedDataUrl]);
 
+  // Load tuned data URL into an image ref for fast synchronous preview rendering
+  useEffect(() => {
+    if (tunedDataUrl) {
+      loadImageFromDataUrl(tunedDataUrl).then(img => {
+        tunedImgRef.current = img;
+        if (previewCanvasRef.current) {
+          const cvs = previewCanvasRef.current;
+          cvs.width = img.width;
+          cvs.height = img.height;
+          const ctx = cvs.getContext('2d');
+          ctx.clearRect(0, 0, cvs.width, cvs.height);
+          ctx.drawImage(img, 0, 0);
+        }
+      });
+    } else {
+      tunedImgRef.current = null;
+    }
+  }, [tunedDataUrl]);
+
   // Brush Masking Initialization
   useEffect(() => {
     if (stage === 3 && processedDataUrl && !editedProcessedCanvasRef.current) {
       loadImageFromDataUrl(processedDataUrl).then(img => {
         editedProcessedCanvasRef.current = imageToCanvas(img, 1200);
       });
-      if (deskewedDataUrl) {
+      if (deskewedDataUrl && !isCreateMode) {
         loadImageFromDataUrl(deskewedDataUrl).then(img => {
           originalImgRef.current = img;
         });
@@ -610,21 +760,28 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
       editedProcessedCanvasRef.current = null;
       originalImgRef.current = null;
     }
-  }, [stage, processedDataUrl, deskewedDataUrl]);
+  }, [stage, processedDataUrl, deskewedDataUrl, isCreateMode]);
 
-  // Draw Tuned Image onto Preview Canvas
+  // Spacebar panning listeners
   useEffect(() => {
-    if (tunedDataUrl && previewCanvasRef.current) {
-      const cvs = previewCanvasRef.current;
-      const ctx = cvs.getContext('2d');
-      loadImageFromDataUrl(tunedDataUrl).then(img => {
-        cvs.width = img.width;
-        cvs.height = img.height;
-        ctx.clearRect(0, 0, cvs.width, cvs.height);
-        ctx.drawImage(img, 0, 0);
-      });
-    }
-  }, [tunedDataUrl]);
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        setPanMode(true);
+        e.preventDefault();
+      }
+    };
+    const handleKeyUp = (e) => {
+      if (e.code === 'Space') {
+        setPanMode(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   // Brush Mouse Handlers
   const applyBrush = (x, y, lastX, lastY, displayWidth, displayHeight) => {
@@ -634,7 +791,8 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
     const scaleY = cvs.height / displayHeight;
     const ctx = cvs.getContext('2d');
     
-    if (brushMode === 'erase') {
+    ctx.save();
+    if (tool === 'erase') {
       ctx.globalCompositeOperation = 'destination-out';
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -643,7 +801,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
       ctx.moveTo(lastX * scaleX, lastY * scaleY);
       ctx.lineTo(x * scaleX, y * scaleY);
       ctx.stroke();
-    } else if (brushMode === 'restore' && originalImgRef.current) {
+    } else if (tool === 'restore' && originalImgRef.current) {
       const tempCvs = document.createElement('canvas');
       tempCvs.width = cvs.width;
       tempCvs.height = cvs.height;
@@ -661,48 +819,231 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
       
       ctx.globalCompositeOperation = 'source-over';
       ctx.drawImage(tempCvs, 0, 0);
+    } else if (tool === 'brush') {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = strokeColor;
+      ctx.globalAlpha = opacity;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = brushSize * scaleX;
+      ctx.beginPath();
+      ctx.moveTo(lastX * scaleX, lastY * scaleY);
+      ctx.lineTo(x * scaleX, y * scaleY);
+      ctx.stroke();
     }
+    ctx.restore();
     
     if (previewCanvasRef.current) {
       const pCtx = previewCanvasRef.current.getContext('2d');
+      pCtx.save();
       pCtx.lineCap = 'round';
       pCtx.lineJoin = 'round';
       pCtx.lineWidth = brushSize * scaleX;
       pCtx.beginPath();
       pCtx.moveTo(lastX * scaleX, lastY * scaleY);
       pCtx.lineTo(x * scaleX, y * scaleY);
-      if (brushMode === 'erase') {
+      if (tool === 'erase') {
         pCtx.globalCompositeOperation = 'destination-out';
         pCtx.stroke();
-      } else {
+      } else if (tool === 'restore') {
         pCtx.globalCompositeOperation = 'source-over';
         pCtx.strokeStyle = 'rgba(0, 255, 0, 0.4)';
         pCtx.stroke();
+      } else if (tool === 'brush') {
+        pCtx.globalCompositeOperation = 'source-over';
+        pCtx.strokeStyle = strokeColor;
+        pCtx.globalAlpha = opacity;
+        pCtx.stroke();
       }
+      pCtx.restore();
     }
   };
 
+  const drawActivePreview = (currentX, currentY) => {
+    if (!previewCanvasRef.current || !tunedImgRef.current) return;
+    const cvs = previewCanvasRef.current;
+    const ctx = cvs.getContext('2d');
+    
+    // Draw base image
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    ctx.drawImage(tunedImgRef.current, 0, 0);
+
+    // Draw active shape preview
+    if (isDrawingShape.current && startPosRef.current) {
+      drawShape(ctx, tool, startPosRef.current, { x: currentX, y: currentY }, {
+        strokeColor,
+        fillColor,
+        strokeEnabled,
+        fillEnabled,
+        brushSize,
+        opacity,
+        fontSize,
+        textString
+      });
+    } else if (tool === 'polygon' && polygonPoints.length > 0) {
+      ctx.save();
+      ctx.globalAlpha = opacity;
+      ctx.strokeStyle = strokeColor;
+      ctx.fillStyle = fillColor;
+      ctx.lineWidth = brushSize;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      ctx.beginPath();
+      ctx.moveTo(polygonPoints[0].x, polygonPoints[0].y);
+      for (let i = 1; i < polygonPoints.length; i++) {
+        ctx.lineTo(polygonPoints[i].x, polygonPoints[i].y);
+      }
+      ctx.lineTo(currentX, currentY); // Guide line to cursor
+      ctx.stroke();
+
+      // Anchor dots
+      ctx.fillStyle = 'var(--color-primary)';
+      for (let pt of polygonPoints) {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, Math.max(4, brushSize / 2), 0, 2 * Math.PI);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  };
+
+  const commitPolygon = () => {
+    if (polygonPoints.length < 2 || !editedProcessedCanvasRef.current) return;
+    const cvs = editedProcessedCanvasRef.current;
+    const ctx = cvs.getContext('2d');
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = strokeColor;
+    ctx.fillStyle = fillColor;
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(polygonPoints[0].x, polygonPoints[0].y);
+    for (let i = 1; i < polygonPoints.length; i++) {
+      ctx.lineTo(polygonPoints[i].x, polygonPoints[i].y);
+    }
+    ctx.closePath();
+
+    if (fillEnabled && polygonPoints.length >= 3) ctx.fill();
+    if (strokeEnabled) ctx.stroke();
+    ctx.restore();
+
+    setPolygonPoints([]);
+    setProcessedDataUrl(canvasToDataUrl(cvs));
+  };
+
   const handleBrushDown = (e) => {
-    if (!brushMode || !previewCanvasRef.current) return;
-    isBrushing.current = true;
+    if (tool === 'pan' || panMode || e.button === 1) return;
+    if (!previewCanvasRef.current) return;
+    
     const rect = previewCanvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    
+    const canvasX = (x / rect.width) * previewCanvasRef.current.width;
+    const canvasY = (y / rect.height) * previewCanvasRef.current.height;
+
+    if (tool === 'polygon') {
+      if (polygonPoints.length >= 3) {
+        const firstPt = polygonPoints[0];
+        const dist = Math.sqrt((canvasX - firstPt.x) ** 2 + (canvasY - firstPt.y) ** 2);
+        const closeThreshold = 15 * (previewCanvasRef.current.width / rect.width);
+        if (dist < closeThreshold) {
+          commitPolygon();
+          return;
+        }
+      }
+      setPolygonPoints(prev => [...prev, { x: canvasX, y: canvasY }]);
+      return;
+    }
+
+    if (tool === 'text') {
+      if (!editedProcessedCanvasRef.current) return;
+      const cvs = editedProcessedCanvasRef.current;
+      const ctx = cvs.getContext('2d');
+      drawShape(ctx, 'text', { x: canvasX, y: canvasY }, { x: canvasX, y: canvasY }, {
+        strokeColor,
+        fillColor,
+        strokeEnabled,
+        fillEnabled,
+        brushSize,
+        opacity,
+        fontSize,
+        textString
+      });
+      setProcessedDataUrl(canvasToDataUrl(cvs));
+      return;
+    }
+
+    if (['line', 'rect', 'circle'].includes(tool)) {
+      isDrawingShape.current = true;
+      startPosRef.current = { x: canvasX, y: canvasY };
+      return;
+    }
+
+    // Brush/Erase/Restore tools
+    isBrushing.current = true;
     brushLastPosRef.current = { x, y };
     applyBrush(x, y, x, y, rect.width, rect.height);
     e.preventDefault();
   };
 
   const handleBrushMove = (e) => {
-    if (!isBrushing.current || !brushMode || !previewCanvasRef.current) return;
+    if (!previewCanvasRef.current) return;
     const rect = previewCanvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    applyBrush(x, y, brushLastPosRef.current.x, brushLastPosRef.current.y, rect.width, rect.height);
-    brushLastPosRef.current = { x, y };
+    
+    const canvasX = (x / rect.width) * previewCanvasRef.current.width;
+    const canvasY = (y / rect.height) * previewCanvasRef.current.height;
+
+    if (tool === 'polygon' && polygonPoints.length > 0) {
+      drawActivePreview(canvasX, canvasY);
+      return;
+    }
+
+    if (isDrawingShape.current && startPosRef.current) {
+      drawActivePreview(canvasX, canvasY);
+      return;
+    }
+
+    if (isBrushing.current && ['brush', 'erase', 'restore'].includes(tool)) {
+      applyBrush(x, y, brushLastPosRef.current.x, brushLastPosRef.current.y, rect.width, rect.height);
+      brushLastPosRef.current = { x, y };
+    }
   };
 
-  const handleBrushUp = () => {
+  const handleBrushUp = (e) => {
+    if (isDrawingShape.current && startPosRef.current && previewCanvasRef.current) {
+      const rect = previewCanvasRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const canvasX = (x / rect.width) * previewCanvasRef.current.width;
+      const canvasY = (y / rect.height) * previewCanvasRef.current.height;
+
+      if (editedProcessedCanvasRef.current) {
+        const cvs = editedProcessedCanvasRef.current;
+        const ctx = cvs.getContext('2d');
+        drawShape(ctx, tool, startPosRef.current, { x: canvasX, y: canvasY }, {
+          strokeColor,
+          fillColor,
+          strokeEnabled,
+          fillEnabled,
+          brushSize,
+          opacity,
+          fontSize,
+          textString
+        });
+        setProcessedDataUrl(canvasToDataUrl(cvs));
+      }
+      isDrawingShape.current = false;
+      startPosRef.current = null;
+    }
+
     if (isBrushing.current) {
       isBrushing.current = false;
       if (editedProcessedCanvasRef.current) {
@@ -798,6 +1139,22 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
     flexShrink: 0,
   });
 
+  const toolBtnStyle = (active) => ({
+    padding: '0.4rem 0.2rem',
+    fontSize: '0.7rem',
+    borderRadius: '6px',
+    border: '1px solid var(--border-color)',
+    background: active ? 'var(--color-primary)' : 'var(--bg-main)',
+    color: active ? 'white' : 'var(--text-primary)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.3rem',
+    fontWeight: active ? '700' : 'normal',
+    transition: 'all 0.15s ease',
+  });
+
   return (
     <div style={panelStyle} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div style={modalStyle}>
@@ -842,69 +1199,135 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
 
           {/* ── Stage 0: Import ── */}
           {stage === 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'center' }}>
-                Upload or photograph your hand-drawn creature art. We'll flatten, enhance, and remove the background automatically.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'center', margin: '0 auto', maxWidth: '600px' }}>
+                Choose how you want to bring your creature to life: import an existing sketch/photo for AI processing, or start drawing directly on a blank template.
               </p>
 
-              {/* Webcam area */}
-              {showWebcam ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-                  <video ref={videoRef} autoPlay playsInline muted
-                    style={{ width: '100%', maxWidth: '500px', borderRadius: '12px', border: '2px solid var(--color-primary)' }} />
-                  <button onClick={captureWebcam} style={{
-                    padding: '0.6rem 1.5rem', background: 'var(--color-primary)', border: 'none',
-                    borderRadius: '8px', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem'
-                  }}>
-                    📸 Capture Photo
-                  </button>
-                  <button onClick={() => { webcamStream?.getTracks().forEach(t => t.stop()); setShowWebcam(false); setWebcamStream(null); }}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}>
-                    Cancel
-                  </button>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '1.5rem',
+                alignItems: 'stretch',
+                marginTop: '0.5rem'
+              }}>
+                {/* Panel 1: Upload / Capture */}
+                <div className="glass-panel" style={{
+                  padding: '2rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(15, 20, 36, 0.4)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  textAlign: 'center',
+                }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                    📥 Upload Existing Art
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', minHeight: '3rem' }}>
+                    Upload a sketch, drawing, or photo. We'll enhance lines and isolate the background.
+                  </p>
+
+                  {showWebcam ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
+                      <video ref={videoRef} autoPlay playsInline muted
+                        style={{ width: '100%', borderRadius: '8px', border: '2px solid var(--color-primary)' }} />
+                      <button onClick={captureWebcam} style={{
+                        width: '100%', padding: '0.6rem 1.5rem', background: 'var(--color-primary)', border: 'none',
+                        borderRadius: '8px', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem'
+                      }}>
+                        📸 Capture Photo
+                      </button>
+                      <button onClick={() => { webcamStream?.getTracks().forEach(t => t.stop()); setShowWebcam(false); setWebcamStream(null); }}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onDrop={handleDrop}
+                      onDragOver={(e) => e.preventDefault()}
+                      style={{
+                        border: '2px dashed var(--border-color)',
+                        borderRadius: '12px',
+                        padding: '2rem 1.5rem',
+                        width: '100%',
+                        background: 'rgba(5, 8, 20, 0.3)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={32} style={{ color: 'var(--color-primary)', marginBottom: '0.5rem' }} />
+                      <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        Drag & drop or browse
+                      </p>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); startWebcam(); }}
+                        style={{
+                          marginTop: '1rem',
+                          padding: '0.4rem 1rem',
+                          background: 'var(--bg-main)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <Camera size={14} /> Camera
+                      </button>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={(e) => e.preventDefault()}
-                  style={{
-                    border: '2px dashed var(--border-color-hover)',
-                    borderRadius: '16px',
-                    padding: '3rem',
-                    textAlign: 'center',
-                    background: 'var(--bg-surface-elevated)',
-                    transition: 'border-color 0.2s',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload size={40} style={{ color: 'var(--color-primary)', marginBottom: '0.75rem' }} />
-                  <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Drag & drop your image here
+
+                {/* Panel 2: Create Blank Canvas */}
+                <div className="glass-panel" style={{
+                  padding: '2rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(15, 20, 36, 0.4)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  textAlign: 'center',
+                }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                    🎨 Sketch Digitally
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', minHeight: '3rem' }}>
+                    Start drawing directly on a blank canvas calibrated to the exact proportions of the card.
                   </p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 1.25rem' }}>
-                    or click to browse files (JPG, PNG, HEIC, WebP)
-                  </p>
+
                   <button
-                    onClick={(e) => { e.stopPropagation(); startWebcam(); }}
+                    onClick={createBlankCanvas}
                     style={{
-                      padding: '0.5rem 1.25rem',
-                      background: 'var(--bg-main)',
-                      border: '1px solid var(--border-color)',
+                      padding: '0.8rem 1.5rem',
+                      background: 'linear-gradient(135deg, var(--color-primary), #8b5cf6)',
+                      border: 'none',
                       borderRadius: '8px',
-                      color: 'var(--text-secondary)',
+                      color: 'white',
+                      fontWeight: 700,
                       cursor: 'pointer',
-                      display: 'inline-flex',
+                      fontSize: '0.9rem',
+                      display: 'flex',
                       alignItems: 'center',
-                      gap: '0.4rem',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
+                      gap: '0.5rem',
+                      boxShadow: '0 4px 12px rgba(99,102,241,0.25)',
+                      transition: 'all 0.2s',
                     }}
                   >
-                    <Camera size={16} /> Use Camera
+                    ✏️ Create Blank Canvas
                   </button>
                 </div>
-              )}
+              </div>
 
               <input
                 ref={fileInputRef}
@@ -932,7 +1355,23 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                   <img src={deskewedDataUrl || rawDataUrl} alt="Deskewed" style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--color-primary)' }} />
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', width: '100%' }}>
+                <button
+                  onClick={() => {
+                    if (confirm('Discard this artwork and start over?')) {
+                      setRawDataUrl(null);
+                      setDeskewedDataUrl(null);
+                      setProcessedDataUrl(null);
+                      setTunedDataUrl(null);
+                      setFinalDataUrl(null);
+                      setIsCreateMode(false);
+                      setStage(0);
+                    }
+                  }}
+                  style={{ marginRight: 'auto', padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--color-danger)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--color-danger)' }}
+                >
+                  🗑️ Start Over
+                </button>
                 <button onClick={runDeskew} style={{ padding: '0.5rem 1rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
                   🔄 Re-run Auto-Detect
                 </button>
@@ -1005,7 +1444,23 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', alignItems: 'center', width: '100%' }}>
+                <button
+                  onClick={() => {
+                    if (confirm('Discard this artwork and start over?')) {
+                      setRawDataUrl(null);
+                      setDeskewedDataUrl(null);
+                      setProcessedDataUrl(null);
+                      setTunedDataUrl(null);
+                      setFinalDataUrl(null);
+                      setIsCreateMode(false);
+                      setStage(0);
+                    }
+                  }}
+                  style={{ marginRight: 'auto', padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--color-danger)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--color-danger)' }}
+                >
+                  🗑️ Start Over
+                </button>
                 <button onClick={() => setStage(1)} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   ← Back
                 </button>
@@ -1027,68 +1482,271 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
             </div>
           )}
 
-          {/* ── Stage 3: Color Tuning ── */}
+          {/* ── Stage 3: Color Tuning / Drawing ── */}
           {stage === 3 && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '1.5rem' }}>
               {/* Controls */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-primary)', margin: 0 }}>Color Tuning</h3>
-
-                {[
-                  { key: 'vibrance', label: 'Vibrance', min: 0, max: 1, step: 0.05 },
-                  { key: 'familyTint', label: `Family Tint (${cardFamily})`, min: 0, max: 1, step: 0.05 },
-                  { key: 'brightness', label: 'Brightness', min: -1, max: 1, step: 0.05 },
-                  { key: 'contrast', label: 'Contrast', min: -1, max: 1, step: 0.05 },
-                  { key: 'hueRotate', label: 'Hue Rotate (°)', min: -180, max: 180, step: 1 },
-                ].map(({ key, label, min, max, step }) => (
-                  <div key={key}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.2rem' }}>
-                      <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</span>
-                      <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{tuning[key]}</span>
-                    </div>
-                    <input type="range" min={min} max={max} step={step}
-                      value={tuning[key]}
-                      onChange={(e) => setTuning(prev => ({ ...prev, [key]: parseFloat(e.target.value) }))}
-                      style={{ width: '100%' }} />
-                  </div>
-                ))}
-
-                <button
-                  onClick={() => setTuning({ vibrance: 0.4, familyTint: 0.5, brightness: 0, contrast: 0, hueRotate: 0 })}
-                  style={{ padding: '0.4rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
-                >
-                  Reset to Defaults
-                </button>
-
-                <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Brush Masking</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button 
-                      onClick={() => setBrushMode(brushMode === 'erase' ? null : 'erase')}
-                      style={{ flex: 1, padding: '0.4rem', fontSize: '0.7rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: brushMode === 'erase' ? 'var(--color-primary)' : 'transparent', color: brushMode === 'erase' ? 'white' : 'var(--text-primary)', cursor: 'pointer' }}>
-                      Erase BG
-                    </button>
-                    <button 
-                      onClick={() => setBrushMode(brushMode === 'restore' ? null : 'restore')}
-                      style={{ flex: 1, padding: '0.4rem', fontSize: '0.7rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: brushMode === 'restore' ? '#10b981' : 'transparent', color: brushMode === 'restore' ? 'white' : 'var(--text-primary)', cursor: 'pointer' }}>
-                      Restore Art
-                    </button>
-                  </div>
-                  {brushMode && (
-                    <div style={{ marginTop: '0.4rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '0.2rem' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Brush Size</span>
-                        <span style={{ color: 'var(--text-secondary)' }}>{brushSize}px</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '550px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                
+                {/* 1. Color Tuning Sliders (Only if not in create mode) */}
+                {!isCreateMode && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    <h3 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-primary)', margin: 0 }}>Color Tuning</h3>
+                    {[
+                      { key: 'vibrance', label: 'Vibrance', min: 0, max: 1, step: 0.05 },
+                      { key: 'familyTint', label: `Family Tint (${cardFamily})`, min: 0, max: 1, step: 0.05 },
+                      { key: 'brightness', label: 'Brightness', min: -1, max: 1, step: 0.05 },
+                      { key: 'contrast', label: 'Contrast', min: -1, max: 1, step: 0.05 },
+                      { key: 'hueRotate', label: 'Hue Rotate (°)', min: -180, max: 180, step: 1 },
+                    ].map(({ key, label, min, max, step }) => (
+                      <div key={key}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '0.1rem' }}>
+                          <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</span>
+                          <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{tuning[key]}</span>
+                        </div>
+                        <input type="range" min={min} max={max} step={step}
+                          value={tuning[key]}
+                          onChange={(e) => setTuning(prev => ({ ...prev, [key]: parseFloat(e.target.value) }))}
+                          style={{ width: '100%' }} />
                       </div>
-                      <input type="range" min={5} max={100} step={1} value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} style={{ width: '100%' }} />
+                    ))}
+                    <button
+                      onClick={() => setTuning({ vibrance: 0.4, familyTint: 0.5, brightness: 0, contrast: 0, hueRotate: 0 })}
+                      style={{ padding: '0.3rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.7rem', color: 'var(--text-muted)' }}
+                    >
+                      Reset Colors
+                    </button>
+                    <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.4rem 0' }} />
+                  </div>
+                )}
+
+                {/* 2. Drawing toolkit */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  <h3 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-primary)', margin: 0 }}>
+                    {isCreateMode ? 'Drawing Studio' : 'Brush Masking & Drawing'}
+                  </h3>
+
+                  {/* Tool selection buttons grid */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Active Tool</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.3rem' }}>
+                      <button 
+                        onClick={() => { setTool('brush'); setBrushMode(null); }}
+                        style={toolBtnStyle(tool === 'brush')}
+                        title="Freehand brush drawing"
+                      >
+                        <Paintbrush size={13} /> Brush
+                      </button>
+                      <button 
+                        onClick={() => { setTool('line'); setBrushMode(null); }}
+                        style={toolBtnStyle(tool === 'line')}
+                        title="Draw straight lines"
+                      >
+                        📏 Line
+                      </button>
+                      <button 
+                        onClick={() => { setTool('rect'); setBrushMode(null); }}
+                        style={toolBtnStyle(tool === 'rect')}
+                        title="Draw rectangles"
+                      >
+                        <Square size={13} /> Rect
+                      </button>
+                      <button 
+                        onClick={() => { setTool('circle'); setBrushMode(null); }}
+                        style={toolBtnStyle(tool === 'circle')}
+                        title="Draw circles"
+                      >
+                        <CircleIcon size={13} /> Circle
+                      </button>
+                      <button 
+                        onClick={() => { setTool('polygon'); setBrushMode(null); }}
+                        style={toolBtnStyle(tool === 'polygon')}
+                        title="Polygon tool: click points, then close to commit"
+                      >
+                        ⬡ Poly
+                      </button>
+                      <button 
+                        onClick={() => { setTool('text'); setBrushMode(null); }}
+                        style={toolBtnStyle(tool === 'text')}
+                        title="Text tool: click on canvas to place text"
+                      >
+                        <Type size={13} /> Text
+                      </button>
+                      <button 
+                        onClick={() => { setTool('erase'); setBrushMode('erase'); }}
+                        style={toolBtnStyle(tool === 'erase')}
+                        title="Erase background pixels to transparency"
+                      >
+                        <Eraser size={13} /> Erase BG
+                      </button>
+                      {!isCreateMode && (
+                        <button 
+                          onClick={() => { setTool('restore'); setBrushMode('restore'); }}
+                          style={toolBtnStyle(tool === 'restore')}
+                          title="Restore original artwork pixels under mask"
+                        >
+                          ✨ Restore
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => { setTool('pan'); setBrushMode(null); }}
+                        style={toolBtnStyle(tool === 'pan')}
+                        title="Pan around canvas (or hold Spacebar while drawing)"
+                      >
+                        <Move size={13} /> Pan
+                      </button>
                     </div>
+                  </div>
+
+                  {/* Tool options panel */}
+                  {tool !== 'pan' && (
+                    <div style={{ padding: '0.6rem', borderRadius: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      
+                      {/* Brush size */}
+                      {['brush', 'line', 'rect', 'circle', 'polygon', 'erase', 'restore'].includes(tool) && (
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.1rem' }}>
+                            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Brush/Line Width</span>
+                            <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{brushSize}px</span>
+                          </div>
+                          <input type="range" min={1} max={100} step={1} value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} style={{ width: '100%' }} />
+                        </div>
+                      )}
+
+                      {/* Opacity */}
+                      {['brush', 'line', 'rect', 'circle', 'polygon', 'text'].includes(tool) && (
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.1rem' }}>
+                            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Opacity</span>
+                            <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{Math.round(opacity * 100)}%</span>
+                          </div>
+                          <input type="range" min={0.05} max={1} step={0.05} value={opacity} onChange={(e) => setOpacity(parseFloat(e.target.value))} style={{ width: '100%' }} />
+                        </div>
+                      )}
+
+                      {/* Colors (Stroke & Fill) */}
+                      {['brush', 'line', 'rect', 'circle', 'polygon', 'text'].includes(tool) && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          {/* Outline Color */}
+                          <div style={{ flex: 1 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.65rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: '0.2rem', fontWeight: 600 }}>
+                              <input type="checkbox" checked={strokeEnabled} onChange={(e) => setStrokeEnabled(e.target.checked)} />
+                              Outline
+                            </label>
+                            <input 
+                              type="color" 
+                              value={strokeColor} 
+                              disabled={!strokeEnabled}
+                              onChange={(e) => setStrokeColor(e.target.value)} 
+                              style={{ width: '100%', height: '24px', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: strokeEnabled ? 'pointer' : 'not-allowed', background: 'transparent' }} 
+                            />
+                          </div>
+
+                          {/* Fill Color */}
+                          {['rect', 'circle', 'polygon', 'text'].includes(tool) && (
+                            <div style={{ flex: 1 }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.65rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: '0.2rem', fontWeight: 600 }}>
+                                <input type="checkbox" checked={fillEnabled} onChange={(e) => setFillEnabled(e.target.checked)} />
+                                Fill
+                              </label>
+                              <input 
+                                type="color" 
+                                value={fillColor} 
+                                disabled={!fillEnabled}
+                                onChange={(e) => setFillColor(e.target.value)} 
+                                style={{ width: '100%', height: '24px', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: fillEnabled ? 'pointer' : 'not-allowed', background: 'transparent' }} 
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Text Settings */}
+                      {tool === 'text' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.4rem' }}>
+                          <div>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.1rem' }}>Text Content</span>
+                            <input 
+                              type="text" 
+                              value={textString} 
+                              onChange={(e) => setTextString(e.target.value)} 
+                              style={{ width: '100%', padding: '0.3rem 0.5rem', fontSize: '0.75rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'white' }} 
+                            />
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.1rem' }}>
+                              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Font Size</span>
+                              <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{fontSize}px</span>
+                            </div>
+                            <input type="range" min={10} max={120} step={1} value={fontSize} onChange={(e) => setFontSize(parseInt(e.target.value))} style={{ width: '100%' }} />
+                          </div>
+                          <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>* Click canvas to place text</span>
+                        </div>
+                      )}
+
+                      {/* Polygon controls */}
+                      {tool === 'polygon' && polygonPoints.length > 0 && (
+                        <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.2rem' }}>
+                          <button
+                            onClick={commitPolygon}
+                            style={{
+                              flex: 2, padding: '0.3rem 0.5rem', background: 'var(--color-success)', border: 'none', borderRadius: '4px',
+                              color: 'white', fontWeight: 700, fontSize: '0.65rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem'
+                            }}
+                          >
+                            <Check size={11} /> Close & Fill ({polygonPoints.length} pts)
+                          </button>
+                          <button
+                            onClick={() => setPolygonPoints([])}
+                            style={{
+                              flex: 1, padding: '0.3rem', background: 'transparent', border: '1px solid var(--color-danger)', borderRadius: '4px',
+                              color: 'var(--color-danger)', fontWeight: 600, fontSize: '0.65rem', cursor: 'pointer'
+                            }}
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Clear Canvas (Create Mode only) */}
+                  {isCreateMode && (
+                    <button
+                      onClick={() => {
+                        if (confirm('Clear the entire drawing canvas and start over?')) {
+                          createBlankCanvas();
+                        }
+                      }}
+                      style={{
+                        padding: '0.4rem', background: 'transparent', border: '1px solid var(--color-danger)', borderRadius: '6px',
+                        cursor: 'pointer', fontSize: '0.7rem', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem'
+                      }}
+                    >
+                      <Trash2 size={12} /> Clear Entire Canvas
+                    </button>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
-                  <button onClick={() => setStage(2)} style={{ flex: 1, padding: '0.5rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                {/* Buttons block */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                  <button
+                    onClick={() => {
+                      if (confirm('Discard this artwork and start over?')) {
+                        setRawDataUrl(null);
+                        setDeskewedDataUrl(null);
+                        setProcessedDataUrl(null);
+                        setTunedDataUrl(null);
+                        setFinalDataUrl(null);
+                        setIsCreateMode(false);
+                        setStage(0);
+                      }
+                    }}
+                    style={{ flex: 1, padding: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--color-danger)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--color-danger)' }}
+                  >
+                    🗑️ Start Over
+                  </button>
+                  <button onClick={() => setStage(isCreateMode ? 0 : 2)} style={{ flex: 1, padding: '0.5rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     ← Back
                   </button>
                   <button onClick={() => setStage(4)} style={{ flex: 2, padding: '0.5rem 1rem', background: 'var(--color-primary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: 'white' }}>
@@ -1097,38 +1755,175 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 </div>
               </div>
 
-              {/* Preview */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Live Preview</p>
-                <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-main)', backgroundImage: 'repeating-conic-gradient(#80808033 0% 25%, transparent 0% 50%)', backgroundSize: '20px 20px', border: '1px solid var(--border-color)' }}>
-                  {/* Before/after slider */}
-                  <img src={processedDataUrl} alt="Before" style={{ width: '100%', display: 'block', opacity: compareSlider < 100 ? 1 : 0 }} />
+              {/* Live Preview Container with Zoom/Pan wrapper */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', margin: 0 }}>Live Workspace Canvas</p>
+                
+                <div 
+                  style={{ 
+                    position: 'relative', 
+                    height: '460px', 
+                    width: '100%', 
+                    overflow: 'hidden', 
+                    background: 'var(--bg-main)', 
+                    backgroundImage: 'repeating-conic-gradient(#80808011 0% 25%, transparent 0% 50%)', 
+                    backgroundSize: '20px 20px', 
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    cursor: panMode || tool === 'pan' ? (isPanning.current ? 'grabbing' : 'grab') : 'crosshair'
+                  }}
+                  onMouseDown={(e) => {
+                    if (panMode || tool === 'pan' || e.button === 1) {
+                      isPanning.current = true;
+                      lastPanPos.current = { x: e.clientX, y: e.clientY };
+                      e.preventDefault();
+                    } else {
+                      handleBrushDown(e);
+                    }
+                  }}
+                  onMouseMove={(e) => {
+                    if (isPanning.current) {
+                      const dx = e.clientX - lastPanPos.current.x;
+                      const dy = e.clientY - lastPanPos.current.y;
+                      setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+                      lastPanPos.current = { x: e.clientX, y: e.clientY };
+                    } else {
+                      handleBrushMove(e);
+                    }
+                  }}
+                  onMouseUp={(e) => {
+                    if (isPanning.current) {
+                      isPanning.current = false;
+                    } else {
+                      handleBrushUp(e);
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (isPanning.current) {
+                      isPanning.current = false;
+                    } else {
+                      handleBrushUp(e);
+                    }
+                  }}
+                >
+                  {/* Floating Zoom/Pan Controls Overlay */}
                   <div style={{
-                    position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
-                    clipPath: `inset(0 0 0 ${compareSlider}%)`
-                  }}>
-                    <canvas 
-                      ref={previewCanvasRef} 
+                    position: 'absolute',
+                    bottom: '0.8rem',
+                    right: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    background: 'var(--bg-surface-elevated)',
+                    padding: '0.3rem 0.5rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-color)',
+                    zIndex: 15,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    userSelect: 'none',
+                    pointerEvents: 'auto'
+                  }} onMouseDown={(e) => e.stopPropagation()}>
+                    <button 
+                      onClick={handleZoomOut}
+                      title="Zoom Out"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--text-secondary)', padding: '2px' }}
+                    >
+                      <ZoomOut size={14} />
+                    </button>
+                    <span style={{ fontSize: '0.7rem', width: '32px', textAlign: 'center', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {Math.round(zoom * 100)}%
+                    </span>
+                    <button 
+                      onClick={handleZoomIn}
+                      title="Zoom In"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--text-secondary)', padding: '2px' }}
+                    >
+                      <ZoomIn size={14} />
+                    </button>
+                    <div style={{ width: '1px', height: '12px', background: 'var(--border-color)', margin: '0 0.15rem' }} />
+                    <button 
+                      onClick={handleZoomReset}
+                      title="Reset Zoom/Pan"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--text-secondary)', padding: '2px' }}
+                    >
+                      <RotateCcw size={13} />
+                    </button>
+                    <button 
+                      onClick={() => setTool(prev => prev === 'pan' ? 'brush' : 'pan')}
+                      title="Pan Canvas Mode (Hold Spacebar to Pan anyway)"
                       style={{ 
-                        width: '100%', display: 'block', 
-                        cursor: brushMode ? (brushMode === 'erase' ? 'url(/erase.png), crosshair' : 'url(/restore.png), crosshair') : 'default',
-                        touchAction: brushMode ? 'none' : 'auto'
-                      }} 
-                      onMouseDown={handleBrushDown}
-                      onMouseMove={handleBrushMove}
-                      onMouseUp={handleBrushUp}
-                      onMouseLeave={handleBrushUp}
-                    />
+                        background: tool === 'pan' ? 'var(--color-primary)' : 'none', 
+                        border: 'none', 
+                        borderRadius: '3px',
+                        padding: '2px',
+                        cursor: 'pointer', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        color: tool === 'pan' ? 'white' : 'var(--text-secondary)' 
+                      }}
+                    >
+                      <Move size={13} />
+                    </button>
                   </div>
-                  {/* Slider line */}
-                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${compareSlider}%`, width: '2px', background: 'white', boxShadow: '0 0 6px rgba(0,0,0,0.5)', pointerEvents: 'none' }} />
-                  <div style={{ position: 'absolute', top: 0, left: 0, padding: '0.3rem 0.5rem', fontSize: '0.65rem', fontWeight: 700, background: 'rgba(0,0,0,0.5)', color: 'white', pointerEvents: 'none' }}>BEFORE</div>
-                  <div style={{ position: 'absolute', top: 0, right: 0, padding: '0.3rem 0.5rem', fontSize: '0.65rem', fontWeight: 700, background: 'rgba(99,102,241,0.7)', color: 'white', pointerEvents: 'none' }}>AFTER</div>
+
+                  {/* Inner transform translation container */}
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                    transformOrigin: 'center center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    {!isCreateMode ? (
+                      /* Before/After slider mode for uploads */
+                      <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img src={processedDataUrl} alt="Before" style={{ maxWidth: '100%', maxHeight: '100%', display: 'block', opacity: compareSlider < 100 ? 1 : 0, objectFit: 'contain' }} />
+                        <div style={{
+                          position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
+                          clipPath: `inset(0 0 0 ${compareSlider}%)`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <canvas 
+                            ref={previewCanvasRef} 
+                            style={{ 
+                              maxWidth: '100%', maxHeight: '100%', display: 'block', 
+                              objectFit: 'contain',
+                              touchAction: 'none'
+                            }} 
+                          />
+                        </div>
+                        {/* Slider bar overlay line */}
+                        <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${compareSlider}%`, width: '2px', background: 'white', boxShadow: '0 0 6px rgba(0,0,0,0.5)', pointerEvents: 'none' }} />
+                        <div style={{ position: 'absolute', top: 0, left: 0, padding: '0.2rem 0.4rem', fontSize: '0.6rem', fontWeight: 700, background: 'rgba(0,0,0,0.5)', color: 'white', pointerEvents: 'none' }}>BEFORE</div>
+                        <div style={{ position: 'absolute', top: 0, right: 0, padding: '0.2rem 0.4rem', fontSize: '0.6rem', fontWeight: 700, background: 'rgba(99,102,241,0.7)', color: 'white', pointerEvents: 'none' }}>AFTER</div>
+                      </div>
+                    ) : (
+                      /* Clean drawing mode for blank canvas */
+                      <canvas 
+                        ref={previewCanvasRef} 
+                        style={{ 
+                          maxWidth: '100%', maxHeight: '100%', display: 'block', 
+                          objectFit: 'contain',
+                          touchAction: 'none'
+                        }} 
+                      />
+                    )}
+                  </div>
                 </div>
-                <input type="range" min={0} max={100} value={compareSlider}
-                  onChange={(e) => setCompareSlider(parseInt(e.target.value))}
-                  style={{ width: '100%' }} />
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center' }}>Drag slider to compare before/after</p>
+
+                {/* Compare Slider controls under the canvas (Only for upload mode) */}
+                {!isCreateMode && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', marginTop: '0.2rem' }}>
+                    <input type="range" min={0} max={100} value={compareSlider}
+                      onChange={(e) => setCompareSlider(parseInt(e.target.value))}
+                      style={{ width: '100%' }} />
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>Drag slider to compare before/after enhancement</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1161,12 +1956,30 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                   </div>
                 ))}
 
-                <button
-                  onClick={() => setArtTransform({ x: SAFE_ZONE.focalX, y: SAFE_ZONE.focalY, scale: 60, rotation: 0 })}
-                  style={{ padding: '0.4rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
-                >
-                  Reset to Center
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => setArtTransform({ x: SAFE_ZONE.focalX, y: SAFE_ZONE.focalY, scale: 60, rotation: 0 })}
+                    style={{ flex: 1, padding: '0.4rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)' }}
+                  >
+                    Reset Position
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Delete this artwork and start over?')) {
+                        setRawDataUrl(null);
+                        setDeskewedDataUrl(null);
+                        setProcessedDataUrl(null);
+                        setTunedDataUrl(null);
+                        setFinalDataUrl(null);
+                        setIsCreateMode(false);
+                        setStage(0);
+                      }
+                    }}
+                    style={{ flex: 1, padding: '0.4rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--color-danger)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', color: 'var(--color-danger)' }}
+                  >
+                    🗑️ Delete & Start Over
+                  </button>
+                </div>
 
                 <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   💡 Art is placed on the <strong>middle layer</strong> — between the card background and the text frame overlays. The frame border will naturally mask any bleed edges.
