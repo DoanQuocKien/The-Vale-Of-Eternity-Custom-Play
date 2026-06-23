@@ -1,89 +1,177 @@
-# The Vale of Eternity: Custom Card & Component Designer
+# The Vale of Eternity: Card Creator
 
-An interactive web application designed to help creators design, manage, and print custom creature cards, rules, tokens, and standees for the card-drafting board game *The Vale of Eternity*.
-
----
-
-## 📖 Game Context & Design Reference
-
-Based on the official rules of *The Vale of Eternity*, cards follow a strict mechanical and visual anatomy. The designer program will enforce and assist with these conventions:
-
-### 1. Card Anatomy
-* **Summoning Cost:** A numeric value in the top-left area.
-* **Family Emblem & Alignment:** Colored icons in the topmost left corner:
-  * 🔥 **Fire:** Cheap card actions, resource management, and Red Stones utilization. *Default Sell Value: 3 Red Stones (3 units)*
-  * 💧 **Water:** Centered around utility, resource generation, and Blue Stones utilization. *Default Sell Value: 1 Blue Stone (3 units)*
-  * 🌿 **Earth:** Focuses on high-scoring capability, resource manipulation, high sell values, and Purple Stones utilization. *Default Sell Value: 4 Red Stones (4 units)*
-  * 💨 **Wind:** Grants hand manipulation, card advantage, and general support. *Default Sell Value: 1 Red Stone and 1 Blue Stone (4 units)*
-  * 🐉 **Dragon:** The ultimate high-tier creatures, demanding heavy investment but offering massive rewards. *Default Sell Value: 1 Purple Stone (6 units)*
-* **Creature Name:** Displayed horizontally across the center divider.
-* **Timing & Ability Type:** Prioritized visual icons before effect text:
-  * ⚡ **Instant Effect:** Triggers once at the moment of summoning.
-  * ♾️ **Permanent Effect:** Constant passive rules modification.
-  * ⏳ **Active Effect:** Triggers once per Resolution Phase.
-* **Effect Text:** Clear description of the card's mechanics.
-* **Concept Art:** An illustration area showing the creature.
+A desktop application for designing, managing, and printing custom creature cards for the card-drafting board game *The Vale of Eternity*. Built with React + Vite and packaged as a standalone Windows app via Electron.
 
 ---
 
-## 🚀 Key Features
+## 📖 Game Context
 
-Our step-by-step implementation will cover three primary functional modules:
+Based on the official rules of *The Vale of Eternity*, each creature card follows a strict mechanical and visual anatomy:
 
-### 1. Interactive Card Creator
-* **Dynamic Card Layout:** A pixel-perfect, live-updating visual preview of the card front and back.
-* **Family Customization:** Select from the 5 standard families (Fire, Water, Earth, Wind, Dragon) or define custom families with custom emblems and colors.
-* **Ability Customizer:** Formulate Summoning Costs, Timing types (⚡, ♾️, ⏳), and format the effect text.
-* **Concept Art Integrator:**
-  * Drag-and-drop or select local images.
-  * Auto-cropping, centering, and scale fitting.
-  * **AI Art Detection:** A utility to identify typical AI-generated signatures (either through metadata analysis, client-side ML models, or heuristic checks) to help curators catalog art sources.
+| Element | Description |
+|---|---|
+| **Summoning Cost** | Numeric value in the top-left area |
+| **Family** | Card type with a colored identity (Fire, Water, Earth, Wind, Dragon) |
+| **Creature Name** | Displayed across the center divider |
+| **Timing Type** | ⚡ Instant · ♾️ Permanent · ⏳ Active |
+| **Effect Text** | Mechanical description of the card's ability |
+| **Concept Art** | Creature illustration behind the card frame |
+| **Credit Line** | Artist attribution near the bottom |
 
-### 2. Design Manager & Pack Publisher
-* **Local Storage:** Save active drafts and finished card designs directly to the browser (IndexedDB) or export/import them as JSON files.
-* **Packs & Sets Management:** Group related card designs into custom expansion packs (e.g., themed synergies) or nested folders of packs.
-* **Print-Ready PDF Exporter:**
-  * Assemble standalone cards or complete card packs.
-  * Generate high-quality PDFs with precise front-and-back alignments.
-  * Custom configurations for printing (bleed zones, crop marks, standard card size of 88mm x 63mm).
-
-### 3. Custom Rules & Accessories (Future Expansion)
-* **Rulebook Editor:** Write custom expansion rulepages that export to matching layouts.
-* **Token Creator:** Design custom Magic Stones or specialized status markers.
-* **Standee & Board Designer:** Visual layout grids to customize the center board, standees, and player boards.
+### Families
+| Family | Playstyle | Default Sell Value |
+|---|---|---|
+| 🔥 Fire | Cheap actions & Red Stone utilization | 3 Red Stones |
+| 💧 Water | Utility, resource generation & Blue Stones | 1 Blue Stone (3 units) |
+| 🌿 Earth | High-scoring & Purple Stone manipulation | 4 Red Stones |
+| 💨 Wind | Hand management & card advantage | 1 Red + 1 Blue Stone |
+| 🐉 Dragon | Ultimate high-investment, high-reward | 1 Purple Stone (6 units) |
 
 ---
 
-## 🛠️ Technical Stack & Architecture
+## ✨ Features
 
-To deliver a high-quality, lightweight, and performant local application, we will use the following tech stack:
+### 🎨 Interactive Card Designer (Editor Tab)
+- **Live card preview** at 63.5 × 88 mm proportions with full zoom support.
+- Edit **Name**, **Summoning Cost**, **Effect Text** (multi-line, with timing icons), and **Credit Line**.
+- **5 Family backgrounds** (Fire, Water, Earth, Wind, Dragon) with family-appropriate color theming for price indicators.
+- **Preset cards** for quick inspiration — includes sample cards from each family.
+- **Random card generator** — generates a random card with name, family, cost, effects and credits.
+- **Save to Pack** — save the active card design to any pack in the local database.
+- **Load from Pack** — double-click a card in Pack Explorer to load it back into the editor.
+- **Element layout controls** — fine-tune position and font size of each card element (name, prices, effect box, credit line) with per-family overrides.
+- **Export Card to PDF** — export the current card as a print-ready PDF (63.5 × 88 mm on A4, with optional duplex backside).
 
-* **Framework:** React + Vite (for modular state management, swift rendering, and hot reloading).
-* **Styling:** Vanilla CSS (Custom properties, CSS grid, flexbox, glassmorphism, and transitions) to design a premium, dark-themed visual experience without the bloat of external libraries.
-* **Graphics & Layouts:** SVG & Canvas API to generate pixel-perfect high-resolution card frames and compile printable sheets.
-* **PDF Engine:** `pdf-lib` or `jspdf` to dynamically construct vector PDFs directly in the browser.
-* **Database:** IndexedDB (via `idb` or `localforage`) for local-first draft tracking.
+### 🖼️ Art Integrator (Multi-Step Workflow)
+A dedicated multi-stage art processing pipeline, opened via the "Set Art" button in the editor:
+
+**Stage 0 — Import**
+- **Upload** an existing image (sketch, photo, digital art).
+- **Webcam capture** — take a photo directly in the app.
+- **Draw from scratch** — opens a blank canvas sized to the card art safe zone (1728 × 2414 px).
+
+**Stage 1 — Deskew**
+- Automatic perspective correction using **jscanify** (OpenCV.js) to straighten photos of hand-drawn art taken at an angle.
+
+**Stage 2 — AI Processing Pipeline** (each step individually skippable)
+- **Shadow Balance** — divide-by-background algorithm to normalize uneven lighting.
+- **Line Art Enhancement** — darkens and sharpens faint pencil/ink lines.
+- **Flood Fill Extraction** — flood-fill from border to detect and erase the background outside the line art, leaving only the drawing with a transparent background.
+- **AI Background Removal** (separate) — uses the `Xenova/modnet` model via Hugging Face Transformers.js (WASM, runs entirely client-side). Requires an internet connection on first use to download the model (~30 MB, cached after that).
+- **AI Upscale** (separate) — uses ESRGAN to upscale low-resolution art before final placement.
+
+**Stage 3 — Color Tuning & Painting**
+- Color tuning sliders: **Brightness**, **Contrast**, **Vibrance**, **Hue Rotate**, **Family Tint**, **Luma Key** (transparency by brightness).
+- Full painting canvas with zoom (1px–200%) and pan (hold Space + drag):
+  - **Brush** — freehand painting with color picker, opacity slider, and adjustable size (1–200px).
+  - **Eraser** — erase pixels (transparency).
+  - **Restore** — restore pixels from the original deskewed image using a brush.
+  - **Line** — draw straight lines.
+  - **Rectangle** — draw filled/outlined rectangles.
+  - **Circle** — draw filled/outlined ellipses.
+  - **Polygon** — click to place vertices, close on first point to commit.
+  - **Text** — place text with a custom string and font size.
+
+**Stage 4 — Placement**
+- Position and scale the processed art on the card preview.
+- Drag to reposition; sliders for scale and rotation.
+
+### 📦 Pack Explorer (Explorer Tab)
+- **Pack management** — create, rename, and delete card packs.
+- **Card library** — browse all saved cards within a pack.
+- **Search and filter** — search by name, filter by family, filter by cost, sort by name/cost/family/date.
+- **Card actions** — edit (load into editor), duplicate, move to another pack, delete.
+- **Export Pack to PDF** — export all filtered cards in the pack as a multi-page print-ready PDF.
+
+### 🖨️ Print-Ready PDF Export
+- Standard card size: **63.5 × 88 mm** (standard card game size).
+- **3 × 3 grid** per A4 page (9 cards/page) with centered margins.
+- **2 mm gutters** between cards for clean separation.
+- Thin light-gray **cutting guide lines** around each card slot.
+- **Fronts Only mode** — single-sided sheet of card fronts.
+- **Duplex mode** — alternates front pages with horizontally-mirrored back pages for perfect two-sided printing alignment.
 
 ---
 
-## 🗺️ Step-by-Step Roadmap
+## 🛠️ Technical Stack
 
-### Step 1: Base Configuration & Mockups
-* Initialize the Vite project and build the CSS custom-property design system.
-* Establish the live HTML card template matching the game's exact aspect ratio and regions.
+| Layer | Technology |
+|---|---|
+| Framework | React 18 + Vite 5 |
+| Desktop wrapper | Electron 35 + electron-builder |
+| Styling | Vanilla CSS (custom properties, glassmorphism, animations) |
+| Database | IndexedDB (browser-native, persisted locally) |
+| PDF export | jsPDF + html2canvas |
+| Art scanning | jscanify (OpenCV.js) for perspective correction |
+| AI background removal | Hugging Face Transformers.js — `Xenova/modnet` (WASM, client-side) |
+| AI upscaling | UpscalerJS — ESRGAN Medium (WASM, client-side) |
+| Image processing | Canvas API (shadow balance, line enhancement, flood fill) |
 
-### Step 2: Live Editor Panel
-* Add input controls for Name, Family, Cost, Timing, and Effect Text.
-* Support image upload with a canvas-based scaling/crop tool.
-* Implement a client-side heuristic-based metadata reader to inspect file sources (AI Art detection start).
+> **AI model files are NOT bundled in the installer.** They are downloaded automatically from HuggingFace CDN on first use (~30 MB for background removal) and cached locally. An internet connection is required for this first-time download only.
 
-### Step 3: Local Database & Pack Manager
-* Integrate IndexedDB to save designs.
-* Build the Pack Explorer UI to group, rename, move, and edit cards.
+---
 
-### Step 4: Export Engine
-* Develop the grid arrangement algorithm for printing.
-* Build the PDF assembler supporting double-sided duplex layouts.
+## 🚀 Running Locally (Development)
 
-### Step 5: Advanced Customizer (Later Features)
-* Add custom boards, token sheets, and rules documentation tools.
+```bash
+# Install dependencies
+npm install
+
+# Start Vite dev server (browser)
+npm run dev
+# → http://localhost:3000
+```
+
+---
+
+## 📦 Building the Desktop App
+
+```bash
+# Launch in Electron (uses the built dist/)
+npm run electron:dev
+
+# Build Windows installer + portable exe into release/
+npm run electron:build
+```
+
+The installer will be created in `release/`. Two formats are produced:
+- `The Vale of Eternity - Card Creator Setup.exe` — NSIS installer with Start Menu and Desktop shortcuts.
+- `The Vale of Eternity - Card Creator.exe` — Portable single-file exe (no install required).
+
+---
+
+## 📁 Project Structure
+
+```
+├── electron/
+│   ├── main.cjs          # Electron main process
+│   └── preload.cjs       # Context bridge preload
+├── public/
+│   ├── fonts/            # Game fonts (NorseBold, TitanOne, MerriweatherSans, Roboto)
+│   └── img/
+│       ├── Background/   # Card background templates per family
+│       ├── Backside/     # Card backside template
+│       ├── TextIcon/     # Timing and resource icons
+│       └── ...
+├── src/
+│   ├── App.jsx           # Main application (designer, pack explorer, PDF export)
+│   ├── ArtImporter.jsx   # Art pipeline modal (scan → enhance → paint → place)
+│   ├── index.css         # Design system tokens and global styles
+│   ├── main.jsx          # React entry point
+│   └── workers/
+│       ├── bgRemoval.worker.js   # Web Worker: AI background removal (Transformers.js)
+│       └── upscale.worker.js     # Web Worker: AI upscaling (UpscalerJS / ESRGAN)
+├── index.html
+├── vite.config.js
+└── package.json
+```
+
+---
+
+## 🗺️ Future Roadmap
+
+- [ ] Custom token sheet designer (Magic Stones, status markers)
+- [ ] Rulebook page editor with export to matching layout
+- [ ] Standee and board component designer
+- [ ] Card import/export as JSON for sharing between users
+- [ ] Undo/redo history in the Art Integrator
