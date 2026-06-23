@@ -23,6 +23,17 @@ const FAMILY_HUES = {
   Dragon: 280,
 };
 
+const getBackgroundPath = (family) => {
+  const mapping = {
+    Fire: 'FireCard.png',
+    Water: 'WaterCard.png',
+    Earth: 'EarthCard.png',
+    Wind: 'WindCard.png',
+    Dragon: 'DragonCard.png'
+  };
+  return `/img/Background/${mapping[family] || 'WaterCard.png'}`;
+};
+
 // ─── Canvas image processing utilities ───────────────────────────────────────
 
 function loadImageFromDataUrl(dataUrl) {
@@ -58,13 +69,16 @@ function imageToCanvas(img, maxDim = 2048) {
  * 3. Stretch result for vivid output
  */
 function applyShadowBalance(srcCanvas, strength = 0.85) {
+  console.time('applyShadowBalance');
   const { width, height } = srcCanvas;
+  console.log(`[ShadowBalance] Starting shadow balance. dimensions=${width}x${height}, strength=${strength}`);
   const ctx = srcCanvas.getContext('2d');
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
 
   // Step 1: Create blurred background model (box blur approximation)
   const blurRadius = Math.round(Math.max(width, height) * 0.08); // 8% of image
+  console.log(`[ShadowBalance] Calculating blur background with radius=${blurRadius}px`);
   const blurCanvas = document.createElement('canvas');
   blurCanvas.width = width;
   blurCanvas.height = height;
@@ -74,14 +88,15 @@ function applyShadowBalance(srcCanvas, strength = 0.85) {
   const blurData = blurCtx.getImageData(0, 0, width, height).data;
 
   // Step 2: Divide original by blur, normalize
+  console.log('[ShadowBalance] Dividing original by blurred background and normalising channels');
   const output = new Uint8ClampedArray(data.length);
   for (let i = 0; i < data.length; i += 4) {
     for (let c = 0; c < 3; c++) {
       const orig = data[i + c];
       const blr = blurData[i + c] || 1;
       // Divide, scale up to target white, blend with strength parameter
-      const normalized = (orig / blr) * 220;
-      output[i + c] = Math.round(orig * (1 - strength) + normalized * strength);
+      const normalized = (orig / blr) * 255;
+      output[i + c] = Math.min(255, Math.max(0, Math.round(orig * (1 - strength) + normalized * strength)));
     }
     output[i + 3] = data[i + 3]; // preserve alpha
   }
@@ -91,6 +106,8 @@ function applyShadowBalance(srcCanvas, strength = 0.85) {
   outCanvas.width = width;
   outCanvas.height = height;
   outCanvas.getContext('2d').putImageData(outImageData, 0, 0);
+  console.timeEnd('applyShadowBalance');
+  console.log('[ShadowBalance] Completed.');
   return outCanvas;
 }
 
@@ -157,15 +174,19 @@ function applyBgRemovalMask(srcCanvas, maskBuffer, maskWidth, maskHeight) {
 
 // Enhance faint pencil lines before background removal
 function applyLineEnhancement(srcCanvas) {
+  console.time('applyLineEnhancement');
+  const { width, height } = srcCanvas;
+  console.log(`[LineEnhancement] Starting line art enhancement on ${width}x${height} canvas`);
   const outCanvas = document.createElement('canvas');
-  outCanvas.width = srcCanvas.width;
-  outCanvas.height = srcCanvas.height;
+  outCanvas.width = width;
+  outCanvas.height = height;
   const ctx = outCanvas.getContext('2d');
   
   ctx.drawImage(srcCanvas, 0, 0);
   const imgData = ctx.getImageData(0, 0, outCanvas.width, outCanvas.height);
   const data = imgData.data;
 
+  let darkenedPixels = 0;
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i];
     const g = data[i+1];
@@ -174,14 +195,22 @@ function applyLineEnhancement(srcCanvas) {
     
     // If it's darker than pure white, darken it heavily to boost lines
     if (brightness < 240) {
-      const factor = Math.min(1, (240 - brightness) / 150); // scales intensity
-      data[i] = Math.max(0, r - (200 * factor));
-      data[i+1] = Math.max(0, g - (200 * factor));
-      data[i+2] = Math.max(0, b - (200 * factor));
+      darkenedPixels++;
+      const factor = Math.min(1, (240 - brightness) / 100); // scales intensity, more aggressive
+      data[i] = Math.max(0, r - (255 * factor));
+      data[i+1] = Math.max(0, g - (255 * factor));
+      data[i+2] = Math.max(0, b - (255 * factor));
+    } else {
+      // Force paper background to pure white to ensure flood fill doesn't snag
+      data[i] = 255;
+      data[i+1] = 255;
+      data[i+2] = 255;
     }
   }
   
   ctx.putImageData(imgData, 0, 0);
+  console.timeEnd('applyLineEnhancement');
+  console.log(`[LineEnhancement] Completed. Darkened ${darkenedPixels} pixels representing lines.`);
   return outCanvas;
 }
 
@@ -363,7 +392,12 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
   };
 
   const runProcessingPipeline = async () => {
-    if (!deskewedDataUrl) return;
+    if (!deskewedDataUrl) {
+      console.warn('[Pipeline] Attempted to run pipeline but deskewedDataUrl is empty!');
+      return;
+    }
+    console.log('[Pipeline] Initialising image processing pipeline...');
+    console.time('PipelineDuration');
     setProcessing(true);
     
     const steps = progressSteps;
@@ -372,42 +406,54 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
     try {
       // ── Step 1: Shadow Balance (Canvas API — no worker needed, fast) ──────
       if (!steps[0].skip) {
+        console.log('[Pipeline] Step 1 (Shadow Balance): Starting...');
         markStep(0, { active: true, done: false }, 0);
         const img = await loadImageFromDataUrl(currentDataUrl);
+        console.log(`[Pipeline] Step 1: Loaded image. dimensions=${img.naturalWidth}x${img.naturalHeight}`);
         const canvas = imageToCanvas(img, 1600);
         const balanced = applyShadowBalance(canvas, 0.8);
         currentDataUrl = canvasToDataUrl(balanced);
         markStep(0, { active: false, done: true }, 100);
+        console.log('[Pipeline] Step 1 (Shadow Balance): Completed.');
       } else {
+        console.log('[Pipeline] Step 1 (Shadow Balance): Skipped.');
         markStep(0, { active: false, done: true, pct: 100 });
       }
 
       // ── Step 2: Line Art Enhancement (Darkens faint lines for AI) ──
       if (!steps[1].skip) {
+        console.log('[Pipeline] Step 2 (Line Art Enhancement): Starting...');
         markStep(1, { active: true, done: false }, 0);
         
         // Let UI update
         await new Promise(r => setTimeout(r, 50));
         
         const img = await loadImageFromDataUrl(currentDataUrl);
+        console.log(`[Pipeline] Step 2: Loaded image. dimensions=${img.naturalWidth}x${img.naturalHeight}`);
         const canvas = imageToCanvas(img, 1600);
         const enhanced = applyLineEnhancement(canvas);
         currentDataUrl = canvasToDataUrl(enhanced);
         
         markStep(1, { active: false, done: true }, 100);
+        console.log('[Pipeline] Step 2 (Line Art Enhancement): Completed.');
       } else {
+        console.log('[Pipeline] Step 2 (Line Art Enhancement): Skipped.');
         markStep(1, { active: false, done: true, pct: 100 });
       }
 
 
       // ── Step 3: Flood Fill Extraction (True inside/outside line art detection) ──
       if (!steps[2].skip) {
+        console.log('[Pipeline] Step 3 (Flood Fill Extraction): Starting...');
         markStep(2, { active: true, done: false }, 0);
         
         // Use the high-contrast Line-Enhanced image for detecting boundaries
+        console.log('[Pipeline] Step 3: Loading enhanced image for boundary mask...');
         const enhancedImg = await loadImageFromDataUrl(currentDataUrl);
         const width = enhancedImg.width;
         const height = enhancedImg.height;
+        console.log(`[Pipeline] Step 3: Enhanced image dimensions=${width}x${height}`);
+        
         const maskCanvas = document.createElement('canvas');
         maskCanvas.width = width;
         maskCanvas.height = height;
@@ -416,7 +462,9 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
         const maskData = maskCtx.getImageData(0, 0, width, height).data;
 
         // Load original untouched deskewed image
+        console.log('[Pipeline] Step 3: Loading original deskewed image...');
         const origImg = await loadImageFromDataUrl(deskewedDataUrl);
+        console.log(`[Pipeline] Step 3: Original deskewed dimensions=${origImg.width}x${origImg.height}`);
         const origCanvas = document.createElement('canvas');
         origCanvas.width = width;
         origCanvas.height = height;
@@ -426,6 +474,8 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
         const origData = origImgData.data;
 
         // --- Fast Flood Fill ---
+        console.log('[Pipeline] Step 3: Starting fast Flood Fill extraction...');
+        console.time('FloodFillRun');
         const visited = new Uint8Array(width * height);
         const queue = new Int32Array(width * height * 2);
         let head = 0, tail = 0;
@@ -439,9 +489,16 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
           queue[tail++] = y;
         };
 
-        // Start from borders
-        for (let x = 0; x < width; x++) { push(x, 0); push(x, height - 1); }
-        for (let y = 0; y < height; y++) { push(0, y); push(width - 1, y); }
+        const inset = Math.floor(Math.min(width, height) * 0.015); // 1.5% inset to bypass any black scanning borders
+        console.log(`[Pipeline] Step 3: Using border inset of ${inset}px to bypass edge artifacts`);
+
+        // Start from inset borders instead of absolute edges
+        for (let x = inset; x < width - inset; x++) { push(x, inset); push(x, height - 1 - inset); }
+        for (let y = inset; y < height - inset; y++) { push(inset, y); push(width - 1 - inset, y); }
+        console.log(`[Pipeline] Step 3: Initial border queue size = ${tail / 2}`);
+
+        let erasedCount = 0;
+        let lineHits = 0;
 
         while (head < tail) {
           const x = queue[head++];
@@ -450,13 +507,15 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
           
           const brightness = (maskData[pIdx] + maskData[pIdx+1] + maskData[pIdx+2]) / 3;
           
-          // If it's a line (darker than pure paper), stop. Don't erase.
-          if (brightness < 220) {
+          // Use a strict threshold of 128 (mid-gray) for the mask since we aggressively enhanced lines
+          if (brightness < 128) {
+            lineHits++;
             continue;
           }
           
           // It's outside paper! Erase it on the ORIGINAL image.
           origData[pIdx + 3] = 0;
+          erasedCount++;
           
           // Add neighbors
           push(x - 1, y);
@@ -464,22 +523,39 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
           push(x, y - 1);
           push(x, y + 1);
         }
+
+        // Clean up the outer border physical pixels directly (since the flood fill was inset and couldn't reach them)
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            if (x < inset || x >= width - inset || y < inset || y >= height - inset) {
+              const pIdx = (y * width + x) * 4;
+              origData[pIdx + 3] = 0; 
+            }
+          }
+        }
+        console.timeEnd('FloodFillRun');
+        console.log(`[Pipeline] Step 3: Flood fill traversal finished. Erased ${erasedCount} pixels. Stopped at line boundaries ${lineHits} times.`);
         
         origCtx.putImageData(origImgData, 0, 0);
         currentDataUrl = origCanvas.toDataURL('image/png');
         
         markStep(2, { active: false, done: true }, 100);
+        console.log('[Pipeline] Step 3 (Flood Fill Extraction): Completed.');
       } else {
+        console.log('[Pipeline] Step 3 (Flood Fill Extraction): Skipped.');
         markStep(2, { active: false, done: true, pct: 100 });
       }
 
       setProcessedDataUrl(currentDataUrl);
       setFinalDataUrl(currentDataUrl);
       setProcessing(false);
+      console.timeEnd('PipelineDuration');
+      console.log('[Pipeline] Pipeline finished successfully.');
       setStage(3); // advance to color tuning
 
     } catch (err) {
-      console.error('Pipeline error:', err);
+      console.timeEnd('PipelineDuration');
+      console.error('[Pipeline] CRITICAL ERROR IN PIPELINE:', err);
       setProcessing(false);
       alert('Processing error: ' + err.message);
     }
@@ -1126,7 +1202,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 margin: '0 auto'
               }}>
                 {/* Card Background (bottom) */}
-                <img src={BG_MAP[cardFamily] || BG_MAP.Earth} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
+                <img src={getBackgroundPath(cardFamily)} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
 
                 {/* Art layer (middle) */}
                 {finalDataUrl && (
@@ -1149,8 +1225,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                   />
                 )}
 
-                {/* Frame overlay (top) */}
-                <img src={frameImg} alt="Card Frame" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 3, pointerEvents: 'none', opacity: 0.8 }} />
+                {/* Text frame overlay (simulated by border) is handled by the parent in App.jsx */}
 
                 {/* Safe zone overlay guide */}
                 <div style={{

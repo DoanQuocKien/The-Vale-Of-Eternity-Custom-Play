@@ -200,14 +200,33 @@ const MOCK_PRESETS = [
 ];
 
 // Random pool for generator
-const RANDOM_NAMES = ['Tectonic Behemoth', 'Frost Leviathan', 'Fafnir, Dragon of Greed', 'Eldritch Sprout', 'Ignis Whelpling', 'Zephyr Djinn', 'Abyssal Siren'];
-const RANDOM_CREDITS = ['Art by AI Tamer', 'Midjourney v6.0', 'Illustrated by Eric Hong', 'Stable Diffusion XL', 'Artist: Quoc Kien'];
+const RANDOM_NAMES = [
+  'Tectonic Behemoth', 'Frost Leviathan', 'Fafnir, Dragon of Greed', 'Eldritch Sprout', 
+  'Ignis Whelpling', 'Zephyr Djinn', 'Abyssal Siren', 'Obsidian Golem', 'Aetherial Phoenix', 
+  'Tidal Serpent', 'Stormcaller Griffin', 'Yggdrasil Treant', 'Void Walker', 'Celestial Kitsune', 
+  'Magma Wyrm', 'Sylph of the Gale', 'Chronos Weaver', 'Kirin of the Peak', 'Cinder Hellhound'
+];
+const RANDOM_CREDITS = [
+  'Art by AI Tamer', 'Midjourney v6.0', 'Illustrated by Eric Hong', 'Stable Diffusion XL', 
+  'Artist: Quoc Kien', 'DALL-E 3 Creations', 'Art by Guest Contributor', 'Concept by Studio X', 
+  'Designed by Tabletop Master', 'Art by NovelAI'
+];
 const RANDOM_EFFECTS = [
   '⚡ Earn \\icon(Stone3) and \\icon(Stone1).\n⏳ Discard a card to earn \\icon(Stone6).',
   '♾️ Whenever you sell a \\icon(Fire) card, earn \\icon(Stone1).\n⏳ Recover.',
   '⚡ Earn \\icon(Score, 4) for each unique card family present.\n\\italic(Eternity looms near.)',
   '⏳ If your hand is empty, earn \\icon(Stone6) and \\icon(Stone3).\n⏳ Recover.',
-  '⚡ A player of your choice discards one of their summoned \\icon(Water) cards.'
+  '⚡ A player of your choice discards one of their summoned \\icon(Water) cards.',
+  '⚡ Summon a \\icon(Water) card from your hand for free.',
+  '♾️ At the end of each round, earn \\icon(Stone1) for each \\icon(Dragon) card you control.',
+  '⏳ Destroy one of your own cards to earn \\icon(Score, 5).',
+  '⚡ Draw 2 cards. Keep 1 and discard the other.',
+  '♾️ Your cards cost 1 less to summon.',
+  '⏳ Discard 2 cards from your hand to earn \\icon(Stone6).',
+  '⚡ Gain \\icon(Score, 2) for every 3 \\icon(Stone1) you have.',
+  '♾️ Opponents must pay you \\icon(Stone1) to summon a \\icon(Dragon).',
+  '⚡ Steal \\icon(Stone1) from the player with the most points.',
+  '⏳ Discard this card from the field to earn \\icon(Score, 10).'
 ];
 
 // Helper parser to render text strings with inline image icons and styling
