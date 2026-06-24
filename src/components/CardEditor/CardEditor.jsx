@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Sliders, ImagePlus, Trash2, Copy, Download, Upload, Minimize2, Maximize2, HelpCircle, RefreshCw, Settings } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore.js';
 import { 
@@ -20,6 +20,10 @@ const CardEditor = ({ onShowArtImporter }) => {
   const setActivePackId = useAppStore(state => state.setActivePackId);
   const saveCard = useAppStore(state => state.saveCard);
   const createNewPack = useAppStore(state => state.createNewPack);
+  const activeCard = useAppStore(state => state.activeCard);
+  const setActiveCard = useAppStore(state => state.setActiveCard);
+
+  const [loadedCardId, setLoadedCardId] = useState(null);
 
   // Instead of using global store for draft, we use local state
   // to avoid lag when dragging or typing rapidly.
@@ -46,19 +50,45 @@ const CardEditor = ({ onShowArtImporter }) => {
   const cardRef = useRef(null);
 
   // Sync state if an external card is loaded
-  // (In App.jsx, loadCardInEditor used to update all these. We can use an effect with a prop or useAppStore activeCard if we implement it.
-  // For now, let's let App.jsx trigger a reload via a method or key.)
+  useEffect(() => {
+    if (activeCard) {
+      if (activeCard.id !== loadedCardId) {
+        setCardName(activeCard.name || '');
+        setCardCost(activeCard.cost || '0');
+        setCardCredit(activeCard.credit || '');
+        setCardEffectText(activeCard.effect || '');
+        setBackgroundFamily(activeCard.family || 'Water');
+        setArtImageData(activeCard.artImageData || null);
+        setLayout(activeCard.layout || DEFAULT_LAYOUT);
+        setLoadedCardId(activeCard.id);
+      }
+    } else if (loadedCardId !== null) {
+      // Clear/Reset back to defaults
+      setCardName(MOCK_PRESETS[0].name);
+      setCardCost(MOCK_PRESETS[0].cost);
+      setCardCredit(MOCK_PRESETS[0].credit);
+      setCardEffectText(MOCK_PRESETS[0].effect);
+      setBackgroundFamily(MOCK_PRESETS[0].family);
+      setArtImageData(null);
+      setLayout(DEFAULT_LAYOUT);
+      setLoadedCardId(null);
+    }
+  }, [activeCard, loadedCardId]);
 
   const loadPreset = (preset) => {
+    setActiveCard(null); // Clear editing card context
     setActivePreset(preset);
     setCardName(preset.name);
     setCardCost(preset.cost);
     setCardCredit(preset.credit);
     setCardEffectText(preset.effect);
     setBackgroundFamily(preset.family);
+    setArtImageData(null);
+    setLayout(DEFAULT_LAYOUT);
   };
 
   const generateRandomCard = () => {
+    setActiveCard(null); // Clear editing card context on random generation
     const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
     const cost = Math.floor(Math.random() * 10).toString();
     const credit = RANDOM_CREDITS[Math.floor(Math.random() * RANDOM_CREDITS.length)];
@@ -71,11 +101,13 @@ const CardEditor = ({ onShowArtImporter }) => {
     setCardCredit(credit);
     setCardEffectText(effect);
     setBackgroundFamily(family);
+    setArtImageData(null);
+    setLayout(DEFAULT_LAYOUT);
   };
 
   const handleSaveCard = async (saveAsNew = false) => {
-    // Determine editingCardId from props or context if implemented
-    const cardId = 'card-' + Date.now(); // Always save as new for now until editingCardId is wired
+    const isNew = saveAsNew || !activeCard;
+    const cardId = isNew ? 'card-' + Date.now() : activeCard.id;
     const newCard = {
       id: cardId,
       packId: activePackId,
@@ -86,12 +118,13 @@ const CardEditor = ({ onShowArtImporter }) => {
       effect: cardEffectText,
       layout: layout,
       artImageData: artImageData || null,
-      createdAt: Date.now(),
+      createdAt: isNew ? Date.now() : activeCard.createdAt,
       updatedAt: Date.now()
     };
     try {
       await saveCard(newCard);
-      alert(saveAsNew ? 'Card duplicated and saved!' : 'Card saved successfully!');
+      setLoadedCardId(cardId);
+      alert(isNew ? 'Card saved as new card!' : 'Card updated successfully!');
     } catch (err) {
       alert('Error saving card: ' + err.message);
     }
@@ -192,12 +225,12 @@ const CardEditor = ({ onShowArtImporter }) => {
     document.addEventListener('mouseup', handleDragEnd);
   };
 
-  const updateSetting = (key, value) => {
+  const updateSetting = (key, value, elementKey = selectedElement) => {
     setLayout(prev => {
-      const selected = prev[selectedElement];
+      const selected = prev[elementKey];
       const familySpecificKeys = ['priceTL', 'priceBR', 'credit'];
       
-      if (familySpecificKeys.includes(selectedElement)) {
+      if (familySpecificKeys.includes(elementKey)) {
         if (key === 'color') {
           const currentColors = selected.colors || {
             Fire: 'default',
@@ -208,7 +241,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           };
           return {
             ...prev,
-            [selectedElement]: {
+            [elementKey]: {
               ...selected,
               color: 'default',
               colors: {
@@ -229,7 +262,7 @@ const CardEditor = ({ onShowArtImporter }) => {
         
         return {
           ...prev,
-          [selectedElement]: {
+          [elementKey]: {
             ...selected,
             families: {
               ...currentFamilies,
@@ -243,7 +276,7 @@ const CardEditor = ({ onShowArtImporter }) => {
       }
       return {
         ...prev,
-        [selectedElement]: {
+        [elementKey]: {
           ...selected,
           [key]: value
         }
@@ -599,7 +632,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               width: `${resolvedCredit.width}%`,
               fontSize: `${resolvedCredit.fontSize}cqw`,
               fontFamily: 'var(--font-credit)',
-              color: layout.credit.color,
+              color: getPriceColor('credit', backgroundFamily, layout),
               textAlign: 'center',
               cursor: 'move',
               userSelect: 'none',
@@ -625,7 +658,53 @@ const CardEditor = ({ onShowArtImporter }) => {
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
               <Sparkles size={16} /> 1. Edit Card Content
             </h3>
-            <div style={{ display: 'flex', gap: '0.4rem' }}>
+            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+              {activeCard && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('Clear editing context and start creating a new card?')) {
+                      setActiveCard(null);
+                    }
+                  }}
+                  style={{
+                    padding: '0.35rem 0.6rem',
+                    background: 'rgba(99, 102, 241, 0.15)',
+                    border: '1px solid var(--color-primary)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    transition: 'all 0.2s'
+                  }}
+                  title="Create a new card from scratch"
+                >
+                  ➕ New Card
+                </button>
+              )}
+              <button
+                onClick={generateRandomCard}
+                style={{
+                  padding: '0.35rem 0.6rem',
+                  background: 'var(--bg-surface-elevated)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  transition: 'all 0.2s'
+                }}
+                title="Generate a random card"
+              >
+                🎲 Random Card
+              </button>
               {artImageData ? (
                 <>
                   <button
@@ -972,156 +1051,61 @@ const CardEditor = ({ onShowArtImporter }) => {
 
           <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '1rem', background: 'var(--bg-surface-elevated)', padding: '0.2rem', borderRadius: 'var(--radius-sm)' }}>
             {[
-              { id: 'priceTL', label: 'Top Cost' },
-              { id: 'priceBR', label: 'Bot Cost' },
+              { id: 'price', label: 'Cost' },
               { id: 'name', label: 'Title' },
               { id: 'effect', label: 'Effect Box' },
               { id: 'credit', label: 'Credit' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedElement(tab.id)}
-                style={{
-                  flex: 1,
-                  padding: '0.35rem 0.2rem',
-                  background: selectedElement === tab.id ? 'var(--color-primary)' : 'transparent',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: selectedElement === tab.id ? 'white' : 'var(--text-secondary)',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
+            ].map(tab => {
+              const isActive = tab.id === 'price'
+                ? ['priceTL', 'priceBR'].includes(selectedElement)
+                : tab.id === 'effect'
+                  ? ['effect', 'effectIcon'].includes(selectedElement)
+                  : selectedElement === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setSelectedElement(tab.id === 'price' ? 'priceTL' : tab.id)}
+                  style={{
+                    flex: 1,
+                    padding: '0.35rem 0.2rem',
+                    background: isActive ? 'var(--color-primary)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '4px',
+                    color: isActive ? 'white' : 'var(--text-secondary)',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            {['priceTL', 'priceBR', 'credit'].includes(selectedElement) && (
-              <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
+          {['priceTL', 'priceBR'].includes(selectedElement) ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
                 <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>
               </div>
-            )}
-            
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                <span>Left Position (X)</span>
-                <span>{resolvedSelected.left}%</span>
-              </div>
-              <input
-                type="range"
-                min="-10"
-                max="110"
-                step="0.1"
-                value={resolvedSelected.left}
-                onChange={(e) => updateSetting('left', parseFloat(e.target.value))}
-                style={{ width: '100%' }}
-              />
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                <span>Top Position (Y)</span>
-                <span>{resolvedSelected.top}%</span>
-              </div>
-              <input
-                type="range"
-                min="-10"
-                max="110"
-                step="0.1"
-                value={resolvedSelected.top}
-                onChange={(e) => updateSetting('top', parseFloat(e.target.value))}
-                style={{ width: '100%' }}
-              />
-            </div>
-          </div>
 
-          {selectedElement !== 'effect' && (
-            <div style={{ marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                <span>Font Size (cqw)</span>
-                <span>{resolvedSelected.fontSize}</span>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="30"
-                step="0.1"
-                value={resolvedSelected.fontSize ?? 5}
-                onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))}
-                style={{ width: '100%' }}
-              />
-            </div>
-          )}
-
-          {['name', 'effect', 'credit'].includes(selectedElement) && (
-            <div style={{ marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                <span>Width (%)</span>
-                <span>{resolvedSelected.width}%</span>
-              </div>
-              <input
-                type="range"
-                min="10"
-                max="100"
-                step="1"
-                value={resolvedSelected.width ?? 80}
-                onChange={(e) => updateSetting('width', parseInt(e.target.value))}
-                style={{ width: '100%' }}
-              />
-            </div>
-          )}
-
-          {['name', 'effect', 'credit', 'priceTL', 'priceBR'].includes(selectedElement) && (
-            <div style={{ marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                <span>Text Color</span>
-              </div>
-              {['priceTL', 'priceBR'].includes(selectedElement) ? (
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <select
-                    value={resolvedSelected.colors?.[backgroundFamily] || resolvedSelected.color || 'default'}
-                    onChange={(e) => updateSetting('color', e.target.value)}
-                    style={{
-                      flexGrow: 1,
-                      padding: '0.35rem 0.5rem',
-                      background: 'var(--bg-surface-elevated)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.8rem'
-                    }}
-                  >
-                    <option value="default">Default Match</option>
-                    <option value="#ffffff">White</option>
-                    <option value="#000000">Black</option>
-                    <option value="#f87171">Red</option>
-                    <option value="#60a5fa">Blue</option>
-                    <option value="#4ade80">Green</option>
-                    <option value="#c084fc">Purple</option>
-                    <option value="#fbbf24">Yellow</option>
-                    <option value="#2dd4bf">Teal</option>
-                  </select>
-                  {resolvedSelected.colors?.[backgroundFamily] && resolvedSelected.colors[backgroundFamily] !== 'default' && (
-                    <div style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '4px',
-                      background: resolvedSelected.colors[backgroundFamily],
-                      border: '1px solid var(--border-color)'
-                    }} />
-                  )}
+              {/* Single Shared Color Control for both tags */}
+              <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                  <span>Shared Cost Tags Color</span>
+                  <span>{backgroundFamily} Theme</span>
                 </div>
-              ) : (
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <input
                     type="color"
-                    value={layout[selectedElement]?.color || '#ffffff'}
-                    onChange={(e) => updateSetting('color', e.target.value)}
+                    value={resolvedPriceTL.colors?.[backgroundFamily] && resolvedPriceTL.colors[backgroundFamily] !== 'default' ? resolvedPriceTL.colors[backgroundFamily] : (resolvedPriceTL.color || '#ffffff')}
+                    onChange={(e) => {
+                      updateSetting('color', e.target.value, 'priceTL');
+                      updateSetting('color', e.target.value, 'priceBR');
+                    }}
                     style={{
-                      width: '100%',
-                      height: '32px',
+                      flexGrow: 1,
+                      height: '30px',
                       padding: '0',
                       border: '1px solid var(--border-color)',
                       borderRadius: 'var(--radius-sm)',
@@ -1129,13 +1113,280 @@ const CardEditor = ({ onShowArtImporter }) => {
                       cursor: 'pointer'
                     }}
                   />
-                  <span style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>{layout[selectedElement]?.color || '#ffffff'}</span>
+                  <button
+                    onClick={() => {
+                      updateSetting('color', 'default', 'priceTL');
+                      updateSetting('color', 'default', 'priceBR');
+                    }}
+                    style={{
+                      padding: '0.35rem 0.5rem',
+                      background: 'var(--bg-main)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.65rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Reset Default
+                  </button>
                 </div>
-              )}
+              </div>
+
+              {/* Panel 1: Top-Left Price Tag */}
+              <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Top-Left Cost Tag</span>
+                  {selectedElement === 'priceTL' && <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600 }}>● Editing</span>}
+                </h4>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Pos X</span>
+                      <span>{resolvedPriceTL.left}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-10"
+                      max="110"
+                      step="0.1"
+                      value={resolvedPriceTL.left}
+                      onChange={(e) => updateSetting('left', parseFloat(e.target.value), 'priceTL')}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Pos Y</span>
+                      <span>{resolvedPriceTL.top}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-10"
+                      max="110"
+                      step="0.1"
+                      value={resolvedPriceTL.top}
+                      onChange={(e) => updateSetting('top', parseFloat(e.target.value), 'priceTL')}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Size</span>
+                      <span>{resolvedPriceTL.fontSize}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="30"
+                      step="0.1"
+                      value={resolvedPriceTL.fontSize ?? 5}
+                      onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value), 'priceTL')}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Panel 2: Bottom-Right Price Tag */}
+              <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Bottom-Right Cost Tag</span>
+                  {selectedElement === 'priceBR' && <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600 }}>● Editing</span>}
+                </h4>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Pos X</span>
+                      <span>{resolvedPriceBR.left}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-10"
+                      max="110"
+                      step="0.1"
+                      value={resolvedPriceBR.left}
+                      onChange={(e) => updateSetting('left', parseFloat(e.target.value), 'priceBR')}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Pos Y</span>
+                      <span>{resolvedPriceBR.top}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-10"
+                      max="110"
+                      step="0.1"
+                      value={resolvedPriceBR.top}
+                      onChange={(e) => updateSetting('top', parseFloat(e.target.value), 'priceBR')}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Size</span>
+                      <span>{resolvedPriceBR.fontSize}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="30"
+                      step="0.1"
+                      value={resolvedPriceBR.fontSize ?? 5}
+                      onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value), 'priceBR')}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
+          ) : (
+            <>
+              {['name', 'credit', 'effect'].includes(selectedElement) && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    {['credit'].includes(selectedElement) && (
+                      <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Left Position (X)</span>
+                        <span>{resolvedSelected.left}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-10"
+                        max="110"
+                        step="0.1"
+                        value={resolvedSelected.left}
+                        onChange={(e) => updateSetting('left', parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Top Position (Y)</span>
+                        <span>{resolvedSelected.top}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-10"
+                        max="110"
+                        step="0.1"
+                        value={resolvedSelected.top}
+                        onChange={(e) => updateSetting('top', parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+
+                  {selectedElement !== 'effect' && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Font Size (cqw)</span>
+                        <span>{resolvedSelected.fontSize}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="30"
+                        step="0.1"
+                        value={resolvedSelected.fontSize ?? 5}
+                        onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  )}
+
+                  {['name', 'effect', 'credit'].includes(selectedElement) && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Width (%)</span>
+                        <span>{resolvedSelected.width}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        step="1"
+                        value={resolvedSelected.width ?? 80}
+                        onChange={(e) => updateSetting('width', parseInt(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  )}
+
+                  {['name', 'effect', 'credit'].includes(selectedElement) && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Text Color</span>
+                      </div>
+                      {selectedElement === 'credit' ? (
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <input
+                            type="color"
+                            value={getPriceColor('credit', backgroundFamily, layout)}
+                            onChange={(e) => updateSetting('color', e.target.value)}
+                            style={{
+                              flexGrow: 1,
+                              height: '32px',
+                              padding: '0',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'transparent',
+                              cursor: 'pointer'
+                            }}
+                          />
+                          <button
+                            onClick={() => updateSetting('color', 'default')}
+                            style={{
+                              padding: '0.35rem 0.5rem',
+                              background: 'var(--bg-surface-elevated)',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: 'var(--radius-sm)',
+                              color: 'var(--text-secondary)',
+                              fontSize: '0.7rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Default
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <input
+                            type="color"
+                            value={layout[selectedElement]?.color || '#ffffff'}
+                            onChange={(e) => updateSetting('color', e.target.value)}
+                            style={{
+                              width: '100%',
+                              height: '32px',
+                              padding: '0',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'transparent',
+                              cursor: 'pointer'
+                            }}
+                          />
+                          <span style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>{layout[selectedElement]?.color || '#ffffff'}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
 
-          {selectedElement === 'effect' && (
+          {['effect', 'effectIcon'].includes(selectedElement) && (
             <>
               <div style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
@@ -1205,10 +1456,10 @@ const CardEditor = ({ onShowArtImporter }) => {
               <div style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0', paddingTop: '0.5rem' }}>
                 <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Timing Icon Properties</h4>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Size (cqw)</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Size</span>
                       <span>{layout.effectIcon?.size ?? layout.effect?.iconSize ?? 6.0}</span>
                     </div>
                     <input
@@ -1230,8 +1481,31 @@ const CardEditor = ({ onShowArtImporter }) => {
                     />
                   </div>
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Top Offset (cqw)</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Left Off.</span>
+                      <span>{layout.effectIcon?.left ?? 0}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-20"
+                      max="20"
+                      step="0.1"
+                      value={layout.effectIcon?.left ?? 0}
+                      onChange={(e) => {
+                        setLayout(prev => ({
+                          ...prev,
+                          effectIcon: {
+                            ...prev.effectIcon,
+                            left: parseFloat(e.target.value)
+                          }
+                        }));
+                      }}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Top Off.</span>
                       <span>{layout.effectIcon?.top ?? layout.effect?.iconOffset ?? 0.2}</span>
                     </div>
                     <input

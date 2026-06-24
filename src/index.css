@@ -1,35 +1,35 @@
 /* Custom Game Fonts loading */
 @font-face {
   font-family: 'NorseBold';
-  src: url('/fonts/NorseBold-2Kge.otf') format('opentype');
+  src: url('../public/fonts/NorseBold-2Kge.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'TitanOne';
-  src: url('/fonts/TitanOne-Regular.ttf') format('truetype');
+  src: url('../public/fonts/TitanOne-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'MerriweatherSans';
-  src: url('/fonts/MerriweatherSans-VariableFont_wght.ttf') format('truetype');
+  src: url('../public/fonts/MerriweatherSans-VariableFont_wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'MerriweatherSans';
-  src: url('/fonts/MerriweatherSans-Italic-VariableFont_wght.ttf') format('truetype');
+  src: url('../public/fonts/MerriweatherSans-Italic-VariableFont_wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: italic;
 }
 
 @font-face {
   font-family: 'Roboto';
-  src: url('/fonts/RobotoCondensed-VariableFont_wght.ttf') format('truetype');
+  src: url('../public/fonts/RobotoCondensed-VariableFont_wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: normal;
 }

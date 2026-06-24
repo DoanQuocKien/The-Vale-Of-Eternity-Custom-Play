@@ -6,7 +6,8 @@ import {
   dbGetCards, 
   dbSaveCard, 
   dbDeleteCard,
-  DEFAULT_PACK_ID
+  DEFAULT_PACK_ID,
+  seedDefaultData
 } from '../services/db.js';
 
 export const useAppStore = create((set, get) => ({
@@ -23,6 +24,18 @@ export const useAppStore = create((set, get) => ({
   activeCard: null,
   
   // Actions
+  initializeApp: async () => {
+    await seedDefaultData();
+    const packs = await get().loadPacks();
+    if (packs.length > 0) {
+      const activeId = get().activePackId || DEFAULT_PACK_ID;
+      const packExists = packs.some(p => p.id === activeId);
+      await get().setActivePackId(packExists ? activeId : packs[0].id);
+    } else {
+      await get().setActivePackId(DEFAULT_PACK_ID);
+    }
+  },
+
   loadPacks: async () => {
     const packs = await dbGetPacks();
     set({ packs: packs.sort((a, b) => b.createdAt - a.createdAt) });

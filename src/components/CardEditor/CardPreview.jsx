@@ -3,7 +3,8 @@ import {
   getResolvedElementLayout, 
   getPriceColor, 
   getBackgroundPath, 
-  getTimingIcon 
+  getTimingIcon,
+  parseEffectText
 } from '../../utils/constants.jsx';
 
 const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
@@ -46,51 +47,27 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
             height: '100%',
             background: `rgba(${parseInt(cardLayout.effect.bgColor.slice(1, 3), 16)}, ${parseInt(cardLayout.effect.bgColor.slice(3, 5), 16)}, ${parseInt(cardLayout.effect.bgColor.slice(5, 7), 16)}, ${cardLayout.effect.bgOpacity})`,
             color: cardLayout.effect.color,
-            padding: `${cardLayout.effect.padding}px`,
+            fontSize: `${cardLayout.effect.fontSize}cqw`,
+            fontFamily: 'var(--font-effect)',
             borderRadius: `${cardLayout.effect.borderRadius}cqw`,
-            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-            border: '0.5cqw solid rgba(255,255,255,0.1)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            position: 'absolute',
-            left: 0,
-            top: 0
+            borderLeft: `2.5px solid var(--family-${family.toLowerCase()})`,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            position: 'relative',
+            boxSizing: 'border-box'
           }}>
             <div style={{
               position: 'absolute',
-              left: `${textLeft}%`,
-              top: `${textTop}%`,
+              left: `${textLeft}cqw`,
+              top: `${textTop}cqw`,
               width: `${textWidth}%`,
               height: `${textHeight}%`,
-              display: 'flex',
-              alignItems: 'center',
-              fontSize: `${cardLayout.effect.fontSize}cqw`,
-              fontFamily: 'var(--font-effect)',
-              lineHeight: 1.25,
-              textShadow: '0 1px 2px rgba(255,255,255,0.8)'
-            }} dangerouslySetInnerHTML={{
-              __html: text.replace(/\\icon\((.*?)\)/g, (match, iconName) => {
-                const parts = iconName.split(',').map(s => s.trim());
-                if (parts.length === 2 && parts[0] === 'Score') {
-                  return `<span style="display:inline-block; position:relative; width:1.5em; height:1.5em; vertical-align:middle; margin:0 0.1em;">
-                            <img src="./img/Effect/Score.png" style="width:100%; height:100%; object-fit:contain;" />
-                            <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900; color:white; -webkit-text-stroke: 0.5px black; font-size:0.8em; margin-top:2px;">${parts[1]}</span>
-                          </span>`;
-                }
-                const pathMap = {
-                  'Stone1': './img/Effect/Stone1.png',
-                  'Stone3': './img/Effect/Stone3.png',
-                  'Stone6': './img/Effect/Stone6.png',
-                  'Fire': './img/Effect/Fire.png',
-                  'Water': './img/Effect/Water.png',
-                  'Earth': './img/Effect/Earth.png',
-                  'Wind': './img/Effect/Wind.png',
-                  'Dragon': './img/Effect/Dragon.png',
-                };
-                return `<img src="${pathMap[parts[0]] || match}" style="height: 1.5em; vertical-align: middle; margin: 0 0.1em;" />`;
-              }).replace(/\\italic\((.*?)\)/g, '<i>$1</i>')
-            }} />
+              textAlign: 'left',
+              lineHeight: 1.35,
+              boxSizing: 'border-box',
+              overflow: 'visible'
+            }}>
+              {parseEffectText(text)}
+            </div>
           </div>
           {icon && (
             <img 
@@ -98,8 +75,8 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
               alt="Timing" 
               style={{
                 position: 'absolute',
-                left: `${iconLeft}%`,
-                top: `${iconOffset}%`,
+                left: `${iconLeft}cqw`,
+                top: `${iconOffset}cqw`,
                 width: `${iconSize}cqw`,
                 height: `${iconSize}cqw`,
                 objectFit: 'contain',
@@ -223,7 +200,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
         width: `${resolvedCredit.width}%`,
         fontSize: `${resolvedCredit.fontSize}cqw`,
         fontFamily: 'var(--font-credit)',
-        color: cardLayout.credit.color,
+        color: getPriceColor('credit', family, cardLayout),
         textAlign: 'center',
         transform: 'translate(0, -50%)',
         zIndex: 2,

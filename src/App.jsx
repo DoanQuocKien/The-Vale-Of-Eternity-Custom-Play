@@ -21,6 +21,7 @@ export default function App() {
   const [pdfExportPackName, setPdfExportPackName] = useState('');
 
   const initializeApp = useAppStore(state => state.initializeApp);
+  const setActiveCard = useAppStore(state => state.setActiveCard);
 
   useEffect(() => {
     initializeApp();
@@ -199,11 +200,8 @@ export default function App() {
         {activeTab === 'explorer' && (
           <PackExplorer 
             onEditCard={(c) => {
-              // Wait, setting the active card is not fully implemented in CardEditor yet.
-              // For a complete migration, we'd add activeCard state or use event dispatch.
-              // We'll leave it as a log for now or switch tabs.
+              setActiveCard(c);
               setActiveTab('editor');
-              alert("Edit card functionality to be wired to the new global store.");
             }}
             onExportPack={exportPack}
             onExportLibrary={exportEntireLibrary}

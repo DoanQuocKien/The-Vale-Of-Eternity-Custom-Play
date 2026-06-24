@@ -248,21 +248,21 @@ export function parseEffectText(text) {
         const parts = iconName.split(',').map(s => s.trim());
         if (parts.length === 2 && parts[0] === 'Score') {
           return `<span style="display:inline-block; position:relative; width:1.5em; height:1.5em; vertical-align:middle; margin:0 0.1em;">
-                    <img src="./img/Effect/Score.png" style="width:100%; height:100%; object-fit:contain;" />
+                    <img src="./img/TextIcon/Score.png" style="width:100%; height:100%; object-fit:contain;" />
                     <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900; color:white; -webkit-text-stroke: 0.5px black; font-size:0.8em; margin-top:2px;">${parts[1]}</span>
                   </span>`;
         }
         const pathMap = {
-          'Stone1': './img/Effect/Stone1.png',
-          'Stone3': './img/Effect/Stone3.png',
-          'Stone6': './img/Effect/Stone6.png',
-          'Fire': './img/Effect/Fire.png',
-          'Water': './img/Effect/Water.png',
-          'Earth': './img/Effect/Earth.png',
-          'Wind': './img/Effect/Wind.png',
-          'Dragon': './img/Effect/Dragon.png',
+          'Stone1': './img/TextIcon/Stone1.png',
+          'Stone3': './img/TextIcon/Stone3.png',
+          'Stone6': './img/TextIcon/Stone6.png',
+          'Fire': './img/TextIcon/Fire.png',
+          'Water': './img/TextIcon/Water.png',
+          'Earth': './img/TextIcon/Earth.png',
+          'Wind': './img/TextIcon/Wind.png',
+          'Dragon': './img/TextIcon/Dragon.png',
         };
-        return `<img src="${pathMap[parts[0]] || match}" style="height: 1.5em; vertical-align: middle; margin: 0 0.1em;" />`;
+        return `<img src="${pathMap[parts[0]] || `./img/TextIcon/${parts[0]}.png`}" style="height: 1.5em; vertical-align: middle; margin: 0 0.1em;" />`;
       }).replace(/\\italic\((.*?)\)/g, '<i>$1</i>')
     }} />
   );
