@@ -4,7 +4,7 @@
   "description": "Design, customize, and export custom creature cards for The Vale of Eternity.",
   "author": "Doan Quoc Kien",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -25,7 +25,8 @@
     "lucide-react": "^0.395.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "upscaler": "^1.0.0"
+    "upscaler": "^1.0.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
@@ -48,13 +49,25 @@
       {
         "from": "public",
         "to": "public",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "electron/icon.png",
       "sign": null,

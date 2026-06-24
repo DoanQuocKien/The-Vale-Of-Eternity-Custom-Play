@@ -31,7 +31,7 @@ const getBackgroundPath = (family) => {
     Wind: 'WindCard.png',
     Dragon: 'DragonCard.png'
   };
-  return `/img/Background/${mapping[family] || 'WaterCard.png'}`;
+  return `./img/Background/${mapping[family] || 'WaterCard.png'}`;
 };
 
 // ─── Canvas image processing utilities ───────────────────────────────────────
