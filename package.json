@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "electron:dev": "vite build && electron .",
     "electron:build": "vite build && electron-builder --win",
-    "electron:build:nosign": "vite build && electron-builder --win --config.win.sign=null --config.nsis.sign=false"
+    "electron:build:nosign": "vite build && electron-builder --win --config.win.sign=null"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
@@ -70,9 +70,7 @@
           ]
         }
       ],
-      "icon": "electron/icon.png",
-      "sign": null,
-      "signingHashAlgorithms": null
+      "icon": "electron/icon.ico"
     },
     "nsis": {
       "oneClick": false,
