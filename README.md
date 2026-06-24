@@ -191,9 +191,11 @@ The installer will be created in `release/`. Two formats are produced:
 
 ## 🗺️ Future Roadmap
 
+
 - [ ] Custom token sheet designer (Magic Stones, status markers)
+- [ ] Customize family and more custom-made icons on cards!
 - [ ] Rulebook page editor with export to matching layout
 - [ ] Standee and board component designer
 - [ ] Card import/export as JSON for sharing between users
 - [ ] Undo/redo history in the Art Integrator
-- [ ] Customize family and more custom-made icons on cards!
+
