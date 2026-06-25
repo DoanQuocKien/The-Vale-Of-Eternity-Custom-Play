@@ -97,20 +97,36 @@ A dedicated multi-stage art processing pipeline, opened via the "Set Art" button
 - Position and scale the processed art on the card preview.
 - Drag to reposition; sliders for scale and rotation.
 
+### 🪙 Token Designer (Tokens Tab)
+- **Design custom tokens** — fully integrated canvas drawing, shapes, webcam capture, and file imports.
+- **Pre-processing pipeline** — includes perspective correction, background removal, upscaling, tinting, and adjustments.
+- **Transparent backing** — tokens save with clear backgrounds.
+- **Automatic bounding box detection** — scans canvas pixels to capture the tightest crop boundary (`bbox`) and saves cropped target frames (`croppedDataUrl`).
+
+### 🎴 Token Overlay Placement & Inline Icons
+- **Interactive Drag & Drop** — drag placed tokens directly on the card preview layout for quick positioning.
+- **Precision Sliders** — calibrate X/Y coordinates (`cx`, `cy`) and size (`cqw`) using smooth range sliders.
+- **Text Insertion** — click shortcut toolbar buttons to place `\icon(token_name)` inside card effects. They render inline with timing symbols, auto-cropped to the token's tight bounding box.
+
 ### 📦 Pack Explorer (Explorer Tab)
 - **Pack management** — create, rename, and delete card packs.
-- **Card library** — browse all saved cards within a pack.
+- **Card & token libraries** — browse cards and custom tokens within a pack.
 - **Search and filter** — search by name, filter by family, filter by cost, sort by name/cost/family/date.
-- **Card actions** — edit (load into editor), duplicate, move to another pack, delete.
-- **Export Pack to PDF** — export all filtered cards in the pack as a multi-page print-ready PDF.
+- **Actions** — edit (load cards/tokens into designers), duplicate/clone, move to other packs, delete.
+- **Export Cards to PDF** — export all filtered cards in the pack as a multi-page print-ready PDF.
+- **Export Tokens to PDF** — open configure dialog to print custom tokens with adjustable base sizes, gaps, and quantities.
 
 ### 🖨️ Print-Ready PDF Export
-- Standard card size: **63.5 × 88 mm** (standard card game size).
-- **3 × 3 grid** per A4 page (9 cards/page) with centered margins.
-- **2 mm gutters** between cards for clean separation.
-- Thin light-gray **cutting guide lines** around each card slot.
-- **Fronts Only mode** — single-sided sheet of card fronts.
-- **Duplex mode** — alternates front pages with horizontally-mirrored back pages for perfect two-sided printing alignment.
+- **Cards Sheet**:
+  - Standard card size: **63.5 × 88 mm** (standard card game size).
+  - **3 × 3 grid** per A4 page (9 cards/page) with centered margins and **2 mm gutters**.
+  - Thin light-gray **cutting guide lines** around each card slot.
+  - **Fronts Only** and **Duplex** (mirrored backsides) print options.
+- **Tokens Sheet**:
+  - Standalone printing of custom-shaped tokens on A4 sheets.
+  - Automatic wrapping flow based on token bounding boxes, chosen base size (`20mm`–`60mm`), and margins (`2mm`–`10mm`).
+  - Lightweight guide lines around bounding boxes to assist scissors/cutting.
+  - Print multi-copy counts per token.
 
 ---
 
@@ -191,8 +207,7 @@ The installer will be created in `release/`. Two formats are produced:
 
 ## 🗺️ Future Roadmap
 
-
-- [ ] Custom token designer
+- [x] Custom token designer
 - [ ] Custom board component designer
 - [ ] Custom standee designer
 - [ ] Customize family
