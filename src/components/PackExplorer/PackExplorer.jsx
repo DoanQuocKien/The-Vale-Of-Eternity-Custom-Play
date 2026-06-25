@@ -302,35 +302,86 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
       <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '600px' }}>
 
         {/* Sub-tab switcher */}
-        <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
-          {[
-            { id: 'cards', label: `Cards (${explorerCards.length})` },
-            { id: 'tokens', label: `Tokens (${tokens.length})` }
-          ].map(tab => (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid var(--border-color)',
+          paddingBottom: '0.5rem',
+          marginBottom: '0.5rem'
+        }}>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            {[
+              { id: 'cards', label: `Cards (${explorerCards.length})` },
+              { id: 'tokens', label: `Tokens (${tokens.length})` }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setSubTab(tab.id);
+                  // Reset sortBy if switching to tokens and sorting by cost
+                  if (tab.id === 'tokens' && (sortBy === 'cost-asc' || sortBy === 'cost-desc')) {
+                    setSortBy('name');
+                  }
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: subTab === tab.id ? '2px solid var(--color-primary)' : '2px solid transparent',
+                  color: subTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  paddingBottom: '0.25rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {subTab === 'cards' ? (
             <button
-              key={tab.id}
-              onClick={() => {
-                setSubTab(tab.id);
-                // Reset sortBy if switching to tokens and sorting by cost
-                if (tab.id === 'tokens' && (sortBy === 'cost-asc' || sortBy === 'cost-desc')) {
-                  setSortBy('name');
-                }
-              }}
+              onClick={() => onEditCard(null)}
               style={{
-                background: 'none',
-                border: 'none',
-                borderBottom: subTab === tab.id ? '2px solid var(--color-primary)' : '2px solid transparent',
-                color: subTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                padding: '0.35rem 0.75rem',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(99, 102, 241, 0.15)',
+                border: '1px solid var(--color-primary)',
+                color: 'var(--text-primary)',
+                fontSize: '0.78rem',
                 fontWeight: 700,
-                fontSize: '0.88rem',
-                paddingBottom: '0.25rem',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                transition: 'all 0.2s'
               }}
             >
-              {tab.label}
+              <span>➕ Create Card</span>
             </button>
-          ))}
+          ) : (
+            <button
+              onClick={() => onEditToken(null)}
+              style={{
+                padding: '0.35rem 0.75rem',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(167, 139, 250, 0.15)',
+                border: '1px solid #a78bfa',
+                color: 'var(--text-primary)',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span>➕ Create Token</span>
+            </button>
+          )}
         </div>
 
         <div style={{

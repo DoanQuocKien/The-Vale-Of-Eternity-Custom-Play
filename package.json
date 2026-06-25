@@ -4,7 +4,7 @@
   "description": "Design, customize, and export custom creature cards for The Vale of Eternity.",
   "author": "Doan Quoc Kien",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {

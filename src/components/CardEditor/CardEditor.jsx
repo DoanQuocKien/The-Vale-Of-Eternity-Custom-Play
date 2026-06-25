@@ -40,6 +40,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   const [zoomScale, setZoomScale] = useState(0.85);
   const [jsonInput, setJsonInput] = useState('');
   const [tokenOverlays, setTokenOverlays] = useState([]); // [{instanceId, tokenId, tokenName, cx, cy, size}]
+  const [sidebarTab, setSidebarTab] = useState('content'); // 'content' | 'calibration'
 
   // Expose the current state so parent can handle ArtImporter logic
   // We'll manage artImageData locally but we need the ArtImporter to be aware.
@@ -146,6 +147,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   const handleDragStart = (e, elementKey) => {
     e.preventDefault();
     setSelectedElement(elementKey);
+    setSidebarTab('calibration');
 
     const cardElement = cardRef.current;
     if (!cardElement) return;
@@ -242,6 +244,7 @@ const CardEditor = ({ onShowArtImporter }) => {
     e.preventDefault();
     e.stopPropagation();
     setSelectedElement('tokens');
+    setSidebarTab('calibration');
 
     const cardElement = cardRef.current;
     if (!cardElement) return;
@@ -822,69 +825,292 @@ const CardEditor = ({ onShowArtImporter }) => {
       </div>
 
       {/* RIGHT COMPONENT: Calibration Settings Sidebar */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-        {/* Section 1: Template and Text Inputs */}
-        <div className="glass-panel" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
-              <Sparkles size={16} /> 1. Edit Card Content
-            </h3>
-            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-              {activeCard && (
-                <button
-                  onClick={() => {
-                    if (window.confirm('Clear editing context and start creating a new card?')) {
-                      setActiveCard(null);
-                    }
-                  }}
-                  style={{
-                    padding: '0.35rem 0.6rem',
-                    background: 'rgba(99, 102, 241, 0.15)',
-                    border: '1px solid var(--color-primary)',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    color: 'var(--text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    transition: 'all 0.2s'
-                  }}
-                  title="Create a new card from scratch"
-                >
-                  ➕ New Card
-                </button>
-              )}
+        {/* Tab Switcher */}
+        <div style={{
+          display: 'flex',
+          background: 'rgba(15, 20, 36, 0.5)',
+          padding: '0.25rem',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border-color)',
+          gap: '0.25rem'
+        }}>
+          <button
+            onClick={() => setSidebarTab('content')}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.6rem 1rem',
+              background: sidebarTab === 'content' ? 'var(--color-primary)' : 'transparent',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              color: sidebarTab === 'content' ? 'white' : 'var(--text-secondary)',
+              fontSize: '0.88rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
+          >
+            <Sparkles size={16} />
+            Card Content
+          </button>
+          <button
+            onClick={() => setSidebarTab('calibration')}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.6rem 1rem',
+              background: sidebarTab === 'calibration' ? 'var(--color-primary)' : 'transparent',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              color: sidebarTab === 'calibration' ? 'white' : 'var(--text-secondary)',
+              fontSize: '0.88rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
+          >
+            <Settings size={16} />
+            Layout Calibration
+          </button>
+        </div>
+
+        {sidebarTab === 'content' && (
+          <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+                <Sparkles size={16} /> Edit Card Content
+              </h3>
+            </div>
+
+            {/* Core Card Actions Toolbar */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <button
+                onClick={() => {
+                  if (window.confirm('Clear editing context and start creating a new card?')) {
+                    setActiveCard(null);
+                  }
+                }}
+                style={{
+                  padding: '0.5rem',
+                  background: 'rgba(99, 102, 241, 0.12)',
+                  border: '1px solid rgba(99, 102, 241, 0.3)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: 'var(--text-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  transition: 'all 0.2s'
+                }}
+                title="Create a new card from scratch"
+              >
+                ➕ New Card
+              </button>
               <button
                 onClick={generateRandomCard}
                 style={{
-                  padding: '0.35rem 0.6rem',
+                  padding: '0.5rem',
                   background: 'var(--bg-surface-elevated)',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.72rem',
+                  fontSize: '0.78rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   color: 'var(--text-secondary)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.25rem',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
                   transition: 'all 0.2s'
                 }}
                 title="Generate a random card"
               >
                 🎲 Random Card
               </button>
-              {artImageData ? (
-                <>
+              
+              <button
+                onClick={() => handleSaveCard(false)}
+                style={{
+                  padding: '0.55rem',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: '#10b981',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                💾 Save / Overwrite
+              </button>
+              <button
+                onClick={() => handleSaveCard(true)}
+                style={{
+                  padding: '0.55rem',
+                  background: 'linear-gradient(135deg, var(--color-primary), #8b5cf6)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'white',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  boxShadow: '0 4px 10px rgba(99, 102, 241, 0.15)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                ✨ Save as New
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Family</label>
+                <select
+                  value={backgroundFamily}
+                  onChange={(e) => setBackgroundFamily(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.4rem 0.6rem',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  {['Fire', 'Water', 'Earth', 'Wind', 'Dragon'].map(f => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Card Name</label>
+                <input
+                  type="text"
+                  value={cardName}
+                  onChange={(e) => setCardName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.4rem 0.6rem',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.85rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Price (Cost)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="99"
+                  value={cardCost}
+                  onChange={(e) => setCardCost(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.4rem 0.6rem',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.85rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Artist Credit</label>
+                <input
+                  type="text"
+                  value={cardCredit}
+                  onChange={(e) => setCardCredit(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.4rem 0.6rem',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.85rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Card Artwork Section */}
+          <div style={{
+            background: 'var(--bg-surface-elevated)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '0.85rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            marginBottom: '0.75rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Card Artwork</label>
+              <span style={{
+                fontSize: '0.68rem',
+                padding: '0.1rem 0.4rem',
+                borderRadius: '4px',
+                background: artImageData ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                color: artImageData ? '#10b981' : '#ef4444',
+                fontWeight: 700
+              }}>
+                {artImageData ? 'Art Loaded' : 'No Art Loaded'}
+              </span>
+            </div>
+            
+            {artImageData ? (
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <div style={{
+                  width: '55px',
+                  height: '55px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-color)',
+                  overflow: 'hidden',
+                  background: '#030712',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <img
+                    src={artImageData.dataUrl}
+                    alt="Card Art Preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </div>
+                <div style={{ flexGrow: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
                   <button
                     onClick={() => onShowArtImporter({ family: backgroundFamily, existingArt: artImageData.dataUrl }, setArtImageData)}
                     style={{
-                      padding: '0.35rem 0.6rem',
-                      background: 'rgba(236,72,153,0.15)',
-                      border: '1px solid var(--color-primary)',
+                      padding: '0.35rem',
+                      background: 'rgba(236,72,153,0.12)',
+                      border: '1px solid rgba(236,72,153,0.3)',
                       borderRadius: 'var(--radius-sm)',
                       fontSize: '0.72rem',
                       fontWeight: 700,
@@ -892,24 +1118,21 @@ const CardEditor = ({ onShowArtImporter }) => {
                       color: '#f472b6',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.25rem',
-                      transition: 'all 0.2s'
+                      justifyContent: 'center',
+                      gap: '0.2rem'
                     }}
-                    title="Adjust position, scale or drawing layers of existing art"
+                    title="Edit, draw, scan or enhance art layers"
                   >
-                    <Sliders size={12} />
-                    Edit Position
+                    🎨 Edit Art
                   </button>
                   <button
                     onClick={() => {
-                      if (window.confirm('Discard existing artwork and import/sketch a new one?')) {
-                        setArtImageData(null);
-                        onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData);
-                      }
+                      setSelectedElement('name');
+                      setSidebarTab('calibration');
                     }}
                     style={{
-                      padding: '0.35rem 0.6rem',
-                      background: 'var(--bg-surface-elevated)',
+                      padding: '0.35rem',
+                      background: 'var(--bg-main)',
                       border: '1px solid var(--border-color)',
                       borderRadius: 'var(--radius-sm)',
                       fontSize: '0.72rem',
@@ -918,13 +1141,37 @@ const CardEditor = ({ onShowArtImporter }) => {
                       color: 'var(--text-secondary)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.25rem',
-                      transition: 'all 0.2s'
+                      justifyContent: 'center',
+                      gap: '0.2rem'
                     }}
-                    title="Start a new artwork (upload or sketch)"
+                    title="Calibrate card layout elements"
                   >
-                    <ImagePlus size={12} />
-                    New Art
+                    ⚙️ Calibrate Layout
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Discard active artwork and import/sketch a new one?')) {
+                        setArtImageData(null);
+                        onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData);
+                      }
+                    }}
+                    style={{
+                      padding: '0.35rem',
+                      background: 'var(--bg-main)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      color: 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.2rem',
+                      gridColumn: 'span 2'
+                    }}
+                  >
+                    🔄 Import New Art
                   </button>
                   <button
                     onClick={() => {
@@ -933,8 +1180,8 @@ const CardEditor = ({ onShowArtImporter }) => {
                       }
                     }}
                     style={{
-                      padding: '0.35rem 0.5rem',
-                      background: 'rgba(239, 68, 68, 0.1)',
+                      padding: '0.35rem',
+                      background: 'rgba(239, 68, 68, 0.08)',
                       border: '1px solid var(--color-danger)',
                       borderRadius: 'var(--radius-sm)',
                       fontSize: '0.72rem',
@@ -944,113 +1191,38 @@ const CardEditor = ({ onShowArtImporter }) => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      transition: 'all 0.2s'
+                      gap: '0.2rem',
+                      gridColumn: 'span 2'
                     }}
-                    title="Remove custom artwork"
                   >
-                    <Trash2 size={12} />
+                    🗑️ Delete Art
                   </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData)}
-                  style={{
-                    padding: '0.35rem 0.75rem',
-                    background: 'var(--bg-surface-elevated)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    color: 'var(--text-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <ImagePlus size={13} />
-                  Add Art
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Family</label>
-              <select
-                value={backgroundFamily}
-                onChange={(e) => setBackgroundFamily(e.target.value)}
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData)}
                 style={{
                   width: '100%',
-                  padding: '0.4rem 0.6rem',
-                  background: 'var(--bg-surface-elevated)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.85rem'
+                  padding: '0.75rem',
+                  background: 'rgba(99, 102, 241, 0.08)',
+                  border: '1.5px dashed rgba(99, 102, 241, 0.3)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: 'var(--color-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  transition: 'all 0.2s'
                 }}
               >
-                {['Fire', 'Water', 'Earth', 'Wind', 'Dragon'].map(f => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ gridColumn: 'span 2' }}>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Card Name</label>
-              <input
-                type="text"
-                value={cardName}
-                onChange={(e) => setCardName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.4rem 0.6rem',
-                  background: 'var(--bg-surface-elevated)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.85rem'
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Price (Cost)</label>
-              <input
-                type="number"
-                min="0"
-                max="99"
-                value={cardCost}
-                onChange={(e) => setCardCost(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.4rem 0.6rem',
-                  background: 'var(--bg-surface-elevated)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.85rem'
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Artist Credit</label>
-              <input
-                type="text"
-                value={cardCredit}
-                onChange={(e) => setCardCredit(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.4rem 0.6rem',
-                  background: 'var(--bg-surface-elevated)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.85rem'
-                }}
-              />
-            </div>
+                <ImagePlus size={16} />
+                Add Custom Artwork (Sketch, Upload, Webcam)
+              </button>
+            )}
           </div>
 
           <div style={{ marginBottom: '0.5rem' }}>
@@ -1151,15 +1323,15 @@ const CardEditor = ({ onShowArtImporter }) => {
             )}
           </div>
 
-          <div style={{
-            marginTop: '1rem',
-            paddingTop: '1rem',
-            borderTop: '1px dashed var(--border-color)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem'
-          }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.5rem', alignItems: 'center' }}>
+            <div style={{
+              marginTop: '0.5rem',
+              paddingTop: '1rem',
+              borderTop: '1px dashed var(--border-color)',
+              display: 'grid',
+              gridTemplateColumns: '1.2fr 0.8fr',
+              gap: '0.5rem',
+              alignItems: 'center'
+            }}>
               <div>
                 <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.15rem', fontWeight: 600 }}>Target Pack</label>
                 <select
@@ -1204,60 +1376,15 @@ const CardEditor = ({ onShowArtImporter }) => {
                 </button>
               </div>
             </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                onClick={() => handleSaveCard(false)}
-                style={{
-                  flexGrow: 1,
-                  padding: '0.6rem 1rem',
-                  background: 'var(--bg-surface-elevated)',
-                  border: '1px solid var(--color-primary)',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                💾 Save/Overwrite Card
-              </button>
-              <button
-                onClick={() => handleSaveCard(true)}
-                style={{
-                  flexGrow: 1,
-                  padding: '0.6rem 1rem',
-                  background: 'linear-gradient(135deg, var(--color-primary), #8b5cf6)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'white',
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)',
-                  transition: 'all 0.2s'
-                }}
-              >
-                ✨ Save as New Card
-              </button>
-            </div>
           </div>
-        </div>
+        )}
 
         {/* Section 2: Element Properties Calibration Sidebar */}
-        <div className="glass-panel" style={{ padding: '1.25rem' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Settings size={16} /> 2. Layout & Typography Calibration
-          </h3>
+        {sidebarTab === 'calibration' && (
+          <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+              <Settings size={16} /> Layout & Typography Calibration
+            </h3>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
             Select an element on the card to fine-tune its position, size, and styling properties.
           </p>
@@ -1935,9 +2062,11 @@ const CardEditor = ({ onShowArtImporter }) => {
             </>
           )}
         </div>
+      )}
 
-        {/* Section 3: Configuration JSON Import/Export */}
-        <div className="glass-panel" style={{ padding: '1.25rem' }}>
+      {/* Section 3: Configuration JSON Import/Export */}
+      {sidebarTab === 'calibration' && (
+        <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem', color: '#f472b6', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Download size={16} /> 3. Layout JSON Configuration
           </h3>
@@ -2027,6 +2156,7 @@ const CardEditor = ({ onShowArtImporter }) => {
             </button>
           </div>
         </div>
+      )}
 
       </div>
     </div>

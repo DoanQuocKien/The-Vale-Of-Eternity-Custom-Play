@@ -10,7 +10,7 @@ import { RefreshCw } from 'lucide-react';
 import { MOCK_PRESETS, DEFAULT_LAYOUT } from './utils/constants.jsx';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('editor');
+  const [activeTab, setActiveTab] = useState('explorer');
   
   // Modals state
   const [showArtImporter, setShowArtImporter] = useState(false);
@@ -172,26 +172,10 @@ export default function App() {
 
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem', gap: '1.5rem', paddingTop: '1rem' }}>
           <button
-            onClick={() => setActiveTab('editor')}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: activeTab === 'editor' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'editor' ? '3px solid var(--color-primary)' : '3px solid transparent',
-              color: activeTab === 'editor' ? 'var(--text-primary)' : 'var(--text-secondary)',
-              fontSize: '0.95rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all var(--transition-fast)'
-            }}
-          >
-            Interactive Designer
-          </button>
-          <button
             onClick={() => setActiveTab('explorer')}
             style={{
               padding: '0.75rem 1.5rem',
-              background: activeTab === 'explorer' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+              background: activeTab === 'explorer' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
               border: 'none',
               borderBottom: activeTab === 'explorer' ? '3px solid var(--color-primary)' : '3px solid transparent',
               color: activeTab === 'explorer' ? 'var(--text-primary)' : 'var(--text-secondary)',
@@ -204,10 +188,26 @@ export default function App() {
             Pack Explorer
           </button>
           <button
+            onClick={() => setActiveTab('editor')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: activeTab === 'editor' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'editor' ? '3px solid var(--color-primary)' : '3px solid transparent',
+              color: activeTab === 'editor' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
+          >
+            Interactive Designer
+          </button>
+          <button
             onClick={() => setActiveTab('tokens')}
             style={{
               padding: '0.75rem 1.5rem',
-              background: activeTab === 'tokens' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+              background: activeTab === 'tokens' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
               border: 'none',
               borderBottom: activeTab === 'tokens' ? '3px solid var(--color-primary)' : '3px solid transparent',
               color: activeTab === 'tokens' ? 'var(--text-primary)' : 'var(--text-secondary)',
