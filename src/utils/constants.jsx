@@ -246,6 +246,19 @@ export function parseEffectText(text) {
     <span dangerouslySetInnerHTML={{
       __html: text.replace(/\\icon\((.*?)\)/g, (match, iconName) => {
         const parts = iconName.split(',').map(s => s.trim());
+        const lowerName = parts[0].toLowerCase();
+        if (lowerName === 'instant') {
+          return `<img src="./img/Effect/InstantEffect.png" style="height: 1.3em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain;" />`;
+        }
+        if (lowerName === 'permanent') {
+          return `<img src="./img/Effect/PermanentEffect.png" style="height: 1.3em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain;" />`;
+        }
+        if (lowerName === 'active') {
+          return `<img src="./img/Effect/ResolutionEffect.png" style="height: 1.3em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain;" />`;
+        }
+        if (lowerName === 'card') {
+          return `<img src="./img/Layout/Backside.png" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);" />`;
+        }
         if (parts.length === 2 && parts[0] === 'Score') {
           return `<span style="display:inline-block; position:relative; width:1.5em; height:1.5em; vertical-align:middle; margin:0 0.1em;">
                     <img src="./img/TextIcon/Score.png" style="width:100%; height:100%; object-fit:contain;" />
