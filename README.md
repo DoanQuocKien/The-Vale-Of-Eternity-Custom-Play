@@ -192,8 +192,10 @@ The installer will be created in `release/`. Two formats are produced:
 ## 🗺️ Future Roadmap
 
 
-- [ ] Custom token, board component and standee designer
-- [ ] Customize family and more custom-made icons on cards
+- [ ] Custom token designer
+- [ ] Custom board component designer
+- [ ] Custom standee designer
+- [ ] Customize family
 - [ ] Rulebook page editor with export to matching layout
 - [ ] Card import/export as JSON for sharing between users
 - [ ] Undo/redo history in the Art Integrator
