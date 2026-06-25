@@ -238,6 +238,47 @@ const CardEditor = ({ onShowArtImporter }) => {
     document.addEventListener('mouseup', handleDragEnd);
   };
 
+  const handleTokenDragStart = (e, instanceId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedElement('tokens');
+
+    const cardElement = cardRef.current;
+    if (!cardElement) return;
+
+    const cardRect = cardElement.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+
+    const targetOverlay = tokenOverlays.find(o => o.instanceId === instanceId);
+    if (!targetOverlay) return;
+
+    const startCx = targetOverlay.cx ?? 50;
+    const startCy = targetOverlay.cy ?? 50;
+
+    const handleDragMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+
+      // Convert delta in pixels to delta in percentage of card width / height
+      const percentDeltaX = (deltaX / cardRect.width) * 100;
+      const percentDeltaY = (deltaY / cardRect.height) * 100;
+
+      const newCx = parseFloat(Math.max(-20, Math.min(120, startCx + percentDeltaX)).toFixed(1));
+      const newCy = parseFloat(Math.max(-20, Math.min(120, startCy + percentDeltaY)).toFixed(1));
+
+      setTokenOverlays(prev => prev.map(o => o.instanceId === instanceId ? { ...o, cx: newCx, cy: newCy } : o));
+    };
+
+    const handleDragEnd = () => {
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+    };
+
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+  };
+
   const updateSetting = (key, value, elementKey = selectedElement) => {
     setLayout(prev => {
       const selected = prev[elementKey];
@@ -564,9 +605,15 @@ const CardEditor = ({ onShowArtImporter }) => {
             const cx = ov.cx && !isNaN(ov.cx) ? ov.cx : 50;
             const cy = ov.cy && !isNaN(ov.cy) ? ov.cy : 50;
 
+            const isTokensSelected = selectedElement === 'tokens';
             return (
               <div
                 key={ov.instanceId}
+                onMouseDown={(e) => {
+                  if (isTokensSelected) {
+                    handleTokenDragStart(e, ov.instanceId);
+                  }
+                }}
                 style={{
                   position: 'absolute',
                   left: `${cx}%`,
@@ -574,9 +621,15 @@ const CardEditor = ({ onShowArtImporter }) => {
                   width: `${overlaySize * aspect}cqw`,
                   height: `${overlaySize}cqw`,
                   transform: 'translate(-50%, -50%)',
-                  pointerEvents: 'none',
-                  zIndex: 2,
-                  userSelect: 'none'
+                  pointerEvents: isTokensSelected ? 'auto' : 'none',
+                  zIndex: 10,
+                  userSelect: 'none',
+                  cursor: isTokensSelected ? 'move' : 'default',
+                  border: isTokensSelected ? '1px dashed #7c3aed' : 'none',
+                  background: isTokensSelected ? 'rgba(124, 58, 237, 0.05)' : 'transparent',
+                  padding: isTokensSelected ? '2px' : '0',
+                  boxSizing: 'border-box',
+                  borderRadius: isTokensSelected ? '4px' : '0'
                 }}
               >
                 <img
@@ -1274,19 +1327,19 @@ const CardEditor = ({ onShowArtImporter }) => {
                         {tok?.imageDataUrl && (
                           <img src={tok.imageDataUrl} alt={tok.name} style={{ height: '40px', width: 'auto', objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--border-color)' }} />
                         )}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                           {[
-                            { label: 'X (cx %)', key: 'cx', min: -20, max: 120, step: 0.5, val: ov.cx ?? 50 },
-                            { label: 'Y (cy %)', key: 'cy', min: -20, max: 120, step: 0.5, val: ov.cy ?? 50 },
-                            { label: 'Size (cqw)', key: 'size', min: 1, max: 80, step: 0.5, val: ov.size ?? 100 }
+                            { label: 'X Position (cx %)', key: 'cx', min: -20, max: 120, step: 0.5, val: ov.cx ?? 50 },
+                            { label: 'Y Position (cy %)', key: 'cy', min: -20, max: 120, step: 0.5, val: ov.cy ?? 50 },
+                            { label: 'Size (cqw)', key: 'size', min: 1, max: 80, step: 0.5, val: ov.size ?? 15 }
                           ].map(ctrl => (
-                            <div key={ctrl.key}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)', marginBottom: '0.15rem' }}>
+                            <div key={ctrl.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
                                 <span>{ctrl.label}</span>
-                                <span>{ctrl.val}</span>
+                                <span style={{ fontWeight: 'bold', color: '#a78bfa' }}>{ctrl.val}</span>
                               </div>
                               <input
-                                type="number"
+                                type="range"
                                 min={ctrl.min}
                                 max={ctrl.max}
                                 step={ctrl.step}
@@ -1295,7 +1348,12 @@ const CardEditor = ({ onShowArtImporter }) => {
                                   const v = parseFloat(e.target.value);
                                   setTokenOverlays(prev => prev.map(o => o.instanceId === ov.instanceId ? { ...o, [ctrl.key]: v } : o));
                                 }}
-                                style={{ width: '100%', padding: '0.25rem 0.3rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '0.75rem', color: 'white' }}
+                                style={{
+                                  width: '100%',
+                                  accentColor: '#7c3aed',
+                                  height: '4px',
+                                  cursor: 'pointer'
+                                }}
                               />
                             </div>
                           ))}
