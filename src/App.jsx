@@ -23,6 +23,7 @@ export default function App() {
 
   const initializeApp = useAppStore(state => state.initializeApp);
   const setActiveCard = useAppStore(state => state.setActiveCard);
+  const setActiveToken = useAppStore(state => state.setActiveToken);
 
   useEffect(() => {
     initializeApp();
@@ -220,6 +221,10 @@ export default function App() {
               setActiveCard(c);
               setActiveTab('editor');
             }}
+            onEditToken={(t) => {
+              setActiveToken(t);
+              setActiveTab('tokens');
+            }}
             onExportPack={exportPack}
             onExportLibrary={exportEntireLibrary}
             onImportFile={handleImportFile}
@@ -228,7 +233,7 @@ export default function App() {
         )}
 
         {activeTab === 'tokens' && (
-          <TokenDesigner />
+          <TokenDesigner onShowArtImporter={handleShowArtImporter} />
         )}
       </div>
 
@@ -236,8 +241,10 @@ export default function App() {
         isOpen={showArtImporter}
         onClose={() => setShowArtImporter(false)}
         onArtConfirmed={handleArtConfirmed}
-        cardFamily={artImporterContext.family}
+        cardFamily={artImporterContext.family || 'Water'}
         existingArt={artImporterContext.existingArt}
+        existingTransform={artImporterContext.existingTransform}
+        isTokenMode={artImporterContext.isTokenMode}
       />
 
       <ExportPdfModal

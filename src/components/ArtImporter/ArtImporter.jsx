@@ -36,12 +36,301 @@ import {
   applyLineEnhancement
 } from '../../utils/canvasUtils.js';
 
+// ─── Custom Color Picker Helpers ─────────────────────────────────────────────
+function hexToHsl(hex) {
+  hex = hex.replace(/^#/, '');
+  if (hex.length === 3) {
+    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  }
+  let r = parseInt(hex.substring(0, 2), 16) / 255;
+  let g = parseInt(hex.substring(2, 4), 16) / 255;
+  let b = parseInt(hex.substring(4, 6), 16) / 255;
+
+  let max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+
+  if (max === min) {
+    h = s = 0;
+  } else {
+    let d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return {
+    h: Math.round(h * 360),
+    s: Math.round(s * 100),
+    l: Math.round(l * 100)
+  };
+}
+
+function hslToHex(h, s, l) {
+  s /= 100;
+  l /= 100;
+  let c = (1 - Math.abs(2 * l - 1)) * s;
+  let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  let m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+
+  if (0 <= h && h < 60) {
+    r = c; g = x; b = 0;
+  } else if (60 <= h && h < 120) {
+    r = x; g = c; b = 0;
+  } else if (120 <= h && h < 180) {
+    r = 0; g = c; b = x;
+  } else if (180 <= h && h < 240) {
+    r = 0; g = x; b = c;
+  } else if (240 <= h && h < 300) {
+    r = x; g = 0; b = c;
+  } else if (300 <= h && h <= 360) {
+    r = c; g = 0; b = x;
+  }
+
+  let rHex = Math.round((r + m) * 255).toString(16).padStart(2, '0');
+  let gHex = Math.round((g + m) * 255).toString(16).padStart(2, '0');
+  let bHex = Math.round((b + m) * 255).toString(16).padStart(2, '0');
+
+  return `#${rHex}${gHex}${bHex}`;
+}
+
+const colorPickerStyles = `
+  .custom-color-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    outline: none;
+    margin: 6px 0;
+    cursor: pointer;
+  }
+  .custom-color-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid var(--color-primary, #6366f1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .custom-color-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+  .custom-color-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid var(--color-primary, #6366f1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .custom-color-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+  }
+`;
+
+function ColorPickerPanel({ color, onChange, label }) {
+  const [hsl, setHsl] = useState({ h: 200, s: 80, l: 50 });
+  const [hexInput, setHexInput] = useState(color);
+
+  useEffect(() => {
+    if (color && color.startsWith('#')) {
+      const parsed = hexToHsl(color);
+      setHsl(parsed);
+      setHexInput(color);
+    }
+  }, [color]);
+
+  const handleHslChange = (h, s, l) => {
+    setHsl({ h, s, l });
+    const hex = hslToHex(h, s, l);
+    setHexInput(hex);
+    onChange(hex);
+  };
+
+  const handleHexInputChange = (e) => {
+    const val = e.target.value;
+    setHexInput(val);
+    if (/^#[0-9A-F]{6}$/i.test(val) || /^#[0-9A-F]{3}$/i.test(val)) {
+      onChange(val);
+      const parsed = hexToHsl(val);
+      setHsl(parsed);
+    }
+  };
+
+  const presets = ['#ffffff', '#000000', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#ec4899', '#a78bfa', '#f472b6'];
+
+  return (
+    <div style={{
+      background: 'rgba(255, 255, 255, 0.03)',
+      border: '1px solid var(--border-color)',
+      borderRadius: 'var(--radius-md)',
+      padding: '0.75rem',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.6rem',
+      marginTop: '0.25rem'
+    }}>
+      <style>{colorPickerStyles}</style>
+      {label && <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{label}</span>}
+      
+      {/* Preset Swatches */}
+      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+        {presets.map(p => (
+          <button
+            key={p}
+            onClick={() => {
+              onChange(p);
+              const parsed = hexToHsl(p);
+              setHsl(parsed);
+              setHexInput(p);
+            }}
+            style={{
+              width: '18px',
+              height: '18px',
+              background: p,
+              border: color.toLowerCase() === p.toLowerCase() ? '2px solid var(--color-primary)' : '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              padding: 0
+            }}
+            title={p}
+          />
+        ))}
+      </div>
+
+      {/* Interactive Sliders */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        {/* Hue Slider */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+            <span>Hue</span>
+            <span>{hsl.h}°</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="360"
+            value={hsl.h}
+            onChange={(e) => handleHslChange(parseInt(e.target.value), hsl.s, hsl.l)}
+            className="custom-color-slider"
+            style={{
+              background: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
+            }}
+          />
+        </div>
+
+        {/* Saturation Slider */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+            <span>Saturation</span>
+            <span>{hsl.s}%</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={hsl.s}
+            onChange={(e) => handleHslChange(hsl.h, parseInt(e.target.value), hsl.l)}
+            className="custom-color-slider"
+            style={{
+              background: `linear-gradient(to right, hsl(${hsl.h}, 0%, 50%), hsl(${hsl.h}, 100%, 50%))`,
+            }}
+          />
+        </div>
+
+        {/* Lightness Slider */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+            <span>Lightness</span>
+            <span>{hsl.l}%</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={hsl.l}
+            onChange={(e) => handleHslChange(hsl.h, hsl.s, parseInt(e.target.value))}
+            className="custom-color-slider"
+            style={{
+              background: `linear-gradient(to right, #000000, hsl(${hsl.h}, 100%, 50%), #ffffff)`,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Hex Text Input & Color Preview Box */}
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.2rem' }}>
+        <div style={{
+          position: 'relative',
+          width: '32px',
+          height: '32px',
+          borderRadius: '6px',
+          background: color,
+          border: '1px solid var(--border-color)',
+          boxShadow: 'inset 0 0 4px rgba(0,0,0,0.2)',
+          cursor: 'pointer',
+          overflow: 'hidden'
+        }} title="Click to open full color picker">
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => {
+              onChange(e.target.value);
+              const parsed = hexToHsl(e.target.value);
+              setHsl(parsed);
+              setHexInput(e.target.value);
+            }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              opacity: 0,
+              cursor: 'pointer'
+            }}
+          />
+        </div>
+        <input
+          type="text"
+          value={hexInput}
+          onChange={handleHexInputChange}
+          placeholder="#ffffff"
+          style={{
+            flexGrow: 1,
+            padding: '0.4rem 0.6rem',
+            background: 'var(--bg-main)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '4px',
+            color: 'white',
+            fontSize: '0.8rem',
+            fontFamily: 'monospace',
+            outline: 'none'
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Main ArtImporter Component ───────────────────────────────────────────────
 
 const STAGES = ['import', 'deskew', 'process', 'tune', 'confirm'];
 const STAGE_LABELS = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Card'];
+const STAGE_LABELS_TOKEN = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Token'];
 
-export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamily = 'Water', existingArt = null }) {
+export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamily = 'Water', existingArt = null, existingTransform = null, isTokenMode = false }) {
   const [stage, setStage] = useState(0); // 0..4
   const [rawDataUrl, setRawDataUrl] = useState(existingArt || null);
   const [deskewedDataUrl, setDeskewedDataUrl] = useState(null);
@@ -102,6 +391,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [panMode, setPanMode] = useState(false);
   const isPanning = useRef(false);
+  const [isPanningState, setIsPanningState] = useState(false);
   const lastPanPos = useRef({ x: 0, y: 0 });
 
   const handleZoomIn = () => setZoom(z => Math.min(8, z + 0.25));
@@ -145,8 +435,19 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
       setBrushMode(null);
       setPolygonPoints([]);
       tunedImgRef.current = null;
+
+      if (existingTransform) {
+        setArtTransform(existingTransform);
+      } else {
+        setArtTransform({
+          x: SAFE_ZONE.focalX,
+          y: SAFE_ZONE.focalY,
+          scale: 60,
+          rotation: 0,
+        });
+      }
     }
-  }, [isOpen, existingArt]);
+  }, [isOpen, existingArt, existingTransform]);
 
   // Cleanup webcam on unmount
   useEffect(() => {
@@ -698,7 +999,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
   };
 
   const handleBrushDown = (e) => {
-    if (tool === 'pan' || panMode || e.button === 1) return;
+    if (tool === 'pan' || panMode || e.button === 1 || e.button === 2) return;
     if (!previewCanvasRef.current) return;
     
     const rect = previewCanvasRef.current.getBoundingClientRect();
@@ -932,10 +1233,10 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
         }}>
           <div>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              🎨 Art Integrator
+              🎨 {isTokenMode ? 'Token Art Integrator' : 'Art Integrator'}
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
-              Scan, enhance, and place your creature art onto the card
+              {isTokenMode ? 'Scan, enhance, and place your custom art onto the token canvas' : 'Scan, enhance, and place your creature art onto the card'}
             </p>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}>
@@ -945,7 +1246,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
 
         {/* Stage indicator */}
         <div style={{ display: 'flex', gap: '0.4rem', padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border-color)', overflowX: 'auto', flexShrink: 0, background: 'var(--bg-main)' }}>
-          {STAGE_LABELS.map((label, i) => (
+          {(isTokenMode ? STAGE_LABELS_TOKEN : STAGE_LABELS).map((label, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
               <button style={stepBtnStyle(stage === i)}>
                 {i < stage ? '✓ ' : ''}{label}
@@ -1387,36 +1688,36 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
 
                       {/* Colors (Stroke & Fill) */}
                       {['brush', 'line', 'rect', 'circle', 'polygon', 'text'].includes(tool) && (
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                           {/* Outline Color */}
-                          <div style={{ flex: 1 }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.65rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: '0.2rem', fontWeight: 600 }}>
+                          <div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: '0.2rem', fontWeight: 600 }}>
                               <input type="checkbox" checked={strokeEnabled} onChange={(e) => setStrokeEnabled(e.target.checked)} />
-                              Outline
+                              Outline / Border
                             </label>
-                            <input 
-                              type="color" 
-                              value={strokeColor} 
-                              disabled={!strokeEnabled}
-                              onChange={(e) => setStrokeColor(e.target.value)} 
-                              style={{ width: '100%', height: '24px', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: strokeEnabled ? 'pointer' : 'not-allowed', background: 'transparent' }} 
-                            />
+                            {strokeEnabled && (
+                              <ColorPickerPanel
+                                label="Border / Stroke Color"
+                                color={strokeColor}
+                                onChange={setStrokeColor}
+                              />
+                            )}
                           </div>
 
                           {/* Fill Color */}
                           {['rect', 'circle', 'polygon', 'text'].includes(tool) && (
-                            <div style={{ flex: 1 }}>
-                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.65rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: '0.2rem', fontWeight: 600 }}>
+                            <div>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: '0.2rem', fontWeight: 600 }}>
                                 <input type="checkbox" checked={fillEnabled} onChange={(e) => setFillEnabled(e.target.checked)} />
-                                Fill
+                                Fill Color
                               </label>
-                              <input 
-                                type="color" 
-                                value={fillColor} 
-                                disabled={!fillEnabled}
-                                onChange={(e) => setFillColor(e.target.value)} 
-                                style={{ width: '100%', height: '24px', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: fillEnabled ? 'pointer' : 'not-allowed', background: 'transparent' }} 
-                              />
+                              {fillEnabled && (
+                                <ColorPickerPanel
+                                  label="Fill Color"
+                                  color={fillColor}
+                                  onChange={setFillColor}
+                                />
+                              )}
                             </div>
                           )}
                         </div>
@@ -1511,7 +1812,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                     ← Back
                   </button>
                   <button onClick={() => setStage(4)} style={{ flex: 2, padding: '0.5rem 1rem', background: 'var(--color-primary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: 'white' }}>
-                    Next: Place on Card →
+                    {isTokenMode ? 'Next: Place on Token →' : 'Next: Place on Card →'}
                   </button>
                 </div>
               </div>
@@ -1531,18 +1832,24 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                     backgroundSize: '20px 20px', 
                     border: '1px solid var(--border-color)',
                     borderRadius: '8px',
-                    cursor: panMode || tool === 'pan' ? (isPanning.current ? 'grabbing' : 'grab') : 'crosshair'
+                    cursor: isPanningState ? 'grabbing' : (panMode || tool === 'pan' ? 'grab' : 'crosshair'),
+                    touchAction: 'none'
                   }}
-                  onMouseDown={(e) => {
-                    if (panMode || tool === 'pan' || e.button === 1) {
+                  onPointerDown={(e) => {
+                    try {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    } catch (err) {}
+                    if (panMode || tool === 'pan' || e.button === 1 || e.button === 2) {
                       isPanning.current = true;
+                      setIsPanningState(true);
                       lastPanPos.current = { x: e.clientX, y: e.clientY };
                       e.preventDefault();
                     } else {
                       handleBrushDown(e);
                     }
                   }}
-                  onMouseMove={(e) => {
+                  onContextMenu={(e) => e.preventDefault()}
+                  onPointerMove={(e) => {
                     if (isPanning.current) {
                       const dx = e.clientX - lastPanPos.current.x;
                       const dy = e.clientY - lastPanPos.current.y;
@@ -1552,16 +1859,13 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                       handleBrushMove(e);
                     }
                   }}
-                  onMouseUp={(e) => {
+                  onPointerUp={(e) => {
+                    try {
+                      e.currentTarget.releasePointerCapture(e.pointerId);
+                    } catch (err) {}
                     if (isPanning.current) {
                       isPanning.current = false;
-                    } else {
-                      handleBrushUp(e);
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (isPanning.current) {
-                      isPanning.current = false;
+                      setIsPanningState(false);
                     } else {
                       handleBrushUp(e);
                     }
@@ -1743,7 +2047,11 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 </div>
 
                 <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  💡 Art is placed on the <strong>middle layer</strong> — between the card background and the text frame overlays. The frame border will naturally mask any bleed edges.
+                  {isTokenMode ? (
+                    <span>💡 Art is placed on the <strong>uploaded layer</strong> of the token. You can further adjust position or draw shapes on top of it.</span>
+                  ) : (
+                    <span>💡 Art is placed on the <strong>middle layer</strong> — between the card background and the text frame overlays. The frame border will naturally mask any bleed edges.</span>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -1758,7 +2066,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                     boxShadow: '0 4px 16px rgba(236,72,153,0.35)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
                   }}>
-                    <Check size={16} /> Apply to Card
+                    <Check size={16} /> {isTokenMode ? 'Apply to Token' : 'Apply to Card'}
                   </button>
                 </div>
               </div>
@@ -1771,13 +2079,16 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 borderRadius: '14px',
                 overflow: 'hidden',
                 boxShadow: '0 12px 30px rgba(0,0,0,0.5)',
-                border: `2px solid var(--family-${cardFamily.toLowerCase()})`,
+                border: isTokenMode ? '2px solid rgba(255,255,255,0.1)' : `2px solid var(--family-${cardFamily.toLowerCase()})`,
+                background: '#0b0f19',
                 userSelect: 'none',
                 margin: '0 auto',
                 containerType: 'inline-size'
               }}>
                 {/* Card Background (bottom) */}
-                <img src={getBackgroundPath(cardFamily)} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
+                {!isTokenMode && (
+                  <img src={getBackgroundPath(cardFamily)} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
+                )}
 
                 {/* Art layer (middle) */}
                 {finalDataUrl && (
@@ -1801,70 +2112,78 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 )}
 
                 {/* Card Layout Border (above art) */}
-                <img 
-                  src="./img/Layout/CardLayout.png" 
-                  alt="Card Layout Border" 
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    pointerEvents: 'none',
-                    zIndex: 3
-                  }}
-                />
+                {!isTokenMode && (
+                  <img 
+                    src="./img/Layout/CardLayout.png" 
+                    alt="Card Layout Border" 
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      pointerEvents: 'none',
+                      zIndex: 3
+                    }}
+                  />
+                )}
 
                 {/* Family Emblem - Top-Left */}
-                <img
-                  src={`./img/TextIcon/${cardFamily}.png`}
-                  alt={`${cardFamily} Emblem TL`}
-                  style={{
-                    position: 'absolute',
-                    left: '8.45%',
-                    top: '6.46%',
-                    width: '11.91cqw',
-                    height: '11.91cqw',
-                    transform: 'translate(-50%, -50%)',
-                    zIndex: 3.5,
-                    borderRadius: '50%',
-                    border: '1.5px solid rgba(0, 0, 0, 0.3)',
-                    boxSizing: 'border-box',
-                    pointerEvents: 'none'
-                  }}
-                />
+                {!isTokenMode && (
+                  <img
+                    src={`./img/TextIcon/${cardFamily}.png`}
+                    alt={`${cardFamily} Emblem TL`}
+                    style={{
+                      position: 'absolute',
+                      left: '8.45%',
+                      top: '6.46%',
+                      width: '11.91cqw',
+                      height: '11.91cqw',
+                      transform: 'translate(-50%, -50%)',
+                      zIndex: 3.5,
+                      borderRadius: '50%',
+                      border: '1.5px solid rgba(0, 0, 0, 0.3)',
+                      boxSizing: 'border-box',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
 
                 {/* Family Emblem - Bottom-Right */}
-                <img
-                  src={`./img/TextIcon/${cardFamily}.png`}
-                  alt={`${cardFamily} Emblem BR`}
-                  style={{
-                    position: 'absolute',
-                    left: '90.97%',
-                    top: '93.54%',
-                    width: '9.84cqw',
-                    height: '9.84cqw',
-                    transform: 'translate(-50%, -50%)',
-                    zIndex: 3.5,
-                    borderRadius: '50%',
-                    border: '1.5px solid rgba(0, 0, 0, 0.3)',
-                    boxSizing: 'border-box',
-                    pointerEvents: 'none'
-                  }}
-                />
+                {!isTokenMode && (
+                  <img
+                    src={`./img/TextIcon/${cardFamily}.png`}
+                    alt={`${cardFamily} Emblem BR`}
+                    style={{
+                      position: 'absolute',
+                      left: '90.97%',
+                      top: '93.54%',
+                      width: '9.84cqw',
+                      height: '9.84cqw',
+                      transform: 'translate(-50%, -50%)',
+                      zIndex: 3.5,
+                      borderRadius: '50%',
+                      border: '1.5px solid rgba(0, 0, 0, 0.3)',
+                      boxSizing: 'border-box',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
 
                 {/* Safe zone overlay guide */}
-                <div style={{
-                  position: 'absolute',
-                  left: `${SAFE_ZONE.xMin}%`,
-                  top: `${SAFE_ZONE.yMin}%`,
-                  width: `${SAFE_ZONE.xMax - SAFE_ZONE.xMin}%`,
-                  height: `${SAFE_ZONE.yMax - SAFE_ZONE.yMin}%`,
-                  border: '1px dashed rgba(255,255,255,0.2)',
-                  borderRadius: '2px',
-                  zIndex: 4,
-                  pointerEvents: 'none'
-                }} />
+                {!isTokenMode && (
+                  <div style={{
+                    position: 'absolute',
+                    left: `${SAFE_ZONE.xMin}%`,
+                    top: `${SAFE_ZONE.yMin}%`,
+                    width: `${SAFE_ZONE.xMax - SAFE_ZONE.xMin}%`,
+                    height: `${SAFE_ZONE.yMax - SAFE_ZONE.yMin}%`,
+                    border: '1px dashed rgba(255,255,255,0.2)',
+                    borderRadius: '2px',
+                    zIndex: 4,
+                    pointerEvents: 'none'
+                  }} />
+                )}
 
                 <p style={{
                   position: 'absolute', bottom: '4px', left: 0, right: 0,
