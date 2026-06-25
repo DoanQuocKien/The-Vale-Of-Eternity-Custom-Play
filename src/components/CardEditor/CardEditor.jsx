@@ -22,6 +22,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   const createNewPack = useAppStore(state => state.createNewPack);
   const activeCard = useAppStore(state => state.activeCard);
   const setActiveCard = useAppStore(state => state.setActiveCard);
+  const tokens = useAppStore(state => state.tokens);
 
   const [loadedCardId, setLoadedCardId] = useState(null);
 
@@ -38,6 +39,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   const [selectedElement, setSelectedElement] = useState('name');
   const [zoomScale, setZoomScale] = useState(0.85);
   const [jsonInput, setJsonInput] = useState('');
+  const [tokenOverlays, setTokenOverlays] = useState([]); // [{instanceId, tokenId, tokenName, cx, cy, size}]
   
   // Expose the current state so parent can handle ArtImporter logic
   // We'll manage artImageData locally but we need the ArtImporter to be aware.
@@ -60,6 +62,7 @@ const CardEditor = ({ onShowArtImporter }) => {
         setBackgroundFamily(activeCard.family || 'Water');
         setArtImageData(activeCard.artImageData || null);
         setLayout(activeCard.layout || DEFAULT_LAYOUT);
+        setTokenOverlays(activeCard.tokenOverlays || []);
         setLoadedCardId(activeCard.id);
       }
     } else if (loadedCardId !== null) {
@@ -71,6 +74,7 @@ const CardEditor = ({ onShowArtImporter }) => {
       setBackgroundFamily(MOCK_PRESETS[0].family);
       setArtImageData(null);
       setLayout(DEFAULT_LAYOUT);
+      setTokenOverlays([]);
       setLoadedCardId(null);
     }
   }, [activeCard, loadedCardId]);
@@ -85,6 +89,7 @@ const CardEditor = ({ onShowArtImporter }) => {
     setBackgroundFamily(preset.family);
     setArtImageData(null);
     setLayout(DEFAULT_LAYOUT);
+    setTokenOverlays([]);
   };
 
   const generateRandomCard = () => {
@@ -103,6 +108,7 @@ const CardEditor = ({ onShowArtImporter }) => {
     setBackgroundFamily(family);
     setArtImageData(null);
     setLayout(DEFAULT_LAYOUT);
+    setTokenOverlays([]);
   };
 
   const handleSaveCard = async (saveAsNew = false) => {
@@ -118,6 +124,7 @@ const CardEditor = ({ onShowArtImporter }) => {
       effect: cardEffectText,
       layout: layout,
       artImageData: artImageData || null,
+      tokenOverlays: tokenOverlays,
       createdAt: isNew ? Date.now() : activeCard.createdAt,
       updatedAt: Date.now()
     };
@@ -390,7 +397,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               boxSizing: 'border-box',
               overflow: 'visible'
             }}>
-              {parseEffectText(text)}
+              {parseEffectText(text, tokens)}
             </div>
           </div>
 
@@ -529,6 +536,53 @@ const CardEditor = ({ onShowArtImporter }) => {
               draggable={false}
             />
           )}
+
+          {/* Token Overlays – rendered above art, below name/effect overlays */}
+          {tokenOverlays.map(ov => {
+            const tok = tokens.find(t => t.id === ov.tokenId);
+            if (!tok || !tok.imageDataUrl) return null;
+            const bbox = tok.bbox;
+            const cW = tok.canvasW || 1728;
+            const cH = tok.canvasH || 2414;
+            const bx = bbox ? bbox.x : 0;
+            const by = bbox ? bbox.y : 0;
+            const bw = bbox ? bbox.w : cW;
+            const bh = bbox ? bbox.h : cH;
+            const aspect = bw / bh;
+            // size is in cqw — that's the height of the cropped image
+            return (
+              <div
+                key={ov.instanceId}
+                style={{
+                  position: 'absolute',
+                  left: `${ov.cx ?? 50}%`,
+                  top: `${ov.cy ?? 50}%`,
+                  width: `${(ov.size ?? 15) * aspect}cqw`,
+                  height: `${ov.size ?? 15}cqw`,
+                  transform: 'translate(-50%, -50%)',
+                  overflow: 'hidden',
+                  pointerEvents: 'none',
+                  zIndex: 2,
+                  userSelect: 'none'
+                }}
+              >
+                <img
+                  src={tok.imageDataUrl}
+                  alt={tok.name}
+                  style={{
+                    position: 'absolute',
+                    width: `${(cW / bw) * 100}%`,
+                    height: 'auto',
+                    left: `${-(bx / bw) * 100}%`,
+                    top: `${-(by / bh) * (bw / bh) * 100}%`,
+                    maxWidth: 'none',
+                    pointerEvents: 'none'
+                  }}
+                  draggable={false}
+                />
+              </div>
+            );
+          })}
 
           {/* Everything Else: Name, Effect, Credit at zIndex: 1 (or 10 if active) */}
           <div 
@@ -995,6 +1049,43 @@ const CardEditor = ({ onShowArtImporter }) => {
                 {t.label}
               </button>
             ))}
+            {/* Token icon insert buttons — one per pack token */}
+            {tokens.length > 0 && (
+              <>
+                <span style={{ fontSize: '0.65rem', color: '#a78bfa', fontWeight: 700, marginLeft: '0.2rem' }}>Tokens:</span>
+                {tokens.map(tok => {
+                  const tagName = tok.name.toLowerCase().replace(/\s+/g, '_');
+                  return (
+                    <button
+                      key={tok.id}
+                      onClick={() => insertTextTag(`\\icon(${tagName})`)}
+                      title={`Insert \\icon(${tagName})`}
+                      style={{
+                        padding: '0.15rem 0.4rem',
+                        background: 'rgba(167,139,250,0.1)',
+                        border: '1px solid #a78bfa',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.7rem',
+                        cursor: 'pointer',
+                        color: '#a78bfa',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.2rem'
+                      }}
+                    >
+                      {tok.imageDataUrl && (
+                        <img
+                          src={tok.imageDataUrl}
+                          alt=""
+                          style={{ height: '1em', width: 'auto', verticalAlign: 'middle' }}
+                        />
+                      )}
+                      {tok.name}
+                    </button>
+                  );
+                })}
+              </>
+            )}
           </div>
 
           <div style={{
@@ -1113,13 +1204,16 @@ const CardEditor = ({ onShowArtImporter }) => {
               { id: 'price', label: 'Cost' },
               { id: 'name', label: 'Title' },
               { id: 'effect', label: 'Effect Box' },
-              { id: 'credit', label: 'Credit' }
+              { id: 'credit', label: 'Credit' },
+              { id: 'tokens', label: '🎴 Tokens' }
             ].map(tab => {
-              const isActive = tab.id === 'price'
-                ? ['priceTL', 'priceBR'].includes(selectedElement)
-                : tab.id === 'effect'
-                  ? ['effect', 'effectIcon'].includes(selectedElement)
-                  : selectedElement === tab.id;
+              const isActive = tab.id === 'tokens'
+                ? selectedElement === 'tokens'
+                : tab.id === 'price'
+                  ? ['priceTL', 'priceBR'].includes(selectedElement)
+                  : tab.id === 'effect'
+                    ? ['effect', 'effectIcon'].includes(selectedElement)
+                    : selectedElement === tab.id;
               return (
                 <button
                   key={tab.id}
@@ -1127,11 +1221,11 @@ const CardEditor = ({ onShowArtImporter }) => {
                   style={{
                     flex: 1,
                     padding: '0.35rem 0.2rem',
-                    background: isActive ? 'var(--color-primary)' : 'transparent',
+                    background: isActive ? (tab.id === 'tokens' ? '#7c3aed' : 'var(--color-primary)') : 'transparent',
                     border: 'none',
                     borderRadius: '4px',
                     color: isActive ? 'white' : 'var(--text-secondary)',
-                    fontSize: '0.7rem',
+                    fontSize: '0.68rem',
                     fontWeight: 600,
                     cursor: 'pointer'
                   }}
@@ -1142,7 +1236,123 @@ const CardEditor = ({ onShowArtImporter }) => {
             })}
           </div>
 
-          {['priceTL', 'priceBR'].includes(selectedElement) ? (
+
+          {selectedElement === 'tokens' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(124,58,237,0.12)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #7c3aed' }}>
+                <span style={{ fontSize: '0.7rem', color: '#a78bfa' }}>🎴 Place token images onto the card. Each instance has its own position and size.</span>
+              </div>
+
+              {/* Token overlay instances list */}
+              {tokenOverlays.length === 0 ? (
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem 0' }}>
+                  No token overlays yet. Add one below.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  {tokenOverlays.map((ov, idx) => {
+                    const tok = tokens.find(t => t.id === ov.tokenId);
+                    return (
+                      <div key={ov.instanceId} style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#a78bfa' }}>{ov.instanceName || ov.tokenName}</span>
+                          <button
+                            onClick={() => setTokenOverlays(prev => prev.filter(o => o.instanceId !== ov.instanceId))}
+                            style={{ padding: '0.2rem 0.4rem', background: 'rgba(239,68,68,0.1)', border: '1px solid var(--color-danger)', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', cursor: 'pointer', color: 'var(--color-danger)' }}
+                          >✕ Remove</button>
+                        </div>
+                        {tok?.imageDataUrl && (
+                          <img src={tok.imageDataUrl} alt={tok.name} style={{ height: '40px', width: 'auto', objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--border-color)' }} />
+                        )}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
+                          {[
+                            { label: 'X (cx %)', key: 'cx', min: -20, max: 120, step: 0.5, val: ov.cx ?? 50 },
+                            { label: 'Y (cy %)', key: 'cy', min: -20, max: 120, step: 0.5, val: ov.cy ?? 50 },
+                            { label: 'Size (cqw)', key: 'size', min: 1, max: 80, step: 0.5, val: ov.size ?? 15 }
+                          ].map(ctrl => (
+                            <div key={ctrl.key}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)', marginBottom: '0.15rem' }}>
+                                <span>{ctrl.label}</span>
+                                <span>{ctrl.val}</span>
+                              </div>
+                              <input
+                                type="number"
+                                min={ctrl.min}
+                                max={ctrl.max}
+                                step={ctrl.step}
+                                value={ctrl.val}
+                                onChange={e => {
+                                  const v = parseFloat(e.target.value);
+                                  setTokenOverlays(prev => prev.map(o => o.instanceId === ov.instanceId ? { ...o, [ctrl.key]: v } : o));
+                                }}
+                                style={{ width: '100%', padding: '0.25rem 0.3rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '0.75rem', color: 'white' }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Add Token section */}
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 600 }}>Add Token to Card</div>
+                {tokens.length === 0 ? (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No tokens in this pack yet. Create tokens in the Tokens Designer tab first.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    {tokens.map(tok => {
+                      const existingCount = tokenOverlays.filter(o => o.tokenId === tok.id).length;
+                      return (
+                        <button
+                          key={tok.id}
+                          onClick={() => {
+                            const normalised = tok.name.toLowerCase().replace(/\s+/g, '_');
+                            const baseName = normalised;
+                            const count = tokenOverlays.filter(o => o.tokenId === tok.id).length;
+                            const instanceName = count === 0 ? baseName : `${baseName}_${count + 1}`;
+                            const newOverlay = {
+                              instanceId: `ovl-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                              tokenId: tok.id,
+                              tokenName: tok.name,
+                              instanceName,
+                              cx: 50,
+                              cy: 50,
+                              size: 15
+                            };
+                            setTokenOverlays(prev => [...prev, newOverlay]);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 0.75rem',
+                            background: 'rgba(124,58,237,0.08)',
+                            border: '1px solid rgba(124,58,237,0.3)',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          {tok.imageDataUrl && (
+                            <img src={tok.imageDataUrl} alt="" style={{ height: '28px', width: 'auto', objectFit: 'contain', borderRadius: '3px' }} />
+                          )}
+                          <div>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#c4b5fd' }}>{tok.name}</div>
+                            {existingCount > 0 && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{existingCount} already placed</div>}
+                          </div>
+                          <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#7c3aed', fontWeight: 700 }}>+ Add</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : ['priceTL', 'priceBR'].includes(selectedElement) ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
                 <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>

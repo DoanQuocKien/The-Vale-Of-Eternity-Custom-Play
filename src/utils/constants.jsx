@@ -241,7 +241,7 @@ export function getTimingIcon(line) {
   return { icon: null, text: cleanLine };
 }
 
-export function parseEffectText(text) {
+export function parseEffectText(text, tokens = []) {
   return (
     <span dangerouslySetInnerHTML={{
       __html: text.replace(/\\icon\((.*?)\)/g, (match, iconName) => {
@@ -265,6 +265,26 @@ export function parseEffectText(text) {
                     <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900; color:white; -webkit-text-stroke: 0.5px black; font-size:0.8em; margin-top:2px;">${parts[1]}</span>
                   </span>`;
         }
+
+        // Check if this matches a custom token (case-insensitive, underscores == spaces)
+        const normalise = (s) => s.toLowerCase().replace(/[\s_]+/g, '_');
+        const matchedToken = tokens.find(t => normalise(t.name) === normalise(parts[0]));
+        if (matchedToken && matchedToken.imageDataUrl) {
+          const bbox = matchedToken.bbox;
+          if (bbox && bbox.w > 0 && bbox.h > 0) {
+            // Render bbox-cropped token image inline
+            // We scale so height = 1.5em. Use a wrapper span with overflow:hidden
+            const aspect = bbox.w / bbox.h;
+            return `<span style="display:inline-block; position:relative; height:1.5em; width:${1.5 * aspect}em; vertical-align:middle; margin:0 0.1em; overflow:hidden; border-radius:2px;">` +
+              `<img src="${matchedToken.imageDataUrl}" ` +
+              `style="position:absolute; height:${(matchedToken.canvasH || bbox.h) / bbox.h * 1.5}em; width:auto; ` +
+              `left:${-(bbox.x / bbox.h) * 1.5}em; top:${-(bbox.y / bbox.h) * 1.5}em; max-width:none;" />` +
+              `</span>`;
+          }
+          // No bbox – just show the full image
+          return `<img src="${matchedToken.imageDataUrl}" style="height: 1.5em; width: auto; vertical-align: middle; margin: 0 0.1em; object-fit: contain;" />`;
+        }
+
         const pathMap = {
           'Stone1': './img/TextIcon/Stone1.png',
           'Stone3': './img/TextIcon/Stone3.png',
@@ -280,3 +300,4 @@ export function parseEffectText(text) {
     }} />
   );
 }
+

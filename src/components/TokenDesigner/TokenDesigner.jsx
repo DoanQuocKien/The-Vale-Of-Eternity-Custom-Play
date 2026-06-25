@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore.js';
-import { 
-  Trash2, Plus, FileText, Camera, Upload, Undo, RotateCcw, 
-  ZoomIn, ZoomOut, Move, Square, Circle as CircleIcon, Type, 
+import {
+  Trash2, Plus, FileText, Camera, Upload, Undo, RotateCcw,
+  ZoomIn, ZoomOut, Move, Square, Circle as CircleIcon, Type,
   Paintbrush, Eraser, Check, Sliders, Settings, Minus
 } from 'lucide-react';
 import { drawShape } from '../../utils/canvasUtils.js';
@@ -154,7 +154,7 @@ function ColorPickerPanel({ color, onChange, label }) {
     }}>
       <style>{colorPickerStyles}</style>
       {label && <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{label}</span>}
-      
+
       {/* Preset Swatches */}
       <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
         {presets.map(p => (
@@ -474,9 +474,6 @@ export default function TokenDesigner({ onShowArtImporter }) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 1. Grid backdrop
-    ctx.fillStyle = '#0b0f19';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     // Grid guide lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 2;
@@ -572,7 +569,32 @@ export default function TokenDesigner({ onShowArtImporter }) {
       setScale(tScale);
       setRotation(tRot);
 
-      // 3. Save to activeToken
+      // 3. Save to activeToken  
+      // First redraw composite with new transforms so bbox scan sees the latest render
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Draw uploaded image with new transforms
+        const uploadCvs = uploadedCanvasRef.current;
+        if (uploadCvs) {
+          ctx.save();
+          ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+          ctx.translate(canvas.width / 2 + tX, canvas.height / 2 + tY);
+          ctx.rotate((tRot * Math.PI) / 180);
+          ctx.scale(tScale, tScale);
+          ctx.drawImage(uploadCvs, -uploadCvs.width / 2, -uploadCvs.height / 2);
+          ctx.restore();
+        }
+        // Draw drawing layer on top
+        const drawCvs = drawingCanvasRef.current;
+        if (drawCvs) ctx.drawImage(drawCvs, 0, 0);
+      }
+
+      const snap = canvasRef.current ? canvasRef.current.toDataURL('image/png') : null;
+      const snapCanvasW = canvasRef.current?.width;
+      const snapCanvasH = canvasRef.current?.height;
+
       const updatedToken = {
         ...activeToken,
         artImageData: {
@@ -584,7 +606,10 @@ export default function TokenDesigner({ onShowArtImporter }) {
         transformX: tX,
         transformY: tY,
         scale: tScale,
-        rotation: tRot
+        rotation: tRot,
+        imageDataUrl: snap,
+        canvasW: snapCanvasW,
+        canvasH: snapCanvasH
       };
       saveToken(updatedToken);
     };
@@ -642,12 +667,49 @@ export default function TokenDesigner({ onShowArtImporter }) {
     }
   };
 
+  // Compute bounding box of non-transparent pixels from the composite canvas
+  const computeBboxAndSnapshot = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { imageDataUrl: null, bbox: null };
+    const ctx = canvas.getContext('2d');
+    const { width, height } = canvas;
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const pixels = imgData.data;
+
+    let minX = width, minY = height, maxX = 0, maxY = 0;
+    let found = false;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = pixels[(y * width + x) * 4 + 3];
+        if (alpha > 8) { // threshold to ignore near-transparent edge fringe
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+          found = true;
+        }
+      }
+    }
+
+    const bbox = found
+      ? { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 }
+      : { x: 0, y: 0, w: width, h: height };
+
+    const imageDataUrl = canvas.toDataURL('image/png');
+    return { imageDataUrl, bbox, canvasW: width, canvasH: height };
+  };
+
   const saveTokenDrawing = () => {
     if (!activeToken || !drawingCanvasRef.current) return;
     const drawingDataUrl = drawingCanvasRef.current.toDataURL('image/png');
+    const { imageDataUrl, bbox, canvasW, canvasH } = computeBboxAndSnapshot();
     saveToken({
       ...activeToken,
       drawingDataUrl,
+      imageDataUrl,
+      bbox,
+      canvasW,
+      canvasH,
       transformX,
       transformY,
       scale,
@@ -664,7 +726,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     // Convert relative viewport click to coordinates in backing canvas (1728 x 2414)
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
@@ -706,7 +768,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
     // Capture pointer to track dragging outside canvas boundary
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
-    } catch (err) {}
+    } catch (err) { }
 
     const isPanAction = panMode || tool === 'none' || e.button === 1 || e.button === 2;
     if (isPanAction) {
@@ -836,7 +898,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
         ctx.stroke();
       }
       ctx.restore();
-      
+
       lastDrawingPos.current = coords;
       redrawComposite();
     }
@@ -845,7 +907,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
   const handlePointerUp = (e) => {
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch (err) {}
+    } catch (err) { }
 
     if (isPanning.current) {
       isPanning.current = false;
@@ -1036,7 +1098,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
             <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', margin: 0 }}>
               Token Settings
             </h4>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Token Name</label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1134,7 +1196,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
             background: 'rgba(5, 8, 20, 0.5)',
             position: 'relative'
           }}>
-            <div 
+            <div
               style={{
                 position: 'relative',
                 width: '400px',
@@ -1307,11 +1369,11 @@ export default function TokenDesigner({ onShowArtImporter }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button
-                        onClick={() => onShowArtImporter({ 
-                          family: 'Water', 
-                          existingArt: activeToken.artImageData.dataUrl, 
+                        onClick={() => onShowArtImporter({
+                          family: 'Water',
+                          existingArt: activeToken.artImageData.dataUrl,
                           existingTransform: activeToken.artImageData.transform,
-                          isTokenMode: true 
+                          isTokenMode: true
                         }, handleTokenArtConfirmed)}
                         style={{
                           flexGrow: 1,
@@ -1361,7 +1423,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
                 {activeToken.artImageData && (
                   <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <h5 style={{ fontSize: '0.8rem', margin: 0, fontWeight: 700 }}>Image Placement Layer transforms</h5>
-                    
+
                     {/* Scale */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
