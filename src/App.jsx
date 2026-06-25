@@ -3,6 +3,7 @@ import CardEditor from './components/CardEditor/CardEditor.jsx';
 import PackExplorer from './components/PackExplorer/PackExplorer.jsx';
 import ExportPdfModal from './components/Export/ExportPdfModal.jsx';
 import ArtImporter from './components/ArtImporter/ArtImporter.jsx';
+import TokenDesigner from './components/TokenDesigner/TokenDesigner.jsx';
 import { useAppStore } from './store/useAppStore.js';
 import { RefreshCw } from 'lucide-react';
 import { MOCK_PRESETS, DEFAULT_LAYOUT } from './utils/constants.jsx';
@@ -191,6 +192,22 @@ export default function App() {
           >
             Pack Explorer
           </button>
+          <button
+            onClick={() => setActiveTab('tokens')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: activeTab === 'tokens' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'tokens' ? '3px solid var(--color-primary)' : '3px solid transparent',
+              color: activeTab === 'tokens' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
+          >
+            Token Designer
+          </button>
         </div>
 
         {activeTab === 'editor' && (
@@ -208,6 +225,10 @@ export default function App() {
             onImportFile={handleImportFile}
             onOpenPdfExport={handleOpenPdfExport}
           />
+        )}
+
+        {activeTab === 'tokens' && (
+          <TokenDesigner />
         )}
       </div>
 

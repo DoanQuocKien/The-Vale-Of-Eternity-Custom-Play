@@ -1,7 +1,7 @@
 import { MOCK_PRESETS, DEFAULT_LAYOUT } from '../utils/constants.jsx';
 
 const DB_NAME = 'ValeOfEternityDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export function openDB() {
   return new Promise((resolve, reject) => {
@@ -14,6 +14,10 @@ export function openDB() {
       if (!db.objectStoreNames.contains('cards')) {
         const cardStore = db.createObjectStore('cards', { keyPath: 'id' });
         cardStore.createIndex('packId', 'packId', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('tokens')) {
+        const tokenStore = db.createObjectStore('tokens', { keyPath: 'id' });
+        tokenStore.createIndex('packId', 'packId', { unique: false });
       }
     };
     request.onsuccess = (e) => resolve(e.target.result);
@@ -48,7 +52,7 @@ export function dbSavePack(pack) {
 export function dbDeletePack(packId) {
   return openDB().then(db => {
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['packs', 'cards'], 'readwrite');
+      const transaction = db.transaction(['packs', 'cards', 'tokens'], 'readwrite');
       
       // Delete pack
       transaction.objectStore('packs').delete(packId);
@@ -58,6 +62,18 @@ export function dbDeletePack(packId) {
       const index = cardStore.index('packId');
       const request = index.openCursor(IDBKeyRange.only(packId));
       request.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+
+      // Delete all tokens in that pack
+      const tokenStore = transaction.objectStore('tokens');
+      const tokenIndex = tokenStore.index('packId');
+      const tokenRequest = tokenIndex.openCursor(IDBKeyRange.only(packId));
+      tokenRequest.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
           cursor.delete();
@@ -102,6 +118,43 @@ export function dbDeleteCard(cardId) {
       const transaction = db.transaction('cards', 'readwrite');
       const store = transaction.objectStore('cards');
       const request = store.delete(cardId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+export function dbGetTokens(packId) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('tokens', 'readonly');
+      const store = transaction.objectStore('tokens');
+      const index = store.index('packId');
+      const request = index.getAll(IDBKeyRange.only(packId));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+export function dbSaveToken(token) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('tokens', 'readwrite');
+      const store = transaction.objectStore('tokens');
+      const request = store.put(token);
+      request.onsuccess = () => resolve(token);
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+export function dbDeleteToken(tokenId) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('tokens', 'readwrite');
+      const store = transaction.objectStore('tokens');
+      const request = store.delete(tokenId);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });

@@ -6,6 +6,9 @@ import {
   dbGetCards, 
   dbSaveCard, 
   dbDeleteCard,
+  dbGetTokens,
+  dbSaveToken,
+  dbDeleteToken,
   DEFAULT_PACK_ID,
   seedDefaultData
 } from '../services/db.js';
@@ -19,9 +22,11 @@ export const useAppStore = create((set, get) => ({
   packs: [],
   activePackId: DEFAULT_PACK_ID,
   explorerCards: [],
+  tokens: [],
   
   // Editor State
   activeCard: null,
+  activeToken: null,
   
   // Actions
   initializeApp: async () => {
@@ -45,6 +50,7 @@ export const useAppStore = create((set, get) => ({
   setActivePackId: async (packId) => {
     set({ activePackId: packId });
     await get().loadExplorerCards(packId);
+    await get().loadTokens(packId);
   },
 
   loadExplorerCards: async (packId) => {
@@ -104,5 +110,68 @@ export const useAppStore = create((set, get) => ({
     if (get().activeCard?.id === cardId) {
       set({ activeCard: null });
     }
+  },
+
+  setActiveToken: (token) => set({ activeToken: token }),
+
+  loadTokens: async (packId) => {
+    const idToLoad = packId || get().activePackId;
+    if (!idToLoad) return [];
+    const tokens = await dbGetTokens(idToLoad);
+    const sorted = tokens.sort((a, b) => b.createdAt - a.createdAt);
+    set({ tokens: sorted });
+    return sorted;
+  },
+
+  saveToken: async (tokenData) => {
+    const tokenToSave = {
+      ...tokenData,
+      updatedAt: Date.now()
+    };
+    if (!tokenToSave.createdAt) tokenToSave.createdAt = Date.now();
+    if (!tokenToSave.id) tokenToSave.id = 'token-' + Date.now();
+
+    await dbSaveToken(tokenToSave);
+    
+    // Refresh tokens list
+    if (get().activePackId === tokenToSave.packId) {
+      await get().loadTokens(get().activePackId);
+    }
+    
+    set({ activeToken: tokenToSave });
+    return tokenToSave;
+  },
+
+  deleteToken: async (tokenId) => {
+    await dbDeleteToken(tokenId);
+    await get().loadTokens(get().activePackId);
+    if (get().activeToken?.id === tokenId) {
+      set({ activeToken: null });
+    }
+  },
+
+  exportToken: async (tokenId, targetPackId) => {
+    const tokens = get().tokens;
+    let tokenToCopy = tokens.find(t => t.id === tokenId);
+    if (!tokenToCopy) {
+      const allTokens = await dbGetTokens(get().activePackId);
+      tokenToCopy = allTokens.find(t => t.id === tokenId);
+    }
+    if (!tokenToCopy) throw new Error('Token not found');
+
+    const copiedToken = {
+      ...tokenToCopy,
+      id: 'token-' + Date.now(),
+      packId: targetPackId,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+
+    await dbSaveToken(copiedToken);
+    
+    if (get().activePackId === targetPackId) {
+      await get().loadTokens(targetPackId);
+    }
+    return copiedToken;
   }
 }));
