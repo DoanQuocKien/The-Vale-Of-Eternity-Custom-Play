@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CardEditor from './components/CardEditor/CardEditor.jsx';
 import PackExplorer from './components/PackExplorer/PackExplorer.jsx';
 import ExportPdfModal from './components/Export/ExportPdfModal.jsx';
+import ExportTokensPdfModal from './components/Export/ExportTokensPdfModal.jsx';
 import ArtImporter from './components/ArtImporter/ArtImporter.jsx';
 import TokenDesigner from './components/TokenDesigner/TokenDesigner.jsx';
 import { useAppStore } from './store/useAppStore.js';
@@ -21,9 +22,13 @@ export default function App() {
   const [pdfExportCards, setPdfExportCards] = useState([]);
   const [pdfExportPackName, setPdfExportPackName] = useState('');
 
+  const [tokensPdfExportIsOpen, setTokensPdfExportIsOpen] = useState(false);
+  const [tokensPdfExportPackName, setTokensPdfExportPackName] = useState('');
+
   const initializeApp = useAppStore(state => state.initializeApp);
   const setActiveCard = useAppStore(state => state.setActiveCard);
   const setActiveToken = useAppStore(state => state.setActiveToken);
+  const tokens = useAppStore(state => state.tokens);
 
   useEffect(() => {
     initializeApp();
@@ -33,6 +38,11 @@ export default function App() {
     setPdfExportCards(cards);
     setPdfExportPackName(packName);
     setPdfExportIsOpen(true);
+  };
+
+  const handleOpenTokensPdfExport = (packName) => {
+    setTokensPdfExportPackName(packName);
+    setTokensPdfExportIsOpen(true);
   };
 
   const handleShowArtImporter = (context, callback) => {
@@ -229,6 +239,7 @@ export default function App() {
             onExportLibrary={exportEntireLibrary}
             onImportFile={handleImportFile}
             onOpenPdfExport={handleOpenPdfExport}
+            onOpenTokensPdfExport={handleOpenTokensPdfExport}
           />
         )}
 
@@ -253,6 +264,13 @@ export default function App() {
         cards={pdfExportCards}
         defaultLayout={DEFAULT_LAYOUT}
         packName={pdfExportPackName}
+      />
+
+      <ExportTokensPdfModal
+        isOpen={tokensPdfExportIsOpen}
+        onClose={() => setTokensPdfExportIsOpen(false)}
+        tokens={tokens}
+        packName={tokensPdfExportPackName}
       />
     </>
   );

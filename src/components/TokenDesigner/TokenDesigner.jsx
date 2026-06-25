@@ -670,10 +670,13 @@ export default function TokenDesigner({ onShowArtImporter }) {
   // Compute bounding box of non-transparent pixels from the composite canvas
   const computeBboxAndSnapshot = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return { imageDataUrl: null, bbox: null };
-    const ctx = canvas.getContext('2d');
-    const { width, height } = canvas;
-    const imgData = ctx.getImageData(0, 0, width, height);
+    const drawCvs = drawingCanvasRef.current; // Get the raw user drawing layer
+    if (!canvas || !drawCvs) return { imageDataUrl: null, bbox: null, croppedDataUrl: null };
+
+    // 💡 FIX: Scan the raw drawing canvas data instead of the dirty editor window canvas
+    const drawCtx = drawCvs.getContext('2d');
+    const { width, height } = drawCvs;
+    const imgData = drawCtx.getImageData(0, 0, width, height);
     const pixels = imgData.data;
 
     let minX = width, minY = height, maxX = 0, maxY = 0;
@@ -681,7 +684,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const alpha = pixels[(y * width + x) * 4 + 3];
-        if (alpha > 8) { // threshold to ignore near-transparent edge fringe
+        if (alpha > 8) {
           if (x < minX) minX = x;
           if (y < minY) minY = y;
           if (x > maxX) maxX = x;
@@ -691,23 +694,43 @@ export default function TokenDesigner({ onShowArtImporter }) {
       }
     }
 
-    const bbox = found
+    // Fallback if the drawing canvas is totally empty
+    let bbox = found
       ? { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 }
       : { x: 0, y: 0, w: width, h: height };
 
+    // If an uploaded art image asset is present, adjust bounds to encompass the full space
+    if (activeToken?.artImageData?.dataUrl) {
+      bbox = { x: 0, y: 0, w: width, h: height };
+    }
+
     const imageDataUrl = canvas.toDataURL('image/png');
-    return { imageDataUrl, bbox, canvasW: width, canvasH: height };
+
+    // Create the clean, perfectly cropped standalone token asset image
+    let croppedDataUrl = imageDataUrl;
+
+    const cropCanvas = document.createElement('canvas');
+    cropCanvas.width = bbox.w;
+    cropCanvas.height = bbox.h;
+    const cropCtx = cropCanvas.getContext('2d');
+
+    // Copy the raw pixels cleanly from the composite canvas into the tight cropped file frame
+    cropCtx.drawImage(canvas, bbox.x, bbox.y, bbox.w, bbox.h, 0, 0, bbox.w, bbox.h);
+    croppedDataUrl = cropCanvas.toDataURL('image/png');
+
+    return { imageDataUrl, bbox, croppedDataUrl, canvasW: width, canvasH: height };
   };
 
   const saveTokenDrawing = () => {
     if (!activeToken || !drawingCanvasRef.current) return;
     const drawingDataUrl = drawingCanvasRef.current.toDataURL('image/png');
-    const { imageDataUrl, bbox, canvasW, canvasH } = computeBboxAndSnapshot();
+    const { imageDataUrl, bbox, croppedDataUrl, canvasW, canvasH } = computeBboxAndSnapshot();
     saveToken({
       ...activeToken,
       drawingDataUrl,
       imageDataUrl,
       bbox,
+      croppedDataUrl,
       canvasW,
       canvasH,
       transformX,

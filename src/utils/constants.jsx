@@ -134,14 +134,14 @@ export const MOCK_PRESETS = [
 
 // Random pool for generator
 export const RANDOM_NAMES = [
-  'Tectonic Behemoth', 'Frost Leviathan', 'Fafnir, Dragon of Greed', 'Eldritch Sprout', 
-  'Ignis Whelpling', 'Zephyr Djinn', 'Abyssal Siren', 'Obsidian Golem', 'Aetherial Phoenix', 
-  'Tidal Serpent', 'Stormcaller Griffin', 'Yggdrasil Treant', 'Void Walker', 'Celestial Kitsune', 
+  'Tectonic Behemoth', 'Frost Leviathan', 'Fafnir, Dragon of Greed', 'Eldritch Sprout',
+  'Ignis Whelpling', 'Zephyr Djinn', 'Abyssal Siren', 'Obsidian Golem', 'Aetherial Phoenix',
+  'Tidal Serpent', 'Stormcaller Griffin', 'Yggdrasil Treant', 'Void Walker', 'Celestial Kitsune',
   'Magma Wyrm', 'Sylph of the Gale', 'Chronos Weaver', 'Kirin of the Peak', 'Cinder Hellhound'
 ];
 export const RANDOM_CREDITS = [
-  'Art by AI Tamer', 'Midjourney v6.0', 'Illustrated by Eric Hong', 'Stable Diffusion XL', 
-  'Artist: Quoc Kien', 'DALL-E 3 Creations', 'Art by Guest Contributor', 'Concept by Studio X', 
+  'Art by AI Tamer', 'Midjourney v6.0', 'Illustrated by Eric Hong', 'Stable Diffusion XL',
+  'Artist: Quoc Kien', 'DALL-E 3 Creations', 'Art by Guest Contributor', 'Concept by Studio X',
   'Designed by Tabletop Master', 'Art by NovelAI'
 ];
 export const RANDOM_EFFECTS = [
@@ -170,7 +170,7 @@ export const COMPONENT_LABELS = {
 export const getResolvedElementLayout = (elementKey, family, layoutState) => {
   const elementLayout = layoutState?.[elementKey];
   if (!elementLayout) return {};
-  
+
   const familySpecificKeys = ['priceTL', 'priceBR', 'credit'];
   if (familySpecificKeys.includes(elementKey)) {
     const familyLayout = elementLayout.families?.[family];
@@ -184,7 +184,7 @@ export const getResolvedElementLayout = (elementKey, family, layoutState) => {
       };
     }
   }
-  
+
   return elementLayout;
 };
 
@@ -192,7 +192,7 @@ export const getResolvedElementLayout = (elementKey, family, layoutState) => {
 export const getPriceColor = (elementKey, family, layoutState) => {
   const elementLayout = layoutState?.[elementKey];
   if (!elementLayout) return '#ffffff';
-  
+
   const defaultColors = {
     Fire: '#ff5a36',   // Bright orange-red
     Water: '#38bdf8',  // Bright sky blue
@@ -208,12 +208,12 @@ export const getPriceColor = (elementKey, family, layoutState) => {
       return colorVal;
     }
   }
-  
+
   // Fallback to legacy single color property if it's not 'default'
   if (elementLayout.color && elementLayout.color !== 'default') {
     return elementLayout.color;
   }
-  
+
   return defaultColors[family] || '#ffffff';
 };
 
@@ -269,20 +269,13 @@ export function parseEffectText(text, tokens = []) {
         // Check if this matches a custom token (case-insensitive, underscores == spaces)
         const normalise = (s) => s.toLowerCase().replace(/[\s_]+/g, '_');
         const matchedToken = tokens.find(t => normalise(t.name) === normalise(parts[0]));
-        if (matchedToken && matchedToken.imageDataUrl) {
-          const bbox = matchedToken.bbox;
-          if (bbox && bbox.w > 0 && bbox.h > 0) {
-            // Render bbox-cropped token image inline
-            // We scale so height = 1.5em. Use a wrapper span with overflow:hidden
-            const aspect = bbox.w / bbox.h;
-            return `<span style="display:inline-block; position:relative; height:1.5em; width:${1.5 * aspect}em; vertical-align:middle; margin:0 0.1em; overflow:hidden; border-radius:2px;">` +
-              `<img src="${matchedToken.imageDataUrl}" ` +
-              `style="position:absolute; height:${(matchedToken.canvasH || bbox.h) / bbox.h * 1.5}em; width:auto; ` +
-              `left:${-(bbox.x / bbox.h) * 1.5}em; top:${-(bbox.y / bbox.h) * 1.5}em; max-width:none;" />` +
-              `</span>`;
+
+        if (matchedToken) {
+          // Use our clean pre-cropped image target if it exists, otherwise fall back to full sheet
+          const srcImage = matchedToken.croppedDataUrl || matchedToken.imageDataUrl;
+          if (srcImage) {
+            return `<img src="${srcImage}" style="height: 1.3em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain;" />`;
           }
-          // No bbox – just show the full image
-          return `<img src="${matchedToken.imageDataUrl}" style="height: 1.5em; width: auto; vertical-align: middle; margin: 0 0.1em; object-fit: contain;" />`;
         }
 
         const pathMap = {

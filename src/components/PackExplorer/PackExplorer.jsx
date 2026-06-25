@@ -3,7 +3,7 @@ import { Plus, Download, Printer, Upload } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore.js';
 import { getPriceColor } from '../../utils/constants.jsx';
 
-const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, onImportFile, onOpenPdfExport }) => {
+const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, onImportFile, onOpenPdfExport, onOpenTokensPdfExport }) => {
   const packs = useAppStore(state => state.packs);
   const activePackId = useAppStore(state => state.activePackId);
   const explorerCards = useAppStore(state => state.explorerCards);
@@ -72,15 +72,12 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
     }
   };
 
+  const renamePack = useAppStore(state => state.renamePack); // Add this hook
+
   const handleRenamePack = async (pack) => {
     const newName = window.prompt('Enter new name for this pack:', pack.name);
     if (newName && newName.trim()) {
-      // Direct call to db or store action. Since rename isn't in store yet, 
-      // we can dispatch a generic action or update the store to handle it.
-      // Wait, we need to update the store with a renamePack action. Let's do it via savePack.
-      const { dbSavePack } = await import('../../services/db.js');
-      await dbSavePack({ ...pack, name: newName.trim() });
-      useAppStore.getState().loadPacks();
+      await renamePack(pack.id, newName.trim());
     }
   };
 
@@ -215,12 +212,42 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
               gap: '0.4rem',
               opacity: (activePackId && explorerCards.length > 0) ? 1 : 0.5,
               boxShadow: (activePackId && explorerCards.length > 0) ? '0 4px 12px rgba(99, 102, 241, 0.2)' : 'none',
+              transition: 'all 0.2s',
+              marginBottom: '0.35rem'
+            }}
+          >
+            <Printer size={13} /> Export Cards to PDF
+          </button>
+
+          <button
+            onClick={() => {
+              const activePack = packs.find(p => p.id === activePackId);
+              const activePackName = activePack ? activePack.name : 'Pack';
+              onOpenTokensPdfExport(activePackName);
+            }}
+            disabled={!activePackId || tokens.length === 0}
+            style={{
+              width: '100%',
+              padding: '0.45rem',
+              borderRadius: 'var(--radius-sm)',
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              border: 'none',
+              cursor: (activePackId && tokens.length > 0) ? 'pointer' : 'not-allowed',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+              opacity: (activePackId && tokens.length > 0) ? 1 : 0.5,
+              boxShadow: (activePackId && tokens.length > 0) ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none',
               transition: 'all 0.2s'
             }}
           >
-            <Printer size={13} /> Export Pack to PDF
+            <Printer size={13} /> Export Tokens to PDF
           </button>
-          
+
           <button
             onClick={onExportLibrary}
             style={{
@@ -273,7 +300,7 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
 
       {/* Right Panel: Card & Token Grid Explorer */}
       <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '600px' }}>
-        
+
         {/* Sub-tab switcher */}
         <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
           {[
@@ -413,8 +440,8 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
           {subTab === 'cards' ? (
             (() => {
               const filtered = explorerCards.filter(c => {
-                const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                    c.effect.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  c.effect.toLowerCase().includes(searchTerm.toLowerCase());
                 const matchesFamily = filterFamily === 'All' || c.family === filterFamily;
                 const matchesCost = filterCost === 'All' || c.cost === filterCost;
                 return matchesSearch && matchesFamily && matchesCost;
@@ -435,9 +462,9 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
               }
 
               return filtered.map(c => (
-                <div 
-                  key={c.id} 
-                  className="glass-panel animate-fade-in" 
+                <div
+                  key={c.id}
+                  className="glass-panel animate-fade-in"
                   style={{
                     padding: '1rem',
                     borderRadius: 'var(--radius-md)',
@@ -588,7 +615,7 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
             })()
           ) : (
             (() => {
-              const filtered = tokens.filter(t => 
+              const filtered = tokens.filter(t =>
                 t.name.toLowerCase().includes(searchTerm.toLowerCase())
               ).sort((a, b) => {
                 if (sortBy === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
@@ -604,9 +631,9 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
               }
 
               return filtered.map(t => (
-                <div 
-                  key={t.id} 
-                  className="glass-panel animate-fade-in" 
+                <div
+                  key={t.id}
+                  className="glass-panel animate-fade-in"
                   style={{
                     padding: '1rem',
                     borderRadius: 'var(--radius-md)',

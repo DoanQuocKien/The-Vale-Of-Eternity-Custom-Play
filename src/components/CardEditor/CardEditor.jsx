@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Sliders, ImagePlus, Trash2, Copy, Download, Upload, Minimize2, Maximize2, HelpCircle, RefreshCw, Settings } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore.js';
-import { 
-  MOCK_PRESETS, 
-  DEFAULT_LAYOUT, 
-  RANDOM_NAMES, 
-  RANDOM_CREDITS, 
-  RANDOM_EFFECTS, 
-  getBackgroundPath, 
-  getTimingIcon, 
-  getPriceColor, 
-  parseEffectText, 
-  getResolvedElementLayout 
+import {
+  MOCK_PRESETS,
+  DEFAULT_LAYOUT,
+  RANDOM_NAMES,
+  RANDOM_CREDITS,
+  RANDOM_EFFECTS,
+  getBackgroundPath,
+  getTimingIcon,
+  getPriceColor,
+  parseEffectText,
+  getResolvedElementLayout
 } from '../../utils/constants.jsx';
 
 const CardEditor = ({ onShowArtImporter }) => {
@@ -40,7 +40,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   const [zoomScale, setZoomScale] = useState(0.85);
   const [jsonInput, setJsonInput] = useState('');
   const [tokenOverlays, setTokenOverlays] = useState([]); // [{instanceId, tokenId, tokenName, cx, cy, size}]
-  
+
   // Expose the current state so parent can handle ArtImporter logic
   // We'll manage artImageData locally but we need the ArtImporter to be aware.
   // We can listen to a custom event or pass down a ref. But for now, we'll assume 
@@ -100,7 +100,7 @@ const CardEditor = ({ onShowArtImporter }) => {
     const effect = RANDOM_EFFECTS[Math.floor(Math.random() * RANDOM_EFFECTS.length)];
     const families = ['Fire', 'Water', 'Earth', 'Wind', 'Dragon'];
     const family = families[Math.floor(Math.random() * families.length)];
-    
+
     setCardName(name);
     setCardCost(cost);
     setCardCredit(credit);
@@ -114,6 +114,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   const handleSaveCard = async (saveAsNew = false) => {
     const isNew = saveAsNew || !activeCard;
     const cardId = isNew ? 'card-' + Date.now() : activeCard.id;
+
     const newCard = {
       id: cardId,
       packId: activePackId,
@@ -124,13 +125,18 @@ const CardEditor = ({ onShowArtImporter }) => {
       effect: cardEffectText,
       layout: layout,
       artImageData: artImageData || null,
-      tokenOverlays: tokenOverlays,
+      tokenOverlays: tokenOverlays, // Stays firmly attached
       createdAt: isNew ? Date.now() : activeCard.createdAt,
       updatedAt: Date.now()
     };
+
     try {
-      await saveCard(newCard);
       setLoadedCardId(cardId);
+
+      setActiveCard(newCard);
+
+      await saveCard(newCard);
+
       alert(isNew ? 'Card saved as new card!' : 'Card updated successfully!');
     } catch (err) {
       alert('Error saving card: ' + err.message);
@@ -140,24 +146,24 @@ const CardEditor = ({ onShowArtImporter }) => {
   const handleDragStart = (e, elementKey) => {
     e.preventDefault();
     setSelectedElement(elementKey);
-    
+
     const cardElement = cardRef.current;
     if (!cardElement) return;
-    
+
     const cardRect = cardElement.getBoundingClientRect();
     const startX = e.clientX;
     const startY = e.clientY;
-    
+
     const currentLayout = getResolvedElementLayout(elementKey, backgroundFamily, layout);
     const startLeft = currentLayout.left ?? 0;
     const startTop = currentLayout.top ?? 0;
-    
+
     const handleDragMove = (moveEvent) => {
       if (elementKey === 'effectIcon') {
         const cqwPx = cardRect.width / 100;
         const deltaX = (moveEvent.clientX - startX) / cqwPx;
         const deltaY = (moveEvent.clientY - startY) / cqwPx;
-        
+
         setLayout(prev => ({
           ...prev,
           effectIcon: {
@@ -168,15 +174,15 @@ const CardEditor = ({ onShowArtImporter }) => {
         }));
         return;
       }
-      
+
       const familySpecificKeys = ['priceTL', 'priceBR', 'credit'];
       if (familySpecificKeys.includes(elementKey)) {
         const deltaX = moveEvent.clientX - startX;
         const deltaY = moveEvent.clientY - startY;
-        
+
         const percentDeltaX = (deltaX / cardRect.width) * 100;
         const percentDeltaY = (deltaY / cardRect.height) * 100;
-        
+
         const percentX = parseFloat(Math.max(0, Math.min(100, startLeft + percentDeltaX)).toFixed(1));
         const percentY = parseFloat(Math.max(0, Math.min(100, startTop + percentDeltaY)).toFixed(1));
 
@@ -206,13 +212,13 @@ const CardEditor = ({ onShowArtImporter }) => {
         });
         return;
       }
-      
+
       const deltaX = moveEvent.clientX - cardRect.left;
       const deltaY = moveEvent.clientY - cardRect.top;
-      
+
       const percentX = parseFloat(Math.max(0, Math.min(100, (deltaX / cardRect.width) * 100)).toFixed(1));
       const percentY = parseFloat(Math.max(0, Math.min(100, (deltaY / cardRect.height) * 100)).toFixed(1));
-      
+
       setLayout(prev => ({
         ...prev,
         [elementKey]: {
@@ -222,12 +228,12 @@ const CardEditor = ({ onShowArtImporter }) => {
         }
       }));
     };
-    
+
     const handleDragEnd = () => {
       document.removeEventListener('mousemove', handleDragMove);
       document.removeEventListener('mouseup', handleDragEnd);
     };
-    
+
     document.addEventListener('mousemove', handleDragMove);
     document.addEventListener('mouseup', handleDragEnd);
   };
@@ -236,7 +242,7 @@ const CardEditor = ({ onShowArtImporter }) => {
     setLayout(prev => {
       const selected = prev[elementKey];
       const familySpecificKeys = ['priceTL', 'priceBR', 'credit'];
-      
+
       if (familySpecificKeys.includes(elementKey)) {
         if (key === 'color') {
           const currentColors = selected.colors || {
@@ -258,7 +264,7 @@ const CardEditor = ({ onShowArtImporter }) => {
             }
           };
         }
-        
+
         const currentFamilies = selected.families || {};
         const activeFamilyLayout = currentFamilies[backgroundFamily] || {
           left: selected.left,
@@ -266,7 +272,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           fontSize: selected.fontSize,
           width: selected.width
         };
-        
+
         return {
           ...prev,
           [elementKey]: {
@@ -308,7 +314,7 @@ const CardEditor = ({ onShowArtImporter }) => {
             gap: parsed.effect?.iconGap ?? 1.5
           };
         }
-        
+
         const familiesList = ['Fire', 'Water', 'Earth', 'Wind', 'Dragon'];
         ['priceTL', 'priceBR', 'credit'].forEach(key => {
           if (parsed[key] && !parsed[key].families) {
@@ -349,7 +355,7 @@ const CardEditor = ({ onShowArtImporter }) => {
 
   const renderEffectPanels = () => {
     const lines = cardEffectText.split('\n');
-    
+
     const iconSize = layout.effectIcon?.size ?? layout.effect?.iconSize ?? 6.0;
     const iconOffset = layout.effectIcon?.top ?? layout.effect?.iconOffset ?? 0.2;
     const iconLeft = layout.effectIcon?.left ?? 0;
@@ -363,9 +369,9 @@ const CardEditor = ({ onShowArtImporter }) => {
 
     return lines.map((line, idx) => {
       if (!line.trim()) return null;
-      
+
       const { icon, text } = getTimingIcon(line);
-      
+
       return (
         <div key={idx} style={{
           position: 'relative',
@@ -402,9 +408,9 @@ const CardEditor = ({ onShowArtImporter }) => {
           </div>
 
           {icon && (
-            <img 
-              src={icon} 
-              alt="Timing" 
+            <img
+              src={icon}
+              alt="Timing"
               onMouseDown={(e) => {
                 e.stopPropagation();
                 handleDragStart(e, 'effectIcon');
@@ -467,7 +473,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           border: '1px solid var(--border-color)',
           zIndex: 10
         }}>
-          <button 
+          <button
             onClick={() => setZoomScale(s => Math.max(0.5, s - 0.05))}
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
@@ -476,7 +482,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           <span style={{ fontSize: '0.8rem', width: '35px', textAlign: 'center', fontWeight: 600 }}>
             {Math.round(zoomScale * 100)}%
           </span>
-          <button 
+          <button
             onClick={() => setZoomScale(s => Math.min(1.5, s + 0.05))}
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
@@ -497,7 +503,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           <HelpCircle size={14} /> Drag elements directly on the card to reposition them.
         </div>
 
-        <div 
+        <div
           ref={cardRef}
           style={{
             position: 'relative',
@@ -513,9 +519,9 @@ const CardEditor = ({ onShowArtImporter }) => {
             containerType: 'inline-size'
           }}
         >
-          <img 
-            src={getBackgroundPath(backgroundFamily)} 
-            alt="Card Background" 
+          <img
+            src={getBackgroundPath(backgroundFamily)}
+            alt="Card Background"
             style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', zIndex: 0 }}
           />
 
@@ -540,42 +546,46 @@ const CardEditor = ({ onShowArtImporter }) => {
           {/* Token Overlays – rendered above art, below name/effect overlays */}
           {tokenOverlays.map(ov => {
             const tok = tokens.find(t => t.id === ov.tokenId);
-            if (!tok || !tok.imageDataUrl) return null;
-            const bbox = tok.bbox;
-            const cW = tok.canvasW || 1728;
-            const cH = tok.canvasH || 2414;
-            const bx = bbox ? bbox.x : 0;
-            const by = bbox ? bbox.y : 0;
-            const bw = bbox ? bbox.w : cW;
-            const bh = bbox ? bbox.h : cH;
-            const aspect = bw / bh;
-            // size is in cqw — that's the height of the cropped image
+            const srcImage = tok?.croppedDataUrl || tok?.imageDataUrl;
+            if (!tok || !srcImage) return null;
+            const bboxW = tok.bbox && typeof tok.bbox.w === 'number' ? tok.bbox.w : null;
+            const bboxH = tok.bbox && typeof tok.bbox.h === 'number' ? tok.bbox.h : null;
+
+            const bw = bboxW !== null ? bboxW : (tok.canvasW || 1728);
+            const bh = bboxH !== null ? bboxH : (tok.canvasH || 2414);
+
+            // If the math values are still somehow zero or corrupted, fallback to standard card proportions
+            let aspect = 1728 / 2414;
+            if (bw > 0 && bh > 0) {
+              aspect = bw / bh;
+            }
+
+            const overlaySize = ov.size && !isNaN(ov.size) ? ov.size : 15;
+            const cx = ov.cx && !isNaN(ov.cx) ? ov.cx : 50;
+            const cy = ov.cy && !isNaN(ov.cy) ? ov.cy : 50;
+
             return (
               <div
                 key={ov.instanceId}
                 style={{
                   position: 'absolute',
-                  left: `${ov.cx ?? 50}%`,
-                  top: `${ov.cy ?? 50}%`,
-                  width: `${(ov.size ?? 15) * aspect}cqw`,
-                  height: `${ov.size ?? 15}cqw`,
+                  left: `${cx}%`,
+                  top: `${cy}%`,
+                  width: `${overlaySize * aspect}cqw`,
+                  height: `${overlaySize}cqw`,
                   transform: 'translate(-50%, -50%)',
-                  overflow: 'hidden',
                   pointerEvents: 'none',
                   zIndex: 2,
                   userSelect: 'none'
                 }}
               >
                 <img
-                  src={tok.imageDataUrl}
+                  src={srcImage}
                   alt={tok.name}
                   style={{
-                    position: 'absolute',
-                    width: `${(cW / bw) * 100}%`,
-                    height: 'auto',
-                    left: `${-(bx / bw) * 100}%`,
-                    top: `${-(by / bh) * (bw / bh) * 100}%`,
-                    maxWidth: 'none',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
                     pointerEvents: 'none'
                   }}
                   draggable={false}
@@ -585,7 +595,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           })}
 
           {/* Everything Else: Name, Effect, Credit at zIndex: 1 (or 10 if active) */}
-          <div 
+          <div
             onMouseDown={(e) => handleDragStart(e, 'name')}
             style={{
               position: 'absolute',
@@ -611,7 +621,7 @@ const CardEditor = ({ onShowArtImporter }) => {
             {cardName}
           </div>
 
-          <div 
+          <div
             onMouseDown={(e) => handleDragStart(e, 'effect')}
             style={{
               position: 'absolute',
@@ -632,7 +642,7 @@ const CardEditor = ({ onShowArtImporter }) => {
             {renderEffectPanels()}
           </div>
 
-          <div 
+          <div
             onMouseDown={(e) => handleDragStart(e, 'credit')}
             style={{
               position: 'absolute',
@@ -657,9 +667,9 @@ const CardEditor = ({ onShowArtImporter }) => {
           </div>
 
           {/* Card Layout Border at zIndex: 2 */}
-          <img 
-            src="./img/Layout/CardLayout.png" 
-            alt="Card Layout Border" 
+          <img
+            src="./img/Layout/CardLayout.png"
+            alt="Card Layout Border"
             style={{
               position: 'absolute',
               inset: 0,
@@ -672,7 +682,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           />
 
           {/* Price tags (Summoning Cost) at zIndex: 3 (or 10 if active) */}
-          <div 
+          <div
             onMouseDown={(e) => handleDragStart(e, 'priceTL')}
             style={{
               position: 'absolute',
@@ -695,7 +705,7 @@ const CardEditor = ({ onShowArtImporter }) => {
             {cardCost}
           </div>
 
-          <div 
+          <div
             onMouseDown={(e) => handleDragStart(e, 'priceBR')}
             style={{
               position: 'absolute',
@@ -760,7 +770,7 @@ const CardEditor = ({ onShowArtImporter }) => {
 
       {/* RIGHT COMPONENT: Calibration Settings Sidebar */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        
+
         {/* Section 1: Template and Text Inputs */}
         <div className="glass-panel" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
@@ -912,7 +922,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               )}
             </div>
           </div>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <div>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Family</label>
@@ -1116,7 +1126,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                   ))}
                 </select>
               </div>
-              
+
               <div style={{ alignSelf: 'end' }}>
                 <button
                   onClick={async () => {
@@ -1205,7 +1215,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               { id: 'name', label: 'Title' },
               { id: 'effect', label: 'Effect Box' },
               { id: 'credit', label: 'Credit' },
-              { id: 'tokens', label: '🎴 Tokens' }
+              { id: 'tokens', label: 'Tokens' }
             ].map(tab => {
               const isActive = tab.id === 'tokens'
                 ? selectedElement === 'tokens'
@@ -1240,7 +1250,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           {selectedElement === 'tokens' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(124,58,237,0.12)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #7c3aed' }}>
-                <span style={{ fontSize: '0.7rem', color: '#a78bfa' }}>🎴 Place token images onto the card. Each instance has its own position and size.</span>
+                <span style={{ fontSize: '0.7rem', color: '#a78bfa' }}>Place token images onto the card. Each instance has its own position and size.</span>
               </div>
 
               {/* Token overlay instances list */}
@@ -1268,7 +1278,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                           {[
                             { label: 'X (cx %)', key: 'cx', min: -20, max: 120, step: 0.5, val: ov.cx ?? 50 },
                             { label: 'Y (cy %)', key: 'cy', min: -20, max: 120, step: 0.5, val: ov.cy ?? 50 },
-                            { label: 'Size (cqw)', key: 'size', min: 1, max: 80, step: 0.5, val: ov.size ?? 15 }
+                            { label: 'Size (cqw)', key: 'size', min: 1, max: 80, step: 0.5, val: ov.size ?? 100 }
                           ].map(ctrl => (
                             <div key={ctrl.key}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)', marginBottom: '0.15rem' }}>
@@ -1408,7 +1418,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                   <span>Top-Left Cost Tag</span>
                   {selectedElement === 'priceTL' && <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600 }}>● Editing</span>}
                 </h4>
-                
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
@@ -1464,7 +1474,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                   <span>Bottom-Right Cost Tag</span>
                   {selectedElement === 'priceBR' && <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600 }}>● Editing</span>}
                 </h4>
-                
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
@@ -1524,7 +1534,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                         <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>
                       </div>
                     )}
-                    
+
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
                         <span>Left Position (X)</span>
@@ -1688,7 +1698,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                   />
                 </div>
               </div>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
@@ -1724,7 +1734,7 @@ const CardEditor = ({ onShowArtImporter }) => {
 
               <div style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0', paddingTop: '0.5rem' }}>
                 <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Timing Icon Properties</h4>
-                
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
@@ -1800,7 +1810,7 @@ const CardEditor = ({ onShowArtImporter }) => {
 
               <div style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0', paddingTop: '0.5rem' }}>
                 <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Internal Text Properties</h4>
-                
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>

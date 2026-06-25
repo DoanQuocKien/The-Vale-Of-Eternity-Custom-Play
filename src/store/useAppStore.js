@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { 
-  dbGetPacks, 
-  dbSavePack, 
-  dbDeletePack, 
-  dbGetCards, 
-  dbSaveCard, 
+import {
+  dbGetPacks,
+  dbSavePack,
+  dbDeletePack,
+  dbGetCards,
+  dbSaveCard,
   dbDeleteCard,
   dbGetTokens,
   dbSaveToken,
@@ -23,11 +23,11 @@ export const useAppStore = create((set, get) => ({
   activePackId: DEFAULT_PACK_ID,
   explorerCards: [],
   tokens: [],
-  
+
   // Editor State
   activeCard: null,
   activeToken: null,
-  
+
   // Actions
   initializeApp: async () => {
     await seedDefaultData();
@@ -94,12 +94,12 @@ export const useAppStore = create((set, get) => ({
     if (!cardToSave.id) cardToSave.id = 'card-' + Date.now();
 
     await dbSaveCard(cardToSave);
-    
+
     // Refresh explorer if we are viewing the pack this card belongs to
     if (get().activePackId === cardToSave.packId) {
       await get().loadExplorerCards(get().activePackId);
     }
-    
+
     set({ activeCard: cardToSave });
     return cardToSave;
   },
@@ -132,12 +132,12 @@ export const useAppStore = create((set, get) => ({
     if (!tokenToSave.id) tokenToSave.id = 'token-' + Date.now();
 
     await dbSaveToken(tokenToSave);
-    
+
     // Refresh tokens list
     if (get().activePackId === tokenToSave.packId) {
       await get().loadTokens(get().activePackId);
     }
-    
+
     set({ activeToken: tokenToSave });
     return tokenToSave;
   },
@@ -168,10 +168,20 @@ export const useAppStore = create((set, get) => ({
     };
 
     await dbSaveToken(copiedToken);
-    
+
     if (get().activePackId === targetPackId) {
       await get().loadTokens(targetPackId);
     }
     return copiedToken;
+  },
+
+  renamePack: async (packId, newName) => {
+    const { dbSavePack } = await import('../services/db.js');
+
+    // Update DB entry
+    await dbSavePack({ id: packId, name: newName });
+
+    // Refresh internal data arrays to trigger a clean top-level UI redraw
+    await get().loadPacks();
   }
 }));

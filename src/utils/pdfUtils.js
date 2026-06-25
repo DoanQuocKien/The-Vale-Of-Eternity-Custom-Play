@@ -112,3 +112,88 @@ export async function generatePdfFromElements({
   const fileName = packName ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_pack.pdf` : 'custom_cards.pdf';
   pdf.save(fileName);
 }
+
+export async function generatePdfForTokens({
+  tokens,
+  quantities,
+  baseSize,
+  spacing,
+  packName,
+  onProgress
+}) {
+  onProgress('Preparing tokens...');
+
+  // Wait for assets/fonts to be ready
+  await document.fonts.ready;
+
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const margin = 15;
+  const gap = spacing;
+  let x = margin;
+  let y = margin;
+  let currentRowHeight = 0;
+
+  const printItems = [];
+  tokens.forEach(tok => {
+    const qty = quantities[tok.id] || 0;
+    for (let k = 0; k < qty; k++) {
+      printItems.push(tok);
+    }
+  });
+
+  if (printItems.length === 0) {
+    onProgress('No tokens to print.');
+    return;
+  }
+
+  for (let i = 0; i < printItems.length; i++) {
+    const tok = printItems[i];
+    onProgress(`Adding token ${i + 1} of ${printItems.length}...`);
+
+    // Get bounding box dimensions relative to canvas (512 x 512 default)
+    const bbox = tok.bbox || { x: 0, y: 0, w: 512, h: 512 };
+    const canvasW = tok.canvasW || 512;
+    const canvasH = tok.canvasH || 512;
+
+    const w_mm = (bbox.w / canvasW) * baseSize;
+    const h_mm = (bbox.h / canvasH) * baseSize;
+
+    // Check wrapping horizontally
+    if (x + w_mm + margin > 210) {
+      x = margin;
+      y = y + currentRowHeight + gap;
+      currentRowHeight = 0;
+    }
+
+    // Check wrapping vertically (new page)
+    if (y > margin && y + h_mm + margin > 297) {
+      pdf.addPage();
+      x = margin;
+      y = margin;
+      currentRowHeight = 0;
+    }
+
+    const srcImage = tok.croppedDataUrl || tok.imageDataUrl;
+    if (srcImage) {
+      pdf.addImage(srcImage, 'PNG', x, y, w_mm, h_mm);
+    }
+
+    // Draw light grey cutting guide border around bounding box
+    pdf.setDrawColor(220, 220, 220);
+    pdf.setLineWidth(0.05);
+    pdf.rect(x, y, w_mm, h_mm);
+
+    x += w_mm + gap;
+    currentRowHeight = Math.max(currentRowHeight, h_mm);
+  }
+
+  onProgress('Saving PDF...');
+  const fileName = packName ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_tokens.pdf` : 'custom_tokens.pdf';
+  pdf.save(fileName);
+}
+
