@@ -133,36 +133,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
         />
       )}
 
-      <div style={{
-        position: 'absolute',
-        left: `${resolvedPriceTL.left}%`,
-        top: `${resolvedPriceTL.top}%`,
-        fontSize: `${resolvedPriceTL.fontSize}cqw`,
-        fontFamily: 'var(--font-price)',
-        color: priceColorTL,
-        lineHeight: 1,
-        transform: 'translate(-50%, -50%)',
-        zIndex: 2,
-        textShadow: '0 2px 4px rgba(0,0,0,0.8)'
-      }}>
-        {cost}
-      </div>
-
-      <div style={{
-        position: 'absolute',
-        left: `${resolvedPriceBR.left}%`,
-        top: `${resolvedPriceBR.top}%`,
-        fontSize: `${resolvedPriceBR.fontSize}cqw`,
-        fontFamily: 'var(--font-price)',
-        color: priceColorBR,
-        lineHeight: 1,
-        transform: 'translate(-50%, -50%)',
-        zIndex: 2,
-        textShadow: '0 2px 4px rgba(0,0,0,0.8)'
-      }}>
-        {cost}
-      </div>
-
+      {/* Everything Else (Name, Effect, Credit) at zIndex: 1 */}
       <div style={{
         position: 'absolute',
         left: `${cardLayout.name.left}%`,
@@ -173,7 +144,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
         color: cardLayout.name.color,
         textAlign: 'center',
         transform: 'translate(0, -50%)',
-        zIndex: 2,
+        zIndex: 1,
         letterSpacing: '0.02em',
         textShadow: '0 2px 8px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 0, 0, 0.7)'
       }}>
@@ -185,7 +156,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
         left: `${cardLayout.effect.left}%`,
         top: `${cardLayout.effect.top}%`,
         width: `${cardLayout.effect.width}%`,
-        zIndex: 2,
+        zIndex: 1,
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box'
@@ -203,11 +174,95 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
         color: getPriceColor('credit', family, cardLayout),
         textAlign: 'center',
         transform: 'translate(0, -50%)',
-        zIndex: 2,
+        zIndex: 1,
         textShadow: '0 1px 3px rgba(0,0,0,0.8)'
       }}>
         {credit}
       </div>
+
+      {/* Card Layout Border at zIndex: 2 */}
+      <img 
+        src="./img/Layout/CardLayout.png" 
+        alt="Card Layout Border" 
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          position: 'absolute',
+          inset: 0,
+          zIndex: 2,
+          pointerEvents: 'none'
+        }}
+      />
+
+      {/* Price tag (Summoning Cost) at zIndex: 3 */}
+      <div style={{
+        position: 'absolute',
+        left: `${resolvedPriceTL.left}%`,
+        top: `${resolvedPriceTL.top}%`,
+        fontSize: `${resolvedPriceTL.fontSize}cqw`,
+        fontFamily: 'var(--font-price)',
+        color: priceColorTL,
+        lineHeight: 1,
+        transform: 'translate(-50%, -50%)',
+        zIndex: 3,
+        textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+      }}>
+        {cost}
+      </div>
+
+      <div style={{
+        position: 'absolute',
+        left: `${resolvedPriceBR.left}%`,
+        top: `${resolvedPriceBR.top}%`,
+        fontSize: `${resolvedPriceBR.fontSize}cqw`,
+        fontFamily: 'var(--font-price)',
+        color: priceColorBR,
+        lineHeight: 1,
+        transform: 'translate(-50%, -50%)',
+        zIndex: 3,
+        textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+      }}>
+        {cost}
+      </div>
+
+      {/* Family Emblem - Top-Left at zIndex: 4 */}
+      <img
+        src={`./img/TextIcon/${family}.png`}
+        alt={`${family} Emblem TL`}
+        style={{
+          position: 'absolute',
+          left: '8.45%',
+          top: '6.46%',
+          width: '11.91cqw',
+          height: '11.91cqw',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 4,
+          borderRadius: '50%',
+          border: '1.5px solid rgba(0, 0, 0, 0.3)',
+          boxSizing: 'border-box',
+          pointerEvents: 'none'
+        }}
+      />
+
+      {/* Family Emblem - Bottom-Right at zIndex: 4 */}
+      <img
+        src={`./img/TextIcon/${family}.png`}
+        alt={`${family} Emblem BR`}
+        style={{
+          position: 'absolute',
+          left: '90.97%',
+          top: '93.54%',
+          width: '9.84cqw',
+          height: '9.84cqw',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 4,
+          borderRadius: '50%',
+          border: '1.5px solid rgba(0, 0, 0, 0.3)',
+          boxSizing: 'border-box',
+          pointerEvents: 'none'
+        }}
+      />
     </div>
   );
 });

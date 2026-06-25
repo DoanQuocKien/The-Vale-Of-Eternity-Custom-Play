@@ -23,7 +23,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
         elements: refs.current,
         cards,
         includeBackside,
-        backsideImgDataUrl: './img/Backside/Backside.png', // This will be loaded relative to index.html in Electron
+        backsideImgDataUrl: './img/Layout/Backside.png', // This will be loaded relative to index.html in Electron
         packName,
         onProgress: (prog, tot, text) => {
           setProgress(prog);

@@ -220,13 +220,13 @@ export const getPriceColor = (elementKey, family, layoutState) => {
 // Global helper to convert background elements to matching template paths
 export const getBackgroundPath = (family) => {
   const mapping = {
-    Fire: 'FireCard.png',
-    Water: 'WaterCard.png',
-    Earth: 'EarthCard.png',
-    Wind: 'AirCard.png',
-    Dragon: 'DragonCard.png'
+    Fire: 'FireBackground.png',
+    Water: 'WaterBackground.png',
+    Earth: 'EarthBackground.png',
+    Wind: 'AirBackground.png',
+    Dragon: 'DragonBackground.png'
   };
-  return `./img/Background/${mapping[family] || 'WaterCard.png'}`;
+  return `./img/Background/${mapping[family] || 'WaterBackground.png'}`;
 };
 
 export function getTimingIcon(line) {

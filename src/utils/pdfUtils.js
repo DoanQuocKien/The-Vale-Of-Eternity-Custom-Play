@@ -24,7 +24,7 @@ export async function generatePdfFromElements({
       img.crossOrigin = 'anonymous';
       img.onload = () => resolve(img);
       img.onerror = reject;
-      img.src = backsideImgDataUrl || './img/Backside/Backside.png';
+      img.src = backsideImgDataUrl || './img/Layout/Backside.png';
     });
   }
 

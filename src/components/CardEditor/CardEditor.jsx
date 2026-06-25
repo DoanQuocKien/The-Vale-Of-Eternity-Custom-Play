@@ -509,7 +509,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           <img 
             src={getBackgroundPath(backgroundFamily)} 
             alt="Card Background" 
-            style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', zIndex: 0 }}
           />
 
           {artImageData?.dataUrl && (
@@ -530,52 +530,7 @@ const CardEditor = ({ onShowArtImporter }) => {
             />
           )}
 
-          <div 
-            onMouseDown={(e) => handleDragStart(e, 'priceTL')}
-            style={{
-              position: 'absolute',
-              left: `${resolvedPriceTL.left}%`,
-              top: `${resolvedPriceTL.top}%`,
-              fontSize: `${resolvedPriceTL.fontSize}cqw`,
-              fontFamily: 'var(--font-price)',
-              color: getPriceColor('priceTL', backgroundFamily, layout),
-              lineHeight: 1,
-              cursor: 'move',
-              userSelect: 'none',
-              padding: '4px',
-              border: selectedElement === 'priceTL' ? '1.5px dashed var(--color-primary)' : '1.5px dashed transparent',
-              borderRadius: '4px',
-              transform: 'translate(-50%, -50%)',
-              zIndex: selectedElement === 'priceTL' ? 10 : 2,
-              textShadow: '0 2px 4px rgba(0,0,0,0.8)'
-            }}
-          >
-            {cardCost}
-          </div>
-
-          <div 
-            onMouseDown={(e) => handleDragStart(e, 'priceBR')}
-            style={{
-              position: 'absolute',
-              left: `${resolvedPriceBR.left}%`,
-              top: `${resolvedPriceBR.top}%`,
-              fontSize: `${resolvedPriceBR.fontSize}cqw`,
-              fontFamily: 'var(--font-price)',
-              color: getPriceColor('priceBR', backgroundFamily, layout),
-              lineHeight: 1,
-              cursor: 'move',
-              userSelect: 'none',
-              padding: '4px',
-              border: selectedElement === 'priceBR' ? '1.5px dashed var(--color-primary)' : '1.5px dashed transparent',
-              borderRadius: '4px',
-              transform: 'translate(-50%, -50%)',
-              zIndex: selectedElement === 'priceBR' ? 10 : 2,
-              textShadow: '0 2px 4px rgba(0,0,0,0.8)'
-            }}
-          >
-            {cardCost}
-          </div>
-
+          {/* Everything Else: Name, Effect, Credit at zIndex: 1 (or 10 if active) */}
           <div 
             onMouseDown={(e) => handleDragStart(e, 'name')}
             style={{
@@ -594,7 +549,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               border: selectedElement === 'name' ? '1.5px dashed var(--color-primary)' : '1.5px dashed transparent',
               borderRadius: '4px',
               transform: 'translate(0, -50%)',
-              zIndex: selectedElement === 'name' ? 10 : 2,
+              zIndex: 1,
               letterSpacing: '0.02em',
               textShadow: '0 2px 8px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 0, 0, 0.7)'
             }}
@@ -614,7 +569,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               padding: '0px',
               border: selectedElement === 'effect' ? '1.5px dashed var(--color-primary)' : '1.5px dashed transparent',
               borderRadius: '8px',
-              zIndex: selectedElement === 'effect' ? 10 : 2,
+              zIndex: 1,
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box'
@@ -640,12 +595,112 @@ const CardEditor = ({ onShowArtImporter }) => {
               border: selectedElement === 'credit' ? '1.5px dashed var(--color-primary)' : '1.5px dashed transparent',
               borderRadius: '4px',
               transform: 'translate(0, -50%)',
-              zIndex: selectedElement === 'credit' ? 10 : 2,
+              zIndex: 1,
               textShadow: '0 1px 3px rgba(0,0,0,0.8)'
             }}
           >
             {cardCredit}
           </div>
+
+          {/* Card Layout Border at zIndex: 2 */}
+          <img 
+            src="./img/Layout/CardLayout.png" 
+            alt="Card Layout Border" 
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              pointerEvents: 'none',
+              zIndex: 2
+            }}
+          />
+
+          {/* Price tags (Summoning Cost) at zIndex: 3 (or 10 if active) */}
+          <div 
+            onMouseDown={(e) => handleDragStart(e, 'priceTL')}
+            style={{
+              position: 'absolute',
+              left: `${resolvedPriceTL.left}%`,
+              top: `${resolvedPriceTL.top}%`,
+              fontSize: `${resolvedPriceTL.fontSize}cqw`,
+              fontFamily: 'var(--font-price)',
+              color: getPriceColor('priceTL', backgroundFamily, layout),
+              lineHeight: 1,
+              cursor: 'move',
+              userSelect: 'none',
+              padding: '4px',
+              border: selectedElement === 'priceTL' ? '1.5px dashed var(--color-primary)' : '1.5px dashed transparent',
+              borderRadius: '4px',
+              transform: 'translate(-50%, -50%)',
+              zIndex: selectedElement === 'priceTL' ? 10 : 3,
+              textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+            }}
+          >
+            {cardCost}
+          </div>
+
+          <div 
+            onMouseDown={(e) => handleDragStart(e, 'priceBR')}
+            style={{
+              position: 'absolute',
+              left: `${resolvedPriceBR.left}%`,
+              top: `${resolvedPriceBR.top}%`,
+              fontSize: `${resolvedPriceBR.fontSize}cqw`,
+              fontFamily: 'var(--font-price)',
+              color: getPriceColor('priceBR', backgroundFamily, layout),
+              lineHeight: 1,
+              cursor: 'move',
+              userSelect: 'none',
+              padding: '4px',
+              border: selectedElement === 'priceBR' ? '1.5px dashed var(--color-primary)' : '1.5px dashed transparent',
+              borderRadius: '4px',
+              transform: 'translate(-50%, -50%)',
+              zIndex: selectedElement === 'priceBR' ? 10 : 3,
+              textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+            }}
+          >
+            {cardCost}
+          </div>
+
+          {/* Family Emblem - Top-Left at zIndex: 4 */}
+          <img
+            src={`./img/TextIcon/${backgroundFamily}.png`}
+            alt={`${backgroundFamily} Emblem TL`}
+            style={{
+              position: 'absolute',
+              left: '8.45%',
+              top: '6.46%',
+              width: '11.91cqw',
+              height: '11.91cqw',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 4,
+              borderRadius: '50%',
+              border: '1.5px solid rgba(0, 0, 0, 0.3)',
+              boxSizing: 'border-box',
+              pointerEvents: 'none'
+            }}
+          />
+
+          {/* Family Emblem - Bottom-Right at zIndex: 4 */}
+          <img
+            src={`./img/TextIcon/${backgroundFamily}.png`}
+            alt={`${backgroundFamily} Emblem BR`}
+            style={{
+              position: 'absolute',
+              left: '90.97%',
+              top: '93.54%',
+              width: '9.84cqw',
+              height: '9.84cqw',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 4,
+              borderRadius: '50%',
+              border: '1.5px solid rgba(0, 0, 0, 0.3)',
+              boxSizing: 'border-box',
+              pointerEvents: 'none'
+            }}
+          />
         </div>
       </div>
 

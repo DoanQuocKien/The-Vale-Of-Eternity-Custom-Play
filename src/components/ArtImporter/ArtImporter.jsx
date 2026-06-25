@@ -1773,7 +1773,8 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 boxShadow: '0 12px 30px rgba(0,0,0,0.5)',
                 border: `2px solid var(--family-${cardFamily.toLowerCase()})`,
                 userSelect: 'none',
-                margin: '0 auto'
+                margin: '0 auto',
+                containerType: 'inline-size'
               }}>
                 {/* Card Background (bottom) */}
                 <img src={getBackgroundPath(cardFamily)} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
@@ -1799,7 +1800,58 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                   />
                 )}
 
-                {/* Text frame overlay (simulated by border) is handled by the parent in App.jsx */}
+                {/* Card Layout Border (above art) */}
+                <img 
+                  src="./img/Layout/CardLayout.png" 
+                  alt="Card Layout Border" 
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    pointerEvents: 'none',
+                    zIndex: 3
+                  }}
+                />
+
+                {/* Family Emblem - Top-Left */}
+                <img
+                  src={`./img/TextIcon/${cardFamily}.png`}
+                  alt={`${cardFamily} Emblem TL`}
+                  style={{
+                    position: 'absolute',
+                    left: '8.45%',
+                    top: '6.46%',
+                    width: '11.91cqw',
+                    height: '11.91cqw',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 3.5,
+                    borderRadius: '50%',
+                    border: '1.5px solid rgba(0, 0, 0, 0.3)',
+                    boxSizing: 'border-box',
+                    pointerEvents: 'none'
+                  }}
+                />
+
+                {/* Family Emblem - Bottom-Right */}
+                <img
+                  src={`./img/TextIcon/${cardFamily}.png`}
+                  alt={`${cardFamily} Emblem BR`}
+                  style={{
+                    position: 'absolute',
+                    left: '90.97%',
+                    top: '93.54%',
+                    width: '9.84cqw',
+                    height: '9.84cqw',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 3.5,
+                    borderRadius: '50%',
+                    border: '1.5px solid rgba(0, 0, 0, 0.3)',
+                    boxSizing: 'border-box',
+                    pointerEvents: 'none'
+                  }}
+                />
 
                 {/* Safe zone overlay guide */}
                 <div style={{
@@ -1810,7 +1862,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                   height: `${SAFE_ZONE.yMax - SAFE_ZONE.yMin}%`,
                   border: '1px dashed rgba(255,255,255,0.2)',
                   borderRadius: '2px',
-                  zIndex: 3,
+                  zIndex: 4,
                   pointerEvents: 'none'
                 }} />
 
