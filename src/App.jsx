@@ -265,7 +265,7 @@ export default function App() {
         )}
 
         {activeTab === 'components' && (
-          <ComponentDesigner />
+          <ComponentDesigner onShowArtImporter={handleShowArtImporter} />
         )}
       </div>
 
@@ -277,6 +277,7 @@ export default function App() {
         existingArt={artImporterContext.existingArt}
         existingTransform={artImporterContext.existingTransform}
         isTokenMode={artImporterContext.isTokenMode}
+        isComponentMode={artImporterContext.isComponentMode}
       />
 
       <ExportPdfModal

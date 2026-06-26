@@ -329,8 +329,10 @@ function ColorPickerPanel({ color, onChange, label }) {
 const STAGES = ['import', 'deskew', 'process', 'tune', 'confirm'];
 const STAGE_LABELS = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Card'];
 const STAGE_LABELS_TOKEN = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Token'];
+const STAGE_LABELS_COMPONENT = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Component'];
 
-export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamily = 'Water', existingArt = null, existingTransform = null, isTokenMode = false }) {
+export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamily = 'Water', existingArt = null, existingTransform = null, isTokenMode = false, isComponentMode = false }) {
+  const isCustomMode = isTokenMode || isComponentMode;
   const [stage, setStage] = useState(0); // 0..4
   const [rawDataUrl, setRawDataUrl] = useState(existingArt || null);
   const [deskewedDataUrl, setDeskewedDataUrl] = useState(null);
@@ -1233,10 +1235,10 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
         }}>
           <div>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              🎨 {isTokenMode ? 'Token Art Integrator' : 'Art Integrator'}
+              🎨 {isComponentMode ? 'Component Art Integrator' : isTokenMode ? 'Token Art Integrator' : 'Art Integrator'}
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
-              {isTokenMode ? 'Scan, enhance, and place your custom art onto the token canvas' : 'Scan, enhance, and place your creature art onto the card'}
+              {isComponentMode ? 'Scan, enhance, and place your custom art onto the component layer' : isTokenMode ? 'Scan, enhance, and place your custom art onto the token canvas' : 'Scan, enhance, and place your creature art onto the card'}
             </p>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}>
@@ -1246,7 +1248,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
 
         {/* Stage indicator */}
         <div style={{ display: 'flex', gap: '0.4rem', padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border-color)', overflowX: 'auto', flexShrink: 0, background: 'var(--bg-main)' }}>
-          {(isTokenMode ? STAGE_LABELS_TOKEN : STAGE_LABELS).map((label, i) => (
+          {(isComponentMode ? STAGE_LABELS_COMPONENT : isTokenMode ? STAGE_LABELS_TOKEN : STAGE_LABELS).map((label, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
               <button style={stepBtnStyle(stage === i)}>
                 {i < stage ? '✓ ' : ''}{label}
@@ -1812,7 +1814,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                     ← Back
                   </button>
                   <button onClick={() => setStage(4)} style={{ flex: 2, padding: '0.5rem 1rem', background: 'var(--color-primary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: 'white' }}>
-                    {isTokenMode ? 'Next: Place on Token →' : 'Next: Place on Card →'}
+                    {isComponentMode ? 'Next: Place on Component →' : isTokenMode ? 'Next: Place on Token →' : 'Next: Place on Card →'}
                   </button>
                 </div>
               </div>
@@ -2047,7 +2049,9 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 </div>
 
                 <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  {isTokenMode ? (
+                  {isComponentMode ? (
+                    <span>💡 Art is placed on the selected <strong>image layer</strong> of the board component. You can drag and scale it inside the bounds of the layer.</span>
+                  ) : isTokenMode ? (
                     <span>💡 Art is placed on the <strong>uploaded layer</strong> of the token. You can further adjust position or draw shapes on top of it.</span>
                   ) : (
                     <span>💡 Art is placed on the <strong>middle layer</strong> — between the card background and the text frame overlays. The frame border will naturally mask any bleed edges.</span>
@@ -2066,7 +2070,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                     boxShadow: '0 4px 16px rgba(236,72,153,0.35)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
                   }}>
-                    <Check size={16} /> {isTokenMode ? 'Apply to Token' : 'Apply to Card'}
+                    <Check size={16} /> {isComponentMode ? 'Apply to Component' : isTokenMode ? 'Apply to Token' : 'Apply to Card'}
                   </button>
                 </div>
               </div>
@@ -2079,14 +2083,14 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 borderRadius: '14px',
                 overflow: 'hidden',
                 boxShadow: '0 12px 30px rgba(0,0,0,0.5)',
-                border: isTokenMode ? '2px solid rgba(255,255,255,0.1)' : `2px solid var(--family-${cardFamily.toLowerCase()})`,
+                border: isCustomMode ? '2px solid rgba(255,255,255,0.1)' : `2px solid var(--family-${cardFamily.toLowerCase()})`,
                 background: '#0b0f19',
                 userSelect: 'none',
                 margin: '0 auto',
                 containerType: 'inline-size'
               }}>
                 {/* Card Background (bottom) */}
-                {!isTokenMode && (
+                {!isCustomMode && (
                   <img src={getBackgroundPath(cardFamily)} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
                 )}
 
@@ -2112,7 +2116,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 )}
 
                 {/* Card Layout Border (above art) */}
-                {!isTokenMode && (
+                {!isCustomMode && (
                   <img 
                     src="./img/Layout/CardLayout.png" 
                     alt="Card Layout Border" 
@@ -2129,7 +2133,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 )}
 
                 {/* Family Emblem - Top-Left */}
-                {!isTokenMode && (
+                {!isCustomMode && (
                   <img
                     src={`./img/TextIcon/${cardFamily}.png`}
                     alt={`${cardFamily} Emblem TL`}
@@ -2150,7 +2154,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 )}
 
                 {/* Family Emblem - Bottom-Right */}
-                {!isTokenMode && (
+                {!isCustomMode && (
                   <img
                     src={`./img/TextIcon/${cardFamily}.png`}
                     alt={`${cardFamily} Emblem BR`}
@@ -2171,7 +2175,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                 )}
 
                 {/* Safe zone overlay guide */}
-                {!isTokenMode && (
+                {!isCustomMode && (
                   <div style={{
                     position: 'absolute',
                     left: `${SAFE_ZONE.xMin}%`,

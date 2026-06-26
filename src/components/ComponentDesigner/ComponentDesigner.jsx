@@ -396,7 +396,7 @@ const PRESETS = [
   { name: 'Tile Sheet (A4 Portrait)', type: 'tile-sheet', widthMm: 210, heightMm: 297, bleedMm: 3 },
 ];
 
-export default function ComponentDesigner() {
+export default function ComponentDesigner({ onShowArtImporter }) {
   const activePackId = useAppStore(state => state.activePackId);
   const components = useAppStore(state => state.components);
   const activeComponent = useAppStore(state => state.activeComponent);
@@ -1665,44 +1665,113 @@ export default function ComponentDesigner() {
                     
                     {!activeLayer.imageDataUrl ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          padding: '2rem 1.25rem',
-                          background: 'rgba(255,255,255,0.02)',
-                          border: '1px dashed var(--border-color)',
-                          borderRadius: 'var(--radius-sm)',
-                          cursor: 'pointer',
-                          color: 'var(--text-secondary)'
-                        }}>
-                          <FileImage size={24} style={{ marginBottom: '0.4rem', color: 'var(--color-primary)' }} />
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Select Local Image File</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (!file) return;
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                handleUpdateLayer(activeLayer.id, { imageDataUrl: event.target.result, scale: 1, rotation: 0, transformX: 0, transformY: 0 });
-                              };
-                              reader.readAsDataURL(file);
-                            }}
-                          />
-                        </label>
+                        <button
+                          onClick={() => {
+                            if (typeof onShowArtImporter === 'function') {
+                              onShowArtImporter({
+                                family: 'Water',
+                                existingArt: activeLayer.imageDataUrl,
+                                isComponentMode: true
+                              }, (artData) => {
+                                handleUpdateLayer(activeLayer.id, {
+                                  imageDataUrl: artData.dataUrl,
+                                  scale: 1,
+                                  rotation: 0,
+                                  transformX: 0,
+                                  transformY: 0
+                                });
+                              });
+                            }
+                          }}
+                          className="btn"
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '2rem 1.25rem',
+                            background: 'rgba(99, 102, 241, 0.04)',
+                            border: '1px dashed var(--color-primary, #6366f1)',
+                            borderRadius: 'var(--radius-md, 8px)',
+                            cursor: 'pointer',
+                            color: 'var(--text-secondary, #9ca3af)',
+                            width: '100%',
+                            gap: '0.5rem',
+                            transition: 'all var(--transition-fast, 0.15s ease)',
+                            outline: 'none'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)';
+                            e.currentTarget.style.borderColor = 'var(--color-primary-hover, #4f46e5)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.04)';
+                            e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                          }}
+                        >
+                          <FileImage size={24} style={{ color: 'var(--color-primary, #6366f1)' }} />
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #f3f4f6)' }}>
+                            Upload & Process Art
+                          </span>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted, #6b7280)' }}>
+                            Opens the Art Integrator pipeline
+                          </span>
+                        </button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                        <button
-                          onClick={() => handleUpdateLayer(activeLayer.id, { imageDataUrl: null })}
-                          className="btn-danger"
-                          style={{ padding: '0.4rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
-                        >
-                          <Trash2 size={12} /> Remove Graphic
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => {
+                              if (typeof onShowArtImporter === 'function') {
+                                onShowArtImporter({
+                                  family: 'Water',
+                                  existingArt: activeLayer.imageDataUrl,
+                                  isComponentMode: true
+                                }, (artData) => {
+                                  handleUpdateLayer(activeLayer.id, {
+                                    imageDataUrl: artData.dataUrl,
+                                    scale: 1,
+                                    rotation: 0,
+                                    transformX: 0,
+                                    transformY: 0
+                                  });
+                                });
+                              }
+                            }}
+                            className="btn"
+                            style={{
+                              flex: 1,
+                              padding: '0.4rem',
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.25rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <FileImage size={12} /> Change Art
+                          </button>
+                          <button
+                            onClick={() => handleUpdateLayer(activeLayer.id, { imageDataUrl: null })}
+                            className="btn-danger"
+                            style={{
+                              flex: 1,
+                              padding: '0.4rem',
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.25rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Trash2 size={12} /> Remove
+                          </button>
+                        </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>

@@ -145,10 +145,10 @@ Plug the existing Art Integrator pipeline into the Component Designer. Component
 - Placed art fills the image layer's bounding region (user can drag/scale within the layer)
 
 ### Tasks
-- [ ] Add `isComponentMode: true` to `ArtImporter` props in `App.jsx` when called from ComponentDesigner
-- [ ] In `ArtImporter`, skip card-frame crop constraints when `isComponentMode` is true
-- [ ] On art confirmation, set the `imageDataUrl` of the target image layer
-- [ ] Add per-layer drag-to-reposition and scale slider (same as Art Integrator Stage 4, scoped to the layer bounds)
+- [x] Add `isComponentMode: true` to `ArtImporter` props in `App.jsx` when called from ComponentDesigner
+- [x] In `ArtImporter`, skip card-frame crop constraints when `isComponentMode` is true
+- [x] On art confirmation, set the `imageDataUrl` of the target image layer
+- [x] Add per-layer drag-to-reposition and scale slider (same as Art Integrator Stage 4, scoped to the layer bounds)
 
 ### Reuse
 - `ArtImporter` already accepts `isTokenMode` to adjust behavior — extend this pattern
