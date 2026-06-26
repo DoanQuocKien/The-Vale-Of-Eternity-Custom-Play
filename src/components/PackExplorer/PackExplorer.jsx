@@ -22,12 +22,15 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
   const [filterCost, setFilterCost] = useState('All');
   const [sortBy, setSortBy] = useState('name');
   const [subTab, setSubTab] = useState('cards'); // 'cards' | 'tokens' | 'components'
+  const [isAddingPack, setIsAddingPack] = useState(false);
+  const [newPackName, setNewPackName] = useState('');
 
   const handleDuplicateToken = async (token) => {
     const newToken = {
       ...token,
       id: 'token-' + Date.now(),
       name: token.name + ' (Copy)',
+      packId: activePackId,
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
@@ -39,6 +42,7 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
       ...comp,
       id: 'component-' + Date.now(),
       name: comp.name + ' (Copy)',
+      packId: activePackId,
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
@@ -73,10 +77,10 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
   };
 
   const handleAddPack = async () => {
-    const name = window.prompt('Enter name for the new pack:');
-    if (name && name.trim()) {
-      await createNewPack(name.trim());
-    }
+    if (!newPackName.trim()) return;
+    await createNewPack(newPackName.trim());
+    setNewPackName('');
+    setIsAddingPack(false);
   };
 
   const handleDeletePack = async (pack) => {
@@ -89,7 +93,7 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
 
   const handleRenamePack = async (pack) => {
     const newName = window.prompt('Enter new name for this pack:', pack.name);
-    if (newName && newName.trim()) {
+    if (newName && newName.trim() && newName.trim() !== pack.name) {
       await renamePack(pack.id, newName.trim());
     }
   };
@@ -106,13 +110,13 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
       <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-primary)' }}>Packs & Expansions</h3>
-          <button
-            onClick={handleAddPack}
+            <button
+            onClick={() => { setIsAddingPack(p => !p); setNewPackName(''); }}
             style={{
               padding: '0.3rem 0.6rem',
               borderRadius: 'var(--radius-sm)',
-              background: 'var(--color-primary)',
-              border: 'none',
+              background: isAddingPack ? 'var(--bg-surface-elevated)' : 'var(--color-primary)',
+              border: isAddingPack ? '1px solid var(--border-color)' : 'none',
               color: 'white',
               fontSize: '0.75rem',
               fontWeight: 600,
@@ -122,9 +126,50 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
               gap: '0.2rem'
             }}
           >
-            <Plus size={12} /> Add Pack
+            {isAddingPack ? '✕ Cancel' : <><Plus size={12} /> Add Pack</>}
           </button>
         </div>
+
+        {/* Inline Add Pack Form (Electron-safe, no window.prompt) */}
+        {isAddingPack && (
+          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={newPackName}
+              onChange={(e) => setNewPackName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAddPack(); if (e.key === 'Escape') { setIsAddingPack(false); setNewPackName(''); } }}
+              placeholder="New pack name..."
+              autoFocus
+              style={{
+                flex: 1,
+                padding: '0.35rem 0.5rem',
+                background: 'var(--bg-main)',
+                border: '1px solid var(--color-primary)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'white',
+                fontSize: '0.8rem',
+                outline: 'none'
+              }}
+            />
+            <button
+              onClick={handleAddPack}
+              disabled={!newPackName.trim()}
+              style={{
+                padding: '0.35rem 0.6rem',
+                background: 'var(--color-primary)',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                color: 'white',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: newPackName.trim() ? 'pointer' : 'not-allowed',
+                opacity: newPackName.trim() ? 1 : 0.5
+              }}
+            >
+              Create
+            </button>
+          </div>
+        )}
 
         {/* Pack List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto' }}>

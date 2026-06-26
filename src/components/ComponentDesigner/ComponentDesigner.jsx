@@ -435,6 +435,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   const isPanning = useRef(false);
   const [isPanningState, setIsPanningState] = useState(false);
   const lastPanPos = useRef({ x: 0, y: 0 });
+  const panRef = useRef({ x: 20, y: 20 }); // mirror of pan state for non-stale access
 
   // Drawing tools state
   const [tool, setTool] = useState('brush'); // 'brush', 'erase', 'line', 'rect', 'circle', 'text', 'none'
@@ -508,7 +509,9 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       const workspaceHeight = 550;
       const fitZoom = Math.min((workspaceWidth - 60) / widthPx, (workspaceHeight - 60) / heightPx);
       setZoom(Math.max(0.15, Math.min(2.5, fitZoom)));
-      setPan({ x: 30, y: 30 });
+      const initPan = { x: 30, y: 30 };
+      setPan(initPan);
+      panRef.current = initPan;
       setUndoList([]);
     } else {
       setCompName('');
@@ -825,6 +828,11 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       isPanning.current = true;
       setIsPanningState(true);
       lastPanPos.current = { x: e.clientX, y: e.clientY };
+      // Sync panRef from state so delta calculations are always correct
+      setPan(currentPan => {
+        panRef.current = currentPan;
+        return currentPan;
+      });
       e.preventDefault();
       return;
     }
@@ -900,11 +908,15 @@ export default function ComponentDesigner({ onShowArtImporter }) {
 
   const handlePointerMove = (e) => {
     if (isPanning.current) {
-      setPan(p => ({
-        x: p.x + (e.clientX - lastPanPos.current.x),
-        y: p.y + (e.clientY - lastPanPos.current.y)
-      }));
+      const dx = e.clientX - lastPanPos.current.x;
+      const dy = e.clientY - lastPanPos.current.y;
       lastPanPos.current = { x: e.clientX, y: e.clientY };
+      const newPan = {
+        x: panRef.current.x + dx,
+        y: panRef.current.y + dy
+      };
+      panRef.current = newPan;
+      setPan({ ...newPan });
       return;
     }
 
@@ -994,7 +1006,16 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     } else {
       setZoom(0.5);
     }
-    setPan({ x: 30, y: 30 });
+    const resetPan = { x: 30, y: 30 };
+    setPan(resetPan);
+    panRef.current = resetPan;
+  };
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const delta = -e.deltaY;
+    const zoomFactor = delta > 0 ? 1.08 : 0.93;
+    setZoom(z => Math.max(0.05, Math.min(8, z * zoomFactor)));
   };
 
   // Layer Stack modifications
@@ -1464,6 +1485,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
+              onWheel={handleWheel}
               onContextMenu={(e) => e.preventDefault()}
             >
               {/* Scaled wrapper carrying Canvas and SVGRulers */}
@@ -1506,33 +1528,26 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                 </div>
               </div>
 
-              {/* Warning overlay if user selects drawing tool on a non-drawing layer */}
+              {/* Non-drawing layer warning badge (non-blocking) */}
               {!isDrawingLayerActive && tool !== 'none' && (
                 <div style={{
                   position: 'absolute',
-                  top: 0, left: 0, width: '100%', height: '100%',
-                  background: 'rgba(5, 8, 20, 0.85)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 5,
-                  padding: '2rem',
-                  textAlign: 'center',
-                  backdropFilter: 'blur(3px)'
+                  top: '0.6rem',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(99, 102, 241, 0.85)',
+                  color: 'white',
+                  padding: '0.3rem 0.8rem',
+                  borderRadius: '20px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  zIndex: 10,
+                  pointerEvents: 'none',
+                  backdropFilter: 'blur(4px)',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
                 }}>
-                  <Paintbrush size={36} style={{ color: '#818cf8', marginBottom: '0.75rem' }} />
-                  <h4 style={{ color: 'white', margin: 0 }}>Non-Drawing Layer Selected</h4>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '300px', margin: '0.5rem 0 1rem 0' }}>
-                    To draw, please select or add a <b>Drawing Layer</b> in the layer stack panel on the left.
-                  </p>
-                  <button
-                    onClick={() => setTool('none')}
-                    className="btn"
-                    style={{ padding: '0.4rem 1rem', fontSize: '0.75rem' }}
-                  >
-                    Switch to Pan Tool
-                  </button>
+                  ✏️ Select a Drawing Layer to draw — pan/drag still works
                 </div>
               )}
 
@@ -1612,7 +1627,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
               </button>
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem', textAlign: 'center' }}>
-              💡 Hold <b>Spacebar</b> and drag to pan workspace. Grid lines are spaced at 10mm. Red margins show bleed safety guidelines.
+              💡 Use the <b>Pan/View</b> tool or hold <b>Spacebar</b> to pan. <b>Scroll</b> to zoom. Grid lines are spaced at 10mm. Red margins show bleed safety guidelines.
             </div>
           </div>
 

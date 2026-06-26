@@ -25,6 +25,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   const tokens = useAppStore(state => state.tokens);
 
   const [loadedCardId, setLoadedCardId] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Instead of using global store for draft, we use local state
   // to avoid lag when dragging or typing rapidly.
@@ -65,6 +66,7 @@ const CardEditor = ({ onShowArtImporter }) => {
         setLayout(activeCard.layout || DEFAULT_LAYOUT);
         setTokenOverlays(activeCard.tokenOverlays || []);
         setLoadedCardId(activeCard.id);
+        setHasUnsavedChanges(false);
       }
     } else if (loadedCardId !== null) {
       // Clear/Reset back to defaults
@@ -77,10 +79,14 @@ const CardEditor = ({ onShowArtImporter }) => {
       setLayout(DEFAULT_LAYOUT);
       setTokenOverlays([]);
       setLoadedCardId(null);
+      setHasUnsavedChanges(false);
     }
   }, [activeCard, loadedCardId]);
 
   const loadPreset = (preset) => {
+    if (hasUnsavedChanges) {
+      if (!window.confirm('You have unsaved changes. Discard and load preset?')) return;
+    }
     setActiveCard(null); // Clear editing card context
     setActivePreset(preset);
     setCardName(preset.name);
@@ -91,9 +97,13 @@ const CardEditor = ({ onShowArtImporter }) => {
     setArtImageData(null);
     setLayout(DEFAULT_LAYOUT);
     setTokenOverlays([]);
+    setHasUnsavedChanges(false);
   };
 
   const generateRandomCard = () => {
+    if (hasUnsavedChanges) {
+      if (!window.confirm('You have unsaved changes. Discard and generate a random card?')) return;
+    }
     setActiveCard(null); // Clear editing card context on random generation
     const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
     const cost = Math.floor(Math.random() * 10).toString();
@@ -110,11 +120,17 @@ const CardEditor = ({ onShowArtImporter }) => {
     setArtImageData(null);
     setLayout(DEFAULT_LAYOUT);
     setTokenOverlays([]);
+    setHasUnsavedChanges(false);
   };
 
   const handleSaveCard = async (saveAsNew = false) => {
     const isNew = saveAsNew || !activeCard;
     const cardId = isNew ? 'card-' + Date.now() : activeCard.id;
+
+    // Warn if Save/Overwrite is about to overwrite a DIFFERENT card than what's currently shown
+    if (!saveAsNew && activeCard && activeCard.id !== loadedCardId) {
+      if (!window.confirm(`This will overwrite "${activeCard.name}" with the current edits. Continue?`)) return;
+    }
 
     const newCard = {
       id: cardId,
@@ -132,9 +148,15 @@ const CardEditor = ({ onShowArtImporter }) => {
     };
 
     try {
-      setLoadedCardId(cardId);
+      // For Save as New, clear loadedCardId so the effect re-syncs the new card cleanly
+      if (saveAsNew) {
+        setLoadedCardId(null);
+      } else {
+        setLoadedCardId(cardId);
+      }
 
       setActiveCard(newCard);
+      setHasUnsavedChanges(false);
 
       await saveCard(newCard);
 
@@ -894,9 +916,13 @@ const CardEditor = ({ onShowArtImporter }) => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <button
                 onClick={() => {
-                  if (window.confirm('Clear editing context and start creating a new card?')) {
-                    setActiveCard(null);
+                  if (hasUnsavedChanges) {
+                    if (!window.confirm('You have unsaved changes. Discard and create a new card?')) return;
+                  } else if (!window.confirm('Clear editing context and start creating a new card?')) {
+                    return;
                   }
+                  setActiveCard(null);
+                  setHasUnsavedChanges(false);
                 }}
                 style={{
                   padding: '0.5rem',
@@ -982,12 +1008,28 @@ const CardEditor = ({ onShowArtImporter }) => {
               </button>
             </div>
 
+            {hasUnsavedChanges && (
+              <div style={{
+                padding: '0.35rem 0.6rem',
+                background: 'rgba(245, 158, 11, 0.15)',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.72rem',
+                color: '#f59e0b',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}>
+                ⚠️ Unsaved changes — remember to save!
+              </div>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '0.75rem' }}>
               <div>
                 <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Family</label>
                 <select
                   value={backgroundFamily}
-                  onChange={(e) => setBackgroundFamily(e.target.value)}
+                  onChange={(e) => { setBackgroundFamily(e.target.value); setHasUnsavedChanges(true); }}
                   style={{
                     width: '100%',
                     padding: '0.4rem 0.6rem',
@@ -1008,7 +1050,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                 <input
                   type="text"
                   value={cardName}
-                  onChange={(e) => setCardName(e.target.value)}
+                  onChange={(e) => { setCardName(e.target.value); setHasUnsavedChanges(true); }}
                   style={{
                     width: '100%',
                     padding: '0.4rem 0.6rem',
@@ -1029,7 +1071,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                   min="0"
                   max="99"
                   value={cardCost}
-                  onChange={(e) => setCardCost(e.target.value)}
+                  onChange={(e) => { setCardCost(e.target.value); setHasUnsavedChanges(true); }}
                   style={{
                     width: '100%',
                     padding: '0.4rem 0.6rem',
@@ -1046,7 +1088,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                 <input
                   type="text"
                   value={cardCredit}
-                  onChange={(e) => setCardCredit(e.target.value)}
+                  onChange={(e) => { setCardCredit(e.target.value); setHasUnsavedChanges(true); }}
                   style={{
                     width: '100%',
                     padding: '0.4rem 0.6rem',
@@ -1231,7 +1273,7 @@ const CardEditor = ({ onShowArtImporter }) => {
             </label>
             <textarea
               value={cardEffectText}
-              onChange={(e) => setCardEffectText(e.target.value)}
+              onChange={(e) => { setCardEffectText(e.target.value); setHasUnsavedChanges(true); }}
               rows="3"
               style={{
                 width: '100%',
@@ -1893,7 +1935,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                   <input
                     type="range"
                     min="2"
-                    max="20"
+                    max="35"
                     step="0.5"
                     value={layout.effect.panelHeight ?? 8.5}
                     onChange={(e) => updateSetting('panelHeight', parseFloat(e.target.value))}
@@ -1908,7 +1950,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                   <input
                     type="range"
                     min="0"
-                    max="10"
+                    max="20"
                     step="0.5"
                     value={layout.effect.panelGap ?? 1.5}
                     onChange={(e) => updateSetting('panelGap', parseFloat(e.target.value))}
@@ -1999,13 +2041,43 @@ const CardEditor = ({ onShowArtImporter }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Font Size (cqw)</span>
+                      <span>{layout.effect.fontSize ?? 3.8}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="20"
+                      step="0.1"
+                      value={layout.effect.fontSize ?? 3.8}
+                      onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Border Radius (cqw)</span>
+                      <span>{layout.effect.borderRadius ?? 1.5}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="8"
+                      step="0.1"
+                      value={layout.effect.borderRadius ?? 1.5}
+                      onChange={(e) => updateSetting('borderRadius', parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
                       <span>Text Left (cqw)</span>
                       <span>{layout.effect.textLeft ?? 10.0}</span>
                     </div>
                     <input
                       type="range"
                       min="0"
-                      max="30"
+                      max="50"
                       step="0.5"
                       value={layout.effect.textLeft ?? 10.0}
                       onChange={(e) => updateSetting('textLeft', parseFloat(e.target.value))}
@@ -2020,7 +2092,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                     <input
                       type="range"
                       min="-5"
-                      max="10"
+                      max="15"
                       step="0.5"
                       value={layout.effect.textTop ?? 1.5}
                       onChange={(e) => updateSetting('textTop', parseFloat(e.target.value))}
@@ -2059,6 +2131,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                   </div>
                 </div>
               </div>
+
             </>
           )}
         </div>
