@@ -3,11 +3,12 @@ import { Plus, Download, Printer, Upload } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore.js';
 import { getPriceColor } from '../../utils/constants.jsx';
 
-const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, onImportFile, onOpenPdfExport, onOpenTokensPdfExport }) => {
+const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, onExportLibrary, onImportFile, onOpenPdfExport, onOpenTokensPdfExport, onOpenComponentsPdfExport }) => {
   const packs = useAppStore(state => state.packs);
   const activePackId = useAppStore(state => state.activePackId);
   const explorerCards = useAppStore(state => state.explorerCards);
   const tokens = useAppStore(state => state.tokens);
+  const components = useAppStore(state => state.components);
   const setActivePackId = useAppStore(state => state.setActivePackId);
   const createNewPack = useAppStore(state => state.createNewPack);
   const deletePack = useAppStore(state => state.deletePack);
@@ -20,7 +21,7 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
   const [filterFamily, setFilterFamily] = useState('All');
   const [filterCost, setFilterCost] = useState('All');
   const [sortBy, setSortBy] = useState('name');
-  const [subTab, setSubTab] = useState('cards'); // 'cards' | 'tokens'
+  const [subTab, setSubTab] = useState('cards'); // 'cards' | 'tokens' | 'components'
 
   const handleDuplicateToken = async (token) => {
     const newToken = {
@@ -31,6 +32,18 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
       updatedAt: Date.now()
     };
     await saveToken(newToken);
+  };
+
+  const handleDuplicateComponent = async (comp) => {
+    const newComp = {
+      ...comp,
+      id: 'component-' + Date.now(),
+      name: comp.name + ' (Copy)',
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    await useAppStore.getState().saveComponent(newComp);
+    await useAppStore.getState().loadComponents(activePackId);
   };
 
   const handleDuplicateCard = async (card) => {
@@ -242,10 +255,40 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
               gap: '0.4rem',
               opacity: (activePackId && tokens.length > 0) ? 1 : 0.5,
               boxShadow: (activePackId && tokens.length > 0) ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              marginBottom: '0.35rem'
             }}
           >
             <Printer size={13} /> Export Tokens to PDF
+          </button>
+
+          <button
+            onClick={() => {
+              const activePack = packs.find(p => p.id === activePackId);
+              const activePackName = activePack ? activePack.name : 'Pack';
+              onOpenComponentsPdfExport(activePackName);
+            }}
+            disabled={!activePackId || components.length === 0}
+            style={{
+              width: '100%',
+              padding: '0.45rem',
+              borderRadius: 'var(--radius-sm)',
+              background: 'linear-gradient(135deg, #818cf8, #6366f1)',
+              border: 'none',
+              cursor: (activePackId && components.length > 0) ? 'pointer' : 'not-allowed',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+              opacity: (activePackId && components.length > 0) ? 1 : 0.5,
+              boxShadow: (activePackId && components.length > 0) ? '0 4px 12px rgba(99, 102, 241, 0.2)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            <Printer size={13} /> Export Components to PDF
           </button>
 
           <button
@@ -313,14 +356,15 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
           <div style={{ display: 'flex', gap: '1rem' }}>
             {[
               { id: 'cards', label: `Cards (${explorerCards.length})` },
-              { id: 'tokens', label: `Tokens (${tokens.length})` }
+              { id: 'tokens', label: `Tokens (${tokens.length})` },
+              { id: 'components', label: `Components (${components.length})` }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => {
                   setSubTab(tab.id);
-                  // Reset sortBy if switching to tokens and sorting by cost
-                  if (tab.id === 'tokens' && (sortBy === 'cost-asc' || sortBy === 'cost-desc')) {
+                  // Reset sortBy if switching to non-cards and sorting by cost
+                  if (tab.id !== 'cards' && (sortBy === 'cost-asc' || sortBy === 'cost-desc')) {
                     setSortBy('name');
                   }
                 }}
@@ -361,7 +405,7 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
             >
               <span>➕ Create Card</span>
             </button>
-          ) : (
+          ) : subTab === 'tokens' ? (
             <button
               onClick={() => onEditToken(null)}
               style={{
@@ -381,6 +425,26 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
             >
               <span>➕ Create Token</span>
             </button>
+          ) : (
+            <button
+              onClick={() => onEditComponent(null)}
+              style={{
+                padding: '0.35rem 0.75rem',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(129, 140, 248, 0.15)',
+                border: '1px solid #818cf8',
+                color: 'var(--text-primary)',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span>➕ Create Component</span>
+            </button>
           )}
         </div>
 
@@ -394,7 +458,7 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
         }}>
           <div>
             <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.2rem' }}>
-              {subTab === 'cards' ? 'Search Cards' : 'Search Tokens'}
+              {subTab === 'cards' ? 'Search Cards' : subTab === 'tokens' ? 'Search Tokens' : 'Search Components'}
             </label>
             <input
               type="text"
@@ -664,7 +728,7 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
                 </div>
               ));
             })()
-          ) : (
+          ) : subTab === 'tokens' ? (
             (() => {
               const filtered = tokens.filter(t =>
                 t.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -818,6 +882,169 @@ const PackExplorer = ({ onEditCard, onEditToken, onExportPack, onExportLibrary, 
                         cursor: 'pointer'
                       }}
                       title="Delete Token"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ));
+            })()
+          ) : (
+            (() => {
+              const filtered = components.filter(c => {
+                return c.name.toLowerCase().includes(searchTerm.toLowerCase());
+              }).sort((a, b) => {
+                if (sortBy === 'name') return a.name.localeCompare(b.name);
+                if (sortBy === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
+                return 0;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-muted)', padding: '4rem 2rem' }}>
+                    No components found. Click "Create Component" to start designing one!
+                  </div>
+                );
+              }
+
+              return filtered.map(c => (
+                <div
+                  key={c.id}
+                  className="glass-panel animate-fade-in"
+                  style={{
+                    padding: '0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    minHeight: '230px',
+                    transition: 'transform var(--transition-fast)'
+                  }}
+                >
+                  {/* Thumbnail / Image preview */}
+                  <div style={{
+                    width: '100%',
+                    height: '110px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: '#070a13',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    marginBottom: '0.6rem',
+                    position: 'relative'
+                  }}>
+                    {c.canvasData ? (
+                      <img
+                        src={c.canvasData}
+                        alt={c.name}
+                        style={{
+                          maxWidth: '96%',
+                          maxHeight: '96%',
+                          objectFit: 'contain',
+                          boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Empty Canvas</span>
+                    )}
+
+                    {/* Component type badge */}
+                    <span style={{
+                      position: 'absolute',
+                      top: '5px',
+                      right: '5px',
+                      fontSize: '0.62rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      color: '#ffffff',
+                      background: 'rgba(99, 102, 241, 0.85)',
+                      padding: '0.15rem 0.35rem',
+                      borderRadius: '3px'
+                    }}>
+                      {c.type}
+                    </span>
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <h4 style={{
+                      margin: '0 0 0.15rem 0',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      color: '#ffffff',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }} title={c.name}>
+                      {c.name}
+                    </h4>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginBottom: '0.6rem' }}>
+                      Physical size: <strong>{c.widthMm} × {c.heightMm} mm</strong>
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.35rem',
+                    borderTop: '1px solid var(--border-color)',
+                    paddingTop: '0.5rem',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <button
+                      onClick={() => onEditComponent(c)}
+                      style={{
+                        flexGrow: 1,
+                        padding: '0.25rem 0.4rem',
+                        background: 'rgba(99, 102, 241, 0.2)',
+                        border: '1px solid var(--color-primary)',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        color: '#ffffff',
+                        textAlign: 'center'
+                      }}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => handleDuplicateComponent(c)}
+                      style={{
+                        padding: '0.25rem 0.35rem',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)'
+                      }}
+                      title="Clone Component"
+                    >
+                      Clone
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        if (window.confirm('Are you sure you want to delete this component?')) {
+                          await useAppStore.getState().deleteComponent(c.id);
+                          await useAppStore.getState().loadComponents(activePackId);
+                        }
+                      }}
+                      style={{
+                        padding: '0.25rem 0.35rem',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid var(--color-danger)',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        color: 'var(--color-danger)',
+                        cursor: 'pointer'
+                      }}
+                      title="Delete Component"
                     >
                       🗑️
                     </button>

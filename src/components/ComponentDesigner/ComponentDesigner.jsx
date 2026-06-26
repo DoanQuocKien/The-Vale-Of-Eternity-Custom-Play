@@ -408,6 +408,9 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   // Component metadata states
   const [compName, setCompName] = useState('');
   const [compBleed, setCompBleed] = useState(3);
+  const [foldLines, setFoldLines] = useState([]);
+  const [newFoldType, setNewFoldType] = useState('horizontal');
+  const [newFoldPos, setNewFoldPos] = useState('');
 
   // Layer stack states
   const [activeLayerId, setActiveLayerId] = useState(null);
@@ -480,6 +483,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     if (activeComponent) {
       setCompName(activeComponent.name || '');
       setCompBleed(activeComponent.bleedMm ?? 3);
+      setFoldLines(activeComponent.foldLines || []);
 
       // Default active layer if none selected or if component changed
       const layers = activeComponent.layers || [];
@@ -509,6 +513,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     } else {
       setCompName('');
       setActiveLayerId(null);
+      setFoldLines([]);
     }
   }, [activeComponent?.id]);
 
@@ -1115,6 +1120,28 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     setShowNewModal(false);
   };
 
+  const handleAddFoldLine = () => {
+    if (!activeComponent) return;
+    const pos = parseFloat(newFoldPos);
+    if (isNaN(pos) || pos <= 0) {
+      alert('Please enter a valid positive number for the position.');
+      return;
+    }
+    const maxVal = newFoldType === 'horizontal' ? activeComponent.heightMm : activeComponent.widthMm;
+    if (pos >= maxVal) {
+      alert(`Fold line position exceeds the component boundary (${maxVal} mm).`);
+      return;
+    }
+    const updated = [...foldLines, { type: newFoldType, positionMm: pos }];
+    setFoldLines(updated);
+    setNewFoldPos('');
+  };
+
+  const handleRemoveFoldLine = (index) => {
+    const updated = foldLines.filter((_, idx) => idx !== index);
+    setFoldLines(updated);
+  };
+
   const handleSaveSettings = async () => {
     if (!activeComponent) return;
     const b = parseFloat(compBleed);
@@ -1122,6 +1149,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       ...activeComponent,
       name: compName.trim() || 'Unnamed Component',
       bleedMm: isNaN(b) ? 3 : b,
+      foldLines,
       updatedAt: Date.now()
     };
     await saveComponent(updated);
@@ -1299,6 +1327,98 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                 max="20"
                 step="0.5"
               />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>Fold Lines (mm)</label>
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <select
+                  value={newFoldType}
+                  onChange={(e) => setNewFoldType(e.target.value)}
+                  style={{
+                    padding: '0.35rem',
+                    background: 'var(--bg-main)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.75rem',
+                    color: 'white'
+                  }}
+                >
+                  <option value="horizontal">Horiz</option>
+                  <option value="vertical">Vert</option>
+                </select>
+                <input
+                  type="number"
+                  placeholder="Pos"
+                  value={newFoldPos}
+                  onChange={(e) => setNewFoldPos(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '0.35rem 0.5rem',
+                    background: 'var(--bg-main)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.75rem',
+                    color: 'white',
+                    outline: 'none'
+                  }}
+                  min="0"
+                />
+                <button
+                  onClick={handleAddFoldLine}
+                  className="btn"
+                  style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', fontWeight: 700 }}
+                >
+                  Add
+                </button>
+              </div>
+              
+              {foldLines.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '0.25rem',
+                  maxHeight: '80px',
+                  overflowY: 'auto',
+                  background: 'rgba(0,0,0,0.2)',
+                  padding: '0.35rem',
+                  borderRadius: 'var(--radius-sm)',
+                  marginTop: '0.25rem',
+                  border: '1px solid var(--border-color)'
+                }} className="comp-scroll">
+                  {foldLines.map((fl, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        background: 'rgba(99, 102, 241, 0.1)',
+                        border: '1px solid rgba(99, 102, 241, 0.2)',
+                        padding: '0.15rem 0.35rem',
+                        borderRadius: '4px',
+                        fontSize: '0.68rem',
+                        color: 'white'
+                      }}
+                    >
+                      {fl.type === 'horizontal' ? 'H' : 'V'}: {fl.positionMm} mm
+                      <button
+                        onClick={() => handleRemoveFoldLine(idx)}
+                        style={{
+                          border: 'none',
+                          background: 'none',
+                          color: 'var(--color-danger)',
+                          cursor: 'pointer',
+                          padding: 0,
+                          fontSize: '0.8rem',
+                          lineHeight: 1
+                        }}
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               onClick={handleSaveSettings}

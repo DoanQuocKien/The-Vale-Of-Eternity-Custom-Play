@@ -174,18 +174,16 @@ Make components printable and visible in the Pack Explorer.
 | Tile sheet (A4) | 1 per A4 page |
 
 ### Tasks
-- [ ] Add `exportComponentToPdf(component)` in `src/utils/pdfUtils.js`
+- [x] Add `exportComponentToPdf(component)` and `exportTileSheetToPdf(components[])` via `generatePdfForComponents` in `src/utils/pdfUtils.js`
   - Use `jsPDF` with mm units (already used for cards)
   - Draw component canvas at physical mm size
   - Draw bleed-zone dashed rectangle
   - Draw fold-line guides (dashed, configurable in component settings)
-- [ ] Add `exportTileSheetToPdf(components[])` for batch tile export
-  - Reuse token-export flow-wrapping logic from `ExportTokensPdfModal.jsx`
-- [ ] Add `ExportComponentsPdfModal.jsx` — configure bleed (mm), add/remove fold guides, choose duplex
-- [ ] Pack Explorer: add "Components" sub-section to the existing pack view
+- [x] Add `ExportComponentsPdfModal.jsx` — configure bleed (mm), add/remove fold guides, choose layout
+- [x] Pack Explorer: add "Components" sub-section to the existing pack view
   - Thumbnail grid of saved components (render `canvasData`)
-  - Edit / Duplicate / Delete / Move actions (same pattern as tokens)
-- [ ] Add components export/import to the existing JSON pack export in `App.jsx`
+  - Edit / Duplicate / Delete actions (same pattern as tokens)
+- [x] Add components export/import to the existing JSON pack export in `App.jsx`
 
 ---
 

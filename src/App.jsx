@@ -3,6 +3,7 @@ import CardEditor from './components/CardEditor/CardEditor.jsx';
 import PackExplorer from './components/PackExplorer/PackExplorer.jsx';
 import ExportPdfModal from './components/Export/ExportPdfModal.jsx';
 import ExportTokensPdfModal from './components/Export/ExportTokensPdfModal.jsx';
+import ExportComponentsPdfModal from './components/Export/ExportComponentsPdfModal.jsx';
 import ArtImporter from './components/ArtImporter/ArtImporter.jsx';
 import TokenDesigner from './components/TokenDesigner/TokenDesigner.jsx';
 import ComponentDesigner from './components/ComponentDesigner/ComponentDesigner.jsx';
@@ -26,6 +27,9 @@ export default function App() {
   const [tokensPdfExportIsOpen, setTokensPdfExportIsOpen] = useState(false);
   const [tokensPdfExportPackName, setTokensPdfExportPackName] = useState('');
 
+  const [componentsPdfExportIsOpen, setComponentsPdfExportIsOpen] = useState(false);
+  const [componentsPdfExportPackName, setComponentsPdfExportPackName] = useState('');
+
   const initializeApp = useAppStore(state => state.initializeApp);
   const setActiveCard = useAppStore(state => state.setActiveCard);
   const setActiveToken = useAppStore(state => state.setActiveToken);
@@ -46,6 +50,11 @@ export default function App() {
     setTokensPdfExportIsOpen(true);
   };
 
+  const handleOpenComponentsPdfExport = (packName) => {
+    setComponentsPdfExportPackName(packName);
+    setComponentsPdfExportIsOpen(true);
+  };
+
   const handleShowArtImporter = (context, callback) => {
     setArtImporterContext(context);
     setArtCallback(() => callback);
@@ -59,12 +68,16 @@ export default function App() {
   };
 
   const exportPack = async (pack) => {
-    const { dbGetCards } = await import('./services/db.js');
+    const { dbGetCards, dbGetTokens, dbGetComponents } = await import('./services/db.js');
     const packCards = await dbGetCards(pack.id);
+    const packTokens = await dbGetTokens(pack.id);
+    const packComponents = await dbGetComponents(pack.id);
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
       type: 'vale-pack',
       pack: pack,
-      cards: packCards
+      cards: packCards,
+      tokens: packTokens,
+      components: packComponents
     }, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
@@ -75,12 +88,14 @@ export default function App() {
   };
 
   const exportEntireLibrary = async () => {
-    const { dbGetPacks, dbGetCards } = await import('./services/db.js');
+    const { dbGetPacks, dbGetCards, dbGetTokens, dbGetComponents } = await import('./services/db.js');
     const allPacks = await dbGetPacks();
     const allData = [];
     for (const pack of allPacks) {
       const pCards = await dbGetCards(pack.id);
-      allData.push({ pack, cards: pCards });
+      const pTokens = await dbGetTokens(pack.id);
+      const pComps = await dbGetComponents(pack.id);
+      allData.push({ pack, cards: pCards, tokens: pTokens, components: pComps });
     }
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
       type: 'vale-library',
@@ -101,21 +116,45 @@ export default function App() {
     reader.onload = async (event) => {
       try {
         const parsed = JSON.parse(event.target.result);
-        const { dbSavePack, dbSaveCard } = await import('./services/db.js');
+        const { dbSavePack, dbSaveCard, dbSaveToken, dbSaveComponent } = await import('./services/db.js');
         
         if (parsed.type === 'vale-pack') {
           const pack = parsed.pack;
           pack.createdAt = pack.createdAt || Date.now();
           await dbSavePack(pack);
-          for (const card of parsed.cards) {
-            await dbSaveCard(card);
+          if (parsed.cards) {
+            for (const card of parsed.cards) {
+              await dbSaveCard(card);
+            }
           }
-          alert(`Pack "${pack.name}" and ${parsed.cards.length} cards imported!`);
+          if (parsed.tokens) {
+            for (const tok of parsed.tokens) {
+              await dbSaveToken(tok);
+            }
+          }
+          if (parsed.components) {
+            for (const comp of parsed.components) {
+              await dbSaveComponent(comp);
+            }
+          }
+          alert(`Pack "${pack.name}" imported successfully!`);
         } else if (parsed.type === 'vale-library') {
           for (const item of parsed.packs) {
             await dbSavePack(item.pack);
-            for (const card of item.cards) {
-              await dbSaveCard(card);
+            if (item.cards) {
+              for (const card of item.cards) {
+                await dbSaveCard(card);
+              }
+            }
+            if (item.tokens) {
+              for (const tok of item.tokens) {
+                await dbSaveToken(tok);
+              }
+            }
+            if (item.components) {
+              for (const comp of item.components) {
+                await dbSaveComponent(comp);
+              }
             }
           }
           alert('Entire library imported successfully!');
@@ -252,11 +291,16 @@ export default function App() {
               setActiveToken(t);
               setActiveTab('tokens');
             }}
+            onEditComponent={(c) => {
+              useAppStore.getState().setActiveComponent(c);
+              setActiveTab('components');
+            }}
             onExportPack={exportPack}
             onExportLibrary={exportEntireLibrary}
             onImportFile={handleImportFile}
             onOpenPdfExport={handleOpenPdfExport}
             onOpenTokensPdfExport={handleOpenTokensPdfExport}
+            onOpenComponentsPdfExport={handleOpenComponentsPdfExport}
           />
         )}
 
@@ -293,6 +337,13 @@ export default function App() {
         onClose={() => setTokensPdfExportIsOpen(false)}
         tokens={tokens}
         packName={tokensPdfExportPackName}
+      />
+
+      <ExportComponentsPdfModal
+        isOpen={componentsPdfExportIsOpen}
+        onClose={() => setComponentsPdfExportIsOpen(false)}
+        components={useAppStore.getState().components}
+        packName={componentsPdfExportPackName}
       />
     </>
   );
