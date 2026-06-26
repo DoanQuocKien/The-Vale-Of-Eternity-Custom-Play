@@ -9,6 +9,9 @@ import {
   dbGetTokens,
   dbSaveToken,
   dbDeleteToken,
+  dbGetComponents,
+  dbSaveComponent,
+  dbDeleteComponent,
   DEFAULT_PACK_ID,
   seedDefaultData
 } from '../services/db.js';
@@ -23,10 +26,12 @@ export const useAppStore = create((set, get) => ({
   activePackId: DEFAULT_PACK_ID,
   explorerCards: [],
   tokens: [],
+  components: [],
 
   // Editor State
   activeCard: null,
   activeToken: null,
+  activeComponent: null,
 
   // Actions
   initializeApp: async () => {
@@ -51,6 +56,7 @@ export const useAppStore = create((set, get) => ({
     set({ activePackId: packId });
     await get().loadExplorerCards(packId);
     await get().loadTokens(packId);
+    await get().loadComponents(packId);
   },
 
   loadExplorerCards: async (packId) => {
@@ -147,6 +153,43 @@ export const useAppStore = create((set, get) => ({
     await get().loadTokens(get().activePackId);
     if (get().activeToken?.id === tokenId) {
       set({ activeToken: null });
+    }
+  },
+
+  loadComponents: async (packId) => {
+    const idToLoad = packId || get().activePackId;
+    if (!idToLoad) return [];
+    const comps = await dbGetComponents(idToLoad);
+    const sorted = comps.sort((a, b) => b.createdAt - a.createdAt);
+    set({ components: sorted });
+    return sorted;
+  },
+
+  setActiveComponent: (component) => set({ activeComponent: component }),
+
+  saveComponent: async (componentData) => {
+    const compToSave = {
+      ...componentData,
+      updatedAt: Date.now()
+    };
+    if (!compToSave.createdAt) compToSave.createdAt = Date.now();
+    if (!compToSave.id) compToSave.id = 'comp-' + Date.now();
+
+    await dbSaveComponent(compToSave);
+
+    if (get().activePackId === compToSave.packId) {
+      await get().loadComponents(get().activePackId);
+    }
+
+    set({ activeComponent: compToSave });
+    return compToSave;
+  },
+
+  deleteComponent: async (componentId) => {
+    await dbDeleteComponent(componentId);
+    await get().loadComponents(get().activePackId);
+    if (get().activeComponent?.id === componentId) {
+      set({ activeComponent: null });
     }
   },
 

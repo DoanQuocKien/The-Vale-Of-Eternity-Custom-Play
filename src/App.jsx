@@ -5,6 +5,7 @@ import ExportPdfModal from './components/Export/ExportPdfModal.jsx';
 import ExportTokensPdfModal from './components/Export/ExportTokensPdfModal.jsx';
 import ArtImporter from './components/ArtImporter/ArtImporter.jsx';
 import TokenDesigner from './components/TokenDesigner/TokenDesigner.jsx';
+import ComponentDesigner from './components/ComponentDesigner/ComponentDesigner.jsx';
 import { useAppStore } from './store/useAppStore.js';
 import { RefreshCw } from 'lucide-react';
 import { MOCK_PRESETS, DEFAULT_LAYOUT } from './utils/constants.jsx';
@@ -219,6 +220,22 @@ export default function App() {
           >
             Token Designer
           </button>
+          <button
+            onClick={() => setActiveTab('components')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: activeTab === 'components' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'components' ? '3px solid var(--color-primary)' : '3px solid transparent',
+              color: activeTab === 'components' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
+          >
+            Component Designer
+          </button>
         </div>
 
         {activeTab === 'editor' && (
@@ -245,6 +262,10 @@ export default function App() {
 
         {activeTab === 'tokens' && (
           <TokenDesigner onShowArtImporter={handleShowArtImporter} />
+        )}
+
+        {activeTab === 'components' && (
+          <ComponentDesigner />
         )}
       </div>
 

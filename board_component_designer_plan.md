@@ -39,10 +39,10 @@ The component data model and persistence layer. Nothing visual yet — just the 
 ```
 
 ### Tasks
-- [ ] Add `dbGetComponents`, `dbSaveComponent`, `dbDeleteComponent` to `src/services/db.js`
-- [ ] Add `components`, `activeComponent`, `loadComponents`, `saveComponent`, `deleteComponent` to `useAppStore.js`
-- [ ] Add `'components'` tab button in `App.jsx` (renders `<div>Coming soon</div>` for now)
-- [ ] Add `loadComponents` call inside `setActivePackId` alongside `loadTokens`
+- [x] Add `dbGetComponents`, `dbSaveComponent`, `dbDeleteComponent` to `src/services/db.js`
+- [x] Add `components`, `activeComponent`, `loadComponents`, `saveComponent`, `deleteComponent` to `useAppStore.js`
+- [x] Add `'components'` tab button in `App.jsx` (renders `<div>Coming soon</div>` for now)
+- [x] Add `loadComponents` call inside `setActivePackId` alongside `loadTokens`
 
 ### Why first?
 Every subsequent phase reads/writes this schema. Getting it right — especially `widthMm`/`heightMm` in physical mm — saves painful migrations later.
@@ -71,13 +71,13 @@ A working canvas at the correct physical scale with the basic drawing tools copi
   - 📐 Custom (user inputs mm dimensions)
 
 ### Tasks
-- [ ] Create `src/components/ComponentDesigner/` folder
-- [ ] Build `ComponentDesigner.jsx` with left panel (tools) + center (canvas) + right panel (properties)
-- [ ] Port drawing tools from `TokenDesigner.jsx` (they share `canvasUtils.js` already)
-- [ ] Add physical-size display: show ruler ticks in mm along canvas edges
-- [ ] Add "New Component" modal with type picker and dimension inputs
-- [ ] Implement Save to Pack → `useAppStore.saveComponent()`
-- [ ] Mount `<ComponentDesigner />` in `App.jsx` on `activeTab === 'components'`
+- [x] Create `src/components/ComponentDesigner/` folder
+- [x] Build `ComponentDesigner.jsx` with left panel (tools) + center (canvas) + right panel (properties)
+- [x] Port drawing tools from `TokenDesigner.jsx` (they share `canvasUtils.js` already)
+- [x] Add physical-size display: show ruler ticks in mm along canvas edges
+- [x] Add "New Component" modal with type picker and dimension inputs
+- [x] Implement Save to Pack → `useAppStore.saveComponent()`
+- [x] Mount `<ComponentDesigner />` in `App.jsx` on `activeTab === 'components'`
 
 ### Reuse from existing code
 - `canvasUtils.js` → `drawShape()` already handles all basic shapes
