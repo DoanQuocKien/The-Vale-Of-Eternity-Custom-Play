@@ -26,10 +26,11 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
 
     const panelHeight = cardLayout.effect.panelHeight ?? 8.5;
     const panelGap = cardLayout.effect.panelGap ?? 1.5;
-    const textLeft = cardLayout.effect.textLeft ?? 10.0;
+    const textLeft = cardLayout.effect.textLeft ?? 0;
     const textTop = cardLayout.effect.textTop ?? 1.5;
-    const textWidth = cardLayout.effect.textWidth ?? 80;
+    const textWidth = cardLayout.effect.textWidth ?? 100;
     const textHeight = cardLayout.effect.textHeight ?? 70;
+    const textAlign = cardLayout.effect.textAlign ?? 'center';
 
     return lines.map((line, idx) => {
       if (!line.trim()) return null;
@@ -61,7 +62,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
               top: `${textTop}cqw`,
               width: `${textWidth}%`,
               height: `${textHeight}%`,
-              textAlign: 'left',
+              textAlign: textAlign,
               lineHeight: 1.35,
               boxSizing: 'border-box',
               overflow: 'visible'

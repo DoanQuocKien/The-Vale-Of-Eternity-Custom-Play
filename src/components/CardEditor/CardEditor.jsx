@@ -428,10 +428,11 @@ const CardEditor = ({ onShowArtImporter }) => {
 
     const panelHeight = layout.effect.panelHeight ?? 8.5;
     const panelGap = layout.effect.panelGap ?? 1.5;
-    const textLeft = layout.effect.textLeft ?? 10.0;
+    const textLeft = layout.effect.textLeft ?? 0;
     const textTop = layout.effect.textTop ?? 1.5;
-    const textWidth = layout.effect.textWidth ?? 80;
+    const textWidth = layout.effect.textWidth ?? 100;
     const textHeight = layout.effect.textHeight ?? 70;
+    const textAlign = layout.effect.textAlign ?? 'center';
 
     return lines.map((line, idx) => {
       if (!line.trim()) return null;
@@ -464,7 +465,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               top: `${textTop}cqw`,
               width: `${textWidth}%`,
               height: `${textHeight}%`,
-              textAlign: 'left',
+              textAlign: textAlign,
               lineHeight: 1.35,
               boxSizing: 'border-box',
               overflow: 'visible'
