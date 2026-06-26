@@ -160,12 +160,47 @@ export const useAppStore = create((set, get) => ({
     const idToLoad = packId || get().activePackId;
     if (!idToLoad) return [];
     const comps = await dbGetComponents(idToLoad);
-    const sorted = comps.sort((a, b) => b.createdAt - a.createdAt);
+    const migrated = comps.map(c => {
+      if (!c.layers || c.layers.length === 0) {
+        return {
+          ...c,
+          layers: [
+            {
+              id: 'layer-draw-default',
+              type: 'drawing',
+              name: 'Main Drawing',
+              visible: true,
+              opacity: 1,
+              drawingData: c.canvasData || null
+            }
+          ]
+        };
+      }
+      return c;
+    });
+    const sorted = migrated.sort((a, b) => b.createdAt - a.createdAt);
     set({ components: sorted });
     return sorted;
   },
 
-  setActiveComponent: (component) => set({ activeComponent: component }),
+  setActiveComponent: (component) => {
+    if (component && (!component.layers || component.layers.length === 0)) {
+      component = {
+        ...component,
+        layers: [
+          {
+            id: 'layer-draw-default',
+            type: 'drawing',
+            name: 'Main Drawing',
+            visible: true,
+            opacity: 1,
+            drawingData: component.canvasData || null
+          }
+        ]
+      };
+    }
+    set({ activeComponent: component });
+  },
 
   saveComponent: async (componentData) => {
     const compToSave = {

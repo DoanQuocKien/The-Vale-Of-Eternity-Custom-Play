@@ -122,12 +122,12 @@ This is the hard phase. Board components need **multiple layers** (background fi
 ```
 
 ### Tasks
-- [ ] Add `layers[]` to `BoardComponent` schema and migration in `db.js`
-- [ ] Build `LayerPanel.jsx` — sidebar list with add/remove/reorder/visibility
-- [ ] Build compositor function: renders all visible layers in order onto a single offscreen canvas → returns final `ImageData`
-- [ ] Build `GridLayerEditor.jsx` — rows × cols inputs, cell size (mm), gap, label list
-- [ ] Integrate game fonts (`NorseBold`, `TitanOne`) into text layers via CSS `@font-face` already loaded in `index.css`
-- [ ] Update Save to run compositor and store result as `canvasData`
+- [x] Add `layers[]` to `BoardComponent` schema and migration in `db.js`
+- [x] Build `LayerPanel.jsx` — sidebar list with add/remove/reorder/visibility
+- [x] Build compositor function: renders all visible layers in order onto a single offscreen canvas → returns final `ImageData`
+- [x] Build `GridLayerEditor.jsx` — rows × cols inputs, cell size (mm), gap, label list
+- [x] Integrate game fonts (`NorseBold`, `TitanOne`) into text layers via CSS `@font-face` already loaded in `index.css`
+- [x] Update Save to run compositor and store result as `canvasData`
 
 ### Why separate from Phase 2?
 Phase 2 gives you a working single-canvas tool immediately. Layers are architecturally significant — they touch Save, Load, the canvas render loop, and the UI. Doing them separately avoids a painful rewrite of a half-finished system.

@@ -3,9 +3,11 @@ import { useAppStore } from '../../store/useAppStore.js';
 import {
   Trash2, Plus, FileText, Undo, RotateCcw,
   ZoomIn, ZoomOut, Move, Square, Circle as CircleIcon, Type,
-  Paintbrush, Eraser, Check, Settings, Minus
+  Paintbrush, Eraser, Check, Settings, Minus, FileImage, Sliders
 } from 'lucide-react';
 import { drawShape } from '../../utils/canvasUtils.js';
+import LayerPanel from './LayerPanel.jsx';
+import GridLayerEditor from './GridLayerEditor.jsx';
 
 // ─── Custom Color Picker Helpers ─────────────────────────────────────────────
 function hexToHsl(hex) {
@@ -407,6 +409,10 @@ export default function ComponentDesigner() {
   const [compName, setCompName] = useState('');
   const [compBleed, setCompBleed] = useState(3);
 
+  // Layer stack states
+  const [activeLayerId, setActiveLayerId] = useState(null);
+  const imageCacheRef = useRef({});
+
   // New component modal state
   const [showNewModal, setShowNewModal] = useState(false);
   const [newPresetType, setNewPresetType] = useState('board'); // 'board' | 'track' | 'tile' | 'tile-sheet' | 'custom'
@@ -438,13 +444,14 @@ export default function ComponentDesigner() {
   const [fontSize, setFontSize] = useState(48);
   const [textString, setTextString] = useState('Text Label');
 
-  // Drawing state
+  // Drawing state tracking
   const isDrawing = useRef(false);
   const lastDrawingPos = useRef({ x: 0, y: 0 });
   const isDrawingShape = useRef(false);
   const startPosRef = useRef({ x: 0, y: 0 });
+  const activeCoordsRef = useRef(null);
 
-  // Undo history
+  // Undo list
   const [undoList, setUndoList] = useState([]);
 
   // Spacebar pan listener
@@ -474,31 +481,26 @@ export default function ComponentDesigner() {
       setCompName(activeComponent.name || '');
       setCompBleed(activeComponent.bleedMm ?? 3);
 
+      // Default active layer if none selected or if component changed
+      const layers = activeComponent.layers || [];
+      if (layers.length > 0) {
+        const hasActive = layers.some(l => l.id === activeLayerId);
+        if (!hasActive) {
+          setActiveLayerId(layers[layers.length - 1].id); // select top layer
+        }
+      }
+
       const widthPx = Math.round(activeComponent.widthMm * 11.811);
       const heightPx = Math.round(activeComponent.heightMm * 11.811);
 
-      // Initialize drawing layer backing canvas
+      // Initialize drawing layer backing canvas size
       const drawCvs = drawingCanvasRef.current || document.createElement('canvas');
       drawCvs.width = widthPx;
       drawCvs.height = heightPx;
       drawingCanvasRef.current = drawCvs;
 
-      const drawCtx = drawCvs.getContext('2d');
-      drawCtx.clearRect(0, 0, widthPx, heightPx);
-
-      if (activeComponent.canvasData) {
-        const img = new Image();
-        img.onload = () => {
-          drawCtx.drawImage(img, 0, 0);
-          redrawComposite();
-        };
-        img.src = activeComponent.canvasData;
-      } else {
-        redrawComposite();
-      }
-
       // Compute fitting default zoom
-      const workspaceWidth = 800; // estimated workspace center dimensions
+      const workspaceWidth = 800;
       const workspaceHeight = 550;
       const fitZoom = Math.min((workspaceWidth - 60) / widthPx, (workspaceHeight - 60) / heightPx);
       setZoom(Math.max(0.15, Math.min(2.5, fitZoom)));
@@ -506,8 +508,9 @@ export default function ComponentDesigner() {
       setUndoList([]);
     } else {
       setCompName('');
+      setActiveLayerId(null);
     }
-  }, [activeComponent]);
+  }, [activeComponent?.id]);
 
   // Load components on pack change
   useEffect(() => {
@@ -516,12 +519,38 @@ export default function ComponentDesigner() {
     }
   }, [activePackId, loadComponents]);
 
-  // Redraw composite when active components or settings change
+  // Sync drawingCanvasRef when active layer changes
+  useEffect(() => {
+    if (activeComponent && activeLayerId) {
+      const activeLayer = activeComponent.layers?.find(l => l.id === activeLayerId);
+      if (activeLayer && activeLayer.type === 'drawing') {
+        const drawCvs = drawingCanvasRef.current;
+        if (drawCvs) {
+          const drawCtx = drawCvs.getContext('2d');
+          drawCtx.clearRect(0, 0, drawCvs.width, drawCvs.height);
+          if (activeLayer.drawingData) {
+            const img = new Image();
+            img.onload = () => {
+              drawCtx.drawImage(img, 0, 0);
+              redrawComposite();
+            };
+            img.src = activeLayer.drawingData;
+          } else {
+            redrawComposite();
+          }
+        }
+      } else {
+        redrawComposite();
+      }
+    }
+  }, [activeLayerId, activeComponent?.id]);
+
+  // Redraw composite when settings, layers list, or drawing tool changes
   useEffect(() => {
     redrawComposite();
-  }, [activeComponent, tool]);
+  }, [activeComponent, tool, activeLayerId]);
 
-  const redrawComposite = (activeCoords = null) => {
+  const redrawComposite = () => {
     const canvas = canvasRef.current;
     if (!canvas || !activeComponent) return;
     const ctx = canvas.getContext('2d');
@@ -531,48 +560,169 @@ export default function ComponentDesigner() {
 
     ctx.clearRect(0, 0, widthPx, heightPx);
 
-    // 1. Draw base canvas backdrop background
-    ctx.fillStyle = '#0b0f19';
-    ctx.fillRect(0, 0, widthPx, heightPx);
+    const layers = activeComponent.layers || [];
+    
+    // Check if we need to load any images first
+    let needsLoading = false;
+    layers.forEach(layer => {
+      if (layer.type === 'drawing' && layer.drawingData) {
+        const cached = imageCacheRef.current[layer.id];
+        if (!cached || cached.src !== layer.drawingData) {
+          needsLoading = true;
+          const img = new Image();
+          img.onload = () => {
+            imageCacheRef.current[layer.id] = img;
+            redrawComposite();
+          };
+          img.src = layer.drawingData;
+        }
+      }
+      if (layer.type === 'image' && layer.imageDataUrl) {
+        const cached = imageCacheRef.current[layer.id];
+        if (!cached || cached.src !== layer.imageDataUrl) {
+          needsLoading = true;
+          const img = new Image();
+          img.onload = () => {
+            imageCacheRef.current[layer.id] = img;
+            redrawComposite();
+          };
+          img.src = layer.imageDataUrl;
+        }
+      }
+    });
 
-    // 2. Draw standard grid backing (subtle)
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-    ctx.lineWidth = 1;
-    const mmStepPx = 10 * 11.811; // 10mm grid lines
-    for (let x = 0; x < widthPx; x += mmStepPx) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, heightPx);
-      ctx.stroke();
-    }
-    for (let y = 0; y < heightPx; y += mmStepPx) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(widthPx, y);
-      ctx.stroke();
-    }
-
-    // 3. Draw existing drawing layer
-    const drawCvs = drawingCanvasRef.current;
-    if (drawCvs) {
-      ctx.drawImage(drawCvs, 0, 0);
-    }
-
-    // 4. Draw active mouse drag preview
-    if (isDrawingShape.current && startPosRef.current && activeCoords) {
-      drawShape(ctx, tool, startPosRef.current, activeCoords, {
-        strokeColor,
-        fillColor,
-        strokeEnabled,
-        fillEnabled,
-        brushSize,
-        opacity: brushOpacity,
-        fontSize,
-        textString
-      });
+    if (needsLoading) {
+      ctx.fillStyle = '#0b0f19';
+      ctx.fillRect(0, 0, widthPx, heightPx);
+      return;
     }
 
-    // 5. Draw safety/bleed border (dashed red)
+    // Compose layers bottom-to-top
+    layers.forEach(layer => {
+      if (!layer.visible) return;
+
+      ctx.save();
+      ctx.globalAlpha = layer.opacity ?? 1.0;
+
+      if (layer.type === 'fill') {
+        ctx.fillStyle = layer.fillColor || '#3b82f6';
+        ctx.fillRect(0, 0, widthPx, heightPx);
+      } 
+      else if (layer.type === 'drawing') {
+        const cachedImg = imageCacheRef.current[layer.id];
+        if (cachedImg) {
+          ctx.drawImage(cachedImg, 0, 0);
+        }
+        
+        // If this drawing layer is active and we are dragging live strokes, draw them
+        if (layer.id === activeLayerId && isDrawingShape.current && startPosRef.current && activeCoordsRef.current) {
+          drawShape(ctx, tool, startPosRef.current, activeCoordsRef.current, {
+            strokeColor,
+            fillColor,
+            strokeEnabled,
+            fillEnabled,
+            brushSize,
+            opacity: brushOpacity,
+            fontSize,
+            textString
+          });
+        }
+      }
+      else if (layer.type === 'image') {
+        const cachedImg = imageCacheRef.current[layer.id];
+        if (cachedImg) {
+          const scale = layer.scale ?? 1;
+          const rotation = layer.rotation ?? 0;
+          const tx = (layer.transformX ?? 0) * 11.811;
+          const ty = (layer.transformY ?? 0) * 11.811;
+          
+          ctx.save();
+          ctx.translate(widthPx / 2 + tx, heightPx / 2 + ty);
+          ctx.rotate((rotation * Math.PI) / 180);
+          ctx.scale(scale, scale);
+          ctx.drawImage(cachedImg, -cachedImg.width / 2, -cachedImg.height / 2);
+          ctx.restore();
+        }
+      }
+      else if (layer.type === 'text') {
+        const textX = (layer.textX ?? Math.round(activeComponent.widthMm / 2)) * 11.811;
+        const textY = (layer.textY ?? Math.round(activeComponent.heightMm / 2)) * 11.811;
+        
+        ctx.font = `bold ${layer.fontSize ?? 48}px ${layer.fontFamily || 'NorseBold'}`;
+        ctx.textAlign = layer.textAlign || 'center';
+        ctx.textBaseline = 'middle';
+        
+        if (layer.fillEnabled ?? true) {
+          ctx.fillStyle = layer.fillColor || '#ffffff';
+          ctx.fillText(layer.text || 'Text Label', textX, textY);
+        }
+        if (layer.strokeEnabled ?? false) {
+          ctx.strokeStyle = layer.strokeColor || '#000000';
+          ctx.lineWidth = layer.lineWidth ?? 2;
+          ctx.strokeText(layer.text || 'Text Label', textX, textY);
+        }
+      }
+      else if (layer.type === 'grid') {
+        const gRows = layer.gridRows ?? 5;
+        const gCols = layer.gridCols ?? 5;
+        const cSizeMm = layer.cellSizeMm ?? 20;
+        const cGapMm = layer.cellGapMm ?? 2;
+        const gX = layer.gridX ?? 10;
+        const gY = layer.gridY ?? 10;
+        
+        const cellW = cSizeMm * 11.811;
+        const cellH = cSizeMm * 11.811;
+        const gap = cGapMm * 11.811;
+        const startX = gX * 11.811;
+        const startY = gY * 11.811;
+        
+        const strokeEn = layer.strokeEnabled ?? true;
+        const fillEn = layer.fillEnabled ?? false;
+        const sColor = layer.strokeColor ?? '#ffffff';
+        const fColor = layer.fillColor ?? '#6366f1';
+        const lWidth = layer.lineWidth ?? 2;
+        const showNum = layer.showNumbers ?? true;
+        const labels = layer.cellLabels ?? [];
+
+        ctx.lineWidth = lWidth;
+        ctx.strokeStyle = sColor;
+        ctx.fillStyle = fColor;
+        
+        for (let r = 0; r < gRows; r++) {
+          for (let c = 0; c < gCols; c++) {
+            const cellX = startX + c * (cellW + gap);
+            const cellY = startY + r * (cellH + gap);
+            
+            ctx.beginPath();
+            ctx.rect(cellX, cellY, cellW, cellH);
+            if (fillEn) ctx.fill();
+            if (strokeEn) ctx.stroke();
+            
+            const cellIndex = r * gCols + c;
+            let cellText = '';
+            if (labels[cellIndex] !== undefined && labels[cellIndex] !== '') {
+              cellText = labels[cellIndex];
+            } else if (showNum) {
+              cellText = String(cellIndex + 1);
+            }
+            
+            if (cellText) {
+              ctx.save();
+              ctx.fillStyle = strokeEn ? sColor : '#ffffff';
+              ctx.font = `bold ${Math.max(12, cellH * 0.22)}px NorseBold, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(cellText, cellX + cellW / 2, cellY + cellH / 2);
+              ctx.restore();
+            }
+          }
+        }
+      }
+
+      ctx.restore();
+    });
+
+    // 6. Draw safety/bleed border (dashed red)
     const bleedPx = Math.round((activeComponent.bleedMm ?? 3) * 11.811);
     if (bleedPx > 0) {
       ctx.save();
@@ -623,12 +773,23 @@ export default function ComponentDesigner() {
     }
   };
 
+  // Saves current drawing backing canvas to the active drawing layer
   const saveComponentDrawing = () => {
-    if (!activeComponent || !drawingCanvasRef.current) return;
-    const canvasData = drawingCanvasRef.current.toDataURL('image/png');
+    if (!activeComponent || !drawingCanvasRef.current || !canvasRef.current) return;
+    
+    const drawingDataUrl = drawingCanvasRef.current.toDataURL('image/png');
+    
+    const updatedLayers = activeComponent.layers.map(l => {
+      if (l.id === activeLayerId) {
+        return { ...l, drawingData: drawingDataUrl };
+      }
+      return l;
+    });
+
     saveComponent({
       ...activeComponent,
-      canvasData
+      layers: updatedLayers,
+      canvasData: canvasRef.current.toDataURL('image/png')
     });
   };
 
@@ -665,13 +826,16 @@ export default function ComponentDesigner() {
 
     if (!drawingCanvasRef.current || !activeComponent) return;
 
+    const activeLayer = activeComponent.layers?.find(l => l.id === activeLayerId);
+    const isDrawingLayerActive = activeLayer && activeLayer.type === 'drawing';
+    if (!isDrawingLayerActive) return; // ignore draws if non-drawing layer is selected
+
     const coords = getCanvasCoords(e);
     if (!coords) return;
 
     const widthPx = Math.round(activeComponent.widthMm * 11.811);
     const heightPx = Math.round(activeComponent.heightMm * 11.811);
 
-    // Verify pointer clicked inside canvas to start drawing
     const clickedInside = coords.x >= 0 && coords.x <= widthPx && coords.y >= 0 && coords.y <= heightPx;
     if (!clickedInside) return;
 
@@ -741,9 +905,10 @@ export default function ComponentDesigner() {
 
     const coords = getCanvasCoords(e);
     if (!coords) return;
+    activeCoordsRef.current = coords;
 
     if (isDrawingShape.current && startPosRef.current) {
-      redrawComposite(coords);
+      redrawComposite();
       return;
     }
 
@@ -802,6 +967,7 @@ export default function ComponentDesigner() {
       });
       isDrawingShape.current = false;
       startPosRef.current = null;
+      activeCoordsRef.current = null;
       saveComponentDrawing();
       redrawComposite();
     }
@@ -813,7 +979,7 @@ export default function ComponentDesigner() {
   };
 
   const handleZoomIn = () => setZoom(z => Math.min(8, z + 0.15));
-  const handleZoomOut = () => setZoom(z => Math.max(0.1, z - 0.15));
+  const handleZoomOut = () => setZoom(z => Math.max(0.05, z - 0.15));
   const handleZoomReset = () => {
     if (activeComponent) {
       const wPx = Math.round(activeComponent.widthMm * 11.811);
@@ -826,6 +992,66 @@ export default function ComponentDesigner() {
     setPan({ x: 30, y: 30 });
   };
 
+  // Layer Stack modifications
+  const handleAddLayer = (type) => {
+    if (!activeComponent) return;
+    const newLayer = {
+      id: 'layer-' + Date.now(),
+      type,
+      name: `${type.charAt(0).toUpperCase() + type.slice(1)} Layer ${(activeComponent.layers || []).length + 1}`,
+      visible: true,
+      opacity: 1,
+      ...(type === 'fill' ? { fillColor: '#3b82f6' } : {}),
+      ...(type === 'text' ? { text: 'Round Track', fontFamily: 'NorseBold', fontSize: 48, fillColor: '#ffffff', fillEnabled: true, textX: Math.round(activeComponent.widthMm / 2), textY: Math.round(activeComponent.heightMm / 2) } : {}),
+      ...(type === 'grid' ? { gridRows: 5, gridCols: 5, cellSizeMm: 20, cellGapMm: 2, gridX: 10, gridY: 10, strokeColor: '#ffffff', fillColor: '#6366f1', strokeEnabled: true, fillEnabled: false, lineWidth: 2, showNumbers: true, cellLabels: [] } : {}),
+      ...(type === 'drawing' ? { drawingData: null } : {}),
+      ...(type === 'image' ? { imageDataUrl: null, scale: 1, rotation: 0, transformX: 0, transformY: 0 } : {})
+    };
+    const updatedLayers = [...(activeComponent.layers || []), newLayer];
+    saveComponent({
+      ...activeComponent,
+      layers: updatedLayers
+    });
+    setActiveLayerId(newLayer.id);
+  };
+
+  const handleRemoveLayer = (layerId) => {
+    if (!activeComponent || (activeComponent.layers || []).length <= 1) return;
+    if (window.confirm('Are you sure you want to delete this layer?')) {
+      const updatedLayers = activeComponent.layers.filter(l => l.id !== layerId);
+      saveComponent({
+        ...activeComponent,
+        layers: updatedLayers
+      });
+      if (activeLayerId === layerId) {
+        setActiveLayerId(updatedLayers[updatedLayers.length - 1].id);
+      }
+    }
+  };
+
+  const handleUpdateLayer = (layerId, updatedProperties) => {
+    if (!activeComponent) return;
+    const updatedLayers = activeComponent.layers.map(l => {
+      if (l.id === layerId) {
+        return { ...l, ...updatedProperties };
+      }
+      return l;
+    });
+    saveComponent({
+      ...activeComponent,
+      layers: updatedLayers
+    });
+  };
+
+  const handleReorderLayers = (newLayers) => {
+    if (!activeComponent) return;
+    saveComponent({
+      ...activeComponent,
+      layers: newLayers
+    });
+  };
+
+  // Component setup
   const handleOpenNewModal = () => {
     setNewName('');
     setNewPresetType('board');
@@ -870,7 +1096,16 @@ export default function ComponentDesigner() {
       heightMm: h,
       bleedMm: isNaN(b) ? 3 : b,
       canvasData: null,
-      layers: [],
+      layers: [
+        {
+          id: 'layer-draw-default',
+          type: 'drawing',
+          name: 'Main Drawing',
+          visible: true,
+          opacity: 1,
+          drawingData: null
+        }
+      ],
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
@@ -899,9 +1134,13 @@ export default function ComponentDesigner() {
     }
   };
 
-  // Physical dimension calculations for view
+  // Current calculations
   const widthPx = activeComponent ? Math.round(activeComponent.widthMm * 11.811) : 0;
   const heightPx = activeComponent ? Math.round(activeComponent.heightMm * 11.811) : 0;
+  
+  const layers = activeComponent?.layers || [];
+  const activeLayer = layers.find(l => l.id === activeLayerId);
+  const isDrawingLayerActive = activeLayer && activeLayer.type === 'drawing';
 
   return (
     <div style={{
@@ -912,7 +1151,7 @@ export default function ComponentDesigner() {
       alignItems: 'start',
       minHeight: '70vh'
     }}>
-      {/* SIDEBAR LEFT: List of components & details */}
+      {/* SIDEBAR LEFT: List of components & layers panel */}
       <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
@@ -943,9 +1182,11 @@ export default function ComponentDesigner() {
           display: 'flex',
           flexDirection: 'column',
           gap: '0.5rem',
-          maxHeight: '260px',
+          maxHeight: '160px',
           overflowY: 'auto',
-          paddingRight: '0.25rem'
+          paddingRight: '0.25rem',
+          borderBottom: '1px solid var(--border-color)',
+          paddingBottom: '1rem'
         }}>
           {components.length === 0 ? (
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '2rem 0' }}>
@@ -960,7 +1201,7 @@ export default function ComponentDesigner() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  padding: '0.75rem 1rem',
+                  padding: '0.6rem 0.75rem',
                   background: activeComponent?.id === comp.id ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.02)',
                   border: activeComponent?.id === comp.id ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-md)',
@@ -969,19 +1210,19 @@ export default function ComponentDesigner() {
                   boxSizing: 'border-box'
                 }}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 }}>
                   <span style={{
-                    fontSize: '0.85rem',
+                    fontSize: '0.82rem',
                     fontWeight: activeComponent?.id === comp.id ? 700 : 500,
                     color: activeComponent?.id === comp.id ? 'var(--text-primary)' : 'var(--text-secondary)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: '160px'
+                    maxWidth: '150px'
                   }}>
                     {comp.name}
                   </span>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                     {comp.type} • {comp.widthMm}x{comp.heightMm}mm
                   </span>
                 </div>
@@ -999,52 +1240,58 @@ export default function ComponentDesigner() {
                   onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-danger)'}
                   onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={12} />
                 </button>
               </div>
             ))
           )}
         </div>
 
+        {/* Dynamic Layer Stack panel */}
         {activeComponent && (
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', margin: 0 }}>
-              Component Properties
-            </h4>
+          <LayerPanel
+            layers={layers}
+            activeLayerId={activeLayerId}
+            onSelectLayer={setActiveLayerId}
+            onAddLayer={handleAddLayer}
+            onRemoveLayer={handleRemoveLayer}
+            onReorderLayers={handleReorderLayers}
+            onUpdateLayer={handleUpdateLayer}
+          />
+        )}
 
-            {/* Name input */}
+        {/* Active Component general configurations */}
+        {activeComponent && (
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Name</label>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>Name</label>
               <input
                 type="text"
                 value={compName}
                 onChange={(e) => setCompName(e.target.value)}
                 style={{
-                  padding: '0.4rem 0.75rem',
+                  padding: '0.35rem 0.6rem',
                   background: 'var(--bg-main)',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.8rem',
+                  fontSize: '0.75rem',
                   outline: 'none',
                   color: 'white'
                 }}
-                placeholder="e.g. Player Board A"
               />
             </div>
-
-            {/* Bleed margin */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Bleed Zone (mm)</label>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>Bleed (mm)</label>
               <input
                 type="number"
                 value={compBleed}
                 onChange={(e) => setCompBleed(e.target.value)}
                 style={{
-                  padding: '0.4rem 0.75rem',
+                  padding: '0.35rem 0.6rem',
                   background: 'var(--bg-main)',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.8rem',
+                  fontSize: '0.75rem',
                   outline: 'none',
                   color: 'white'
                 }}
@@ -1053,17 +1300,10 @@ export default function ComponentDesigner() {
                 step="0.5"
               />
             </div>
-
             <button
               onClick={handleSaveSettings}
               className="btn"
-              style={{
-                width: '100%',
-                padding: '0.45rem',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                marginTop: '0.25rem'
-              }}
+              style={{ width: '100%', padding: '0.4rem', fontSize: '0.75rem', fontWeight: 700 }}
             >
               Save Settings
             </button>
@@ -1071,7 +1311,7 @@ export default function ComponentDesigner() {
         )}
       </div>
 
-      {/* WORKSPACE & TOOLS PANELS */}
+      {/* WORKSPACE & PROPERTIES PANEL */}
       {activeComponent ? (
         <div style={{
           display: 'grid',
@@ -1079,7 +1319,7 @@ export default function ComponentDesigner() {
           gap: '2rem',
           alignItems: 'start'
         }}>
-          {/* CENTER: Canvas viewport workspace */}
+          {/* CENTER: Workspace Viewport */}
           <div className="glass-panel" style={{
             padding: '1.5rem',
             display: 'flex',
@@ -1088,7 +1328,7 @@ export default function ComponentDesigner() {
             background: 'rgba(5, 8, 20, 0.5)',
             position: 'relative'
           }}>
-            {/* Active canvas box */}
+            {/* Viewport viewport */}
             <div
               style={{
                 position: 'relative',
@@ -1121,40 +1361,62 @@ export default function ComponentDesigner() {
                   gridTemplateRows: '25px 1fr',
                   boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
                 }}>
-                  {/* Top-Left Empty Corner */}
                   <div style={{
                     background: '#111827',
                     borderRight: '1px solid rgba(255,255,255,0.1)',
                     borderBottom: '1px solid rgba(255,255,255,0.1)'
                   }} />
 
-                  {/* Horizontal Ruler */}
                   <div style={{ overflow: 'hidden', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                     <HorizontalRuler widthMm={activeComponent.widthMm} widthPx={widthPx} />
                   </div>
 
-                  {/* Vertical Ruler */}
                   <div style={{ overflow: 'hidden', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
                     <VerticalRuler heightMm={activeComponent.heightMm} heightPx={heightPx} />
                   </div>
 
-                  {/* Drawing Area Canvas */}
                   <div style={{ position: 'relative', width: `${widthPx}px`, height: `${heightPx}px` }}>
                     <canvas
                       ref={canvasRef}
                       width={widthPx}
                       height={heightPx}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'block'
-                      }}
+                      style={{ width: '100%', height: '100%', display: 'block' }}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Floating workspace controls */}
+              {/* Warning overlay if user selects drawing tool on a non-drawing layer */}
+              {!isDrawingLayerActive && tool !== 'none' && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: 0, width: '100%', height: '100%',
+                  background: 'rgba(5, 8, 20, 0.85)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 5,
+                  padding: '2rem',
+                  textAlign: 'center',
+                  backdropFilter: 'blur(3px)'
+                }}>
+                  <Paintbrush size={36} style={{ color: '#818cf8', marginBottom: '0.75rem' }} />
+                  <h4 style={{ color: 'white', margin: 0 }}>Non-Drawing Layer Selected</h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '300px', margin: '0.5rem 0 1rem 0' }}>
+                    To draw, please select or add a <b>Drawing Layer</b> in the layer stack panel on the left.
+                  </p>
+                  <button
+                    onClick={() => setTool('none')}
+                    className="btn"
+                    style={{ padding: '0.4rem 1rem', fontSize: '0.75rem' }}
+                  >
+                    Switch to Pan Tool
+                  </button>
+                </div>
+              )}
+
+              {/* Floating zoom controls */}
               <div style={{
                 position: 'absolute',
                 bottom: '1rem',
@@ -1196,10 +1458,11 @@ export default function ComponentDesigner() {
               </div>
             </div>
 
+            {/* Canvas drawing actions */}
             <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', width: '100%', justifyContent: 'center' }}>
               <button
                 onClick={handleUndo}
-                disabled={undoList.length === 0}
+                disabled={undoList.length === 0 || !isDrawingLayerActive}
                 className="btn"
                 style={{
                   padding: '0.4rem 0.8rem',
@@ -1207,186 +1470,465 @@ export default function ComponentDesigner() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.25rem',
-                  opacity: undoList.length === 0 ? 0.5 : 1
+                  opacity: (undoList.length === 0 || !isDrawingLayerActive) ? 0.5 : 1
                 }}
               >
                 <Undo size={12} /> Undo
               </button>
               <button
                 onClick={handleClearDrawing}
+                disabled={!isDrawingLayerActive}
                 className="btn-danger"
                 style={{
                   padding: '0.4rem 0.8rem',
                   fontSize: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.25rem'
+                  gap: '0.25rem',
+                  opacity: !isDrawingLayerActive ? 0.5 : 1
                 }}
               >
-                <Trash2 size={12} /> Clear Canvas
+                <Trash2 size={12} /> Clear Layer Drawing
               </button>
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem', textAlign: 'center' }}>
-              💡 Hold <b>Spacebar</b> and drag inside workspace to pan. Grid is split into 10mm lines. Red lines denote bleed safety margins.
+              💡 Hold <b>Spacebar</b> and drag to pan workspace. Grid lines are spaced at 10mm. Red margins show bleed safety guidelines.
             </div>
           </div>
 
-          {/* RIGHT PANEL: Drawing tools & properties */}
+          {/* RIGHT PANEL: Properties Configuration Panel */}
           <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              🖌️ Drawing Toolkit
-            </h4>
-
-            {/* Choose Tool Grid */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Choose Tool</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.35rem' }}>
-                {[
-                  { id: 'brush', icon: <Paintbrush size={14} />, label: 'Brush' },
-                  { id: 'erase', icon: <Eraser size={14} />, label: 'Eraser' },
-                  { id: 'line', icon: <Minus size={14} style={{ transform: 'rotate(-45deg)' }} />, label: 'Line' },
-                  { id: 'rect', icon: <Square size={14} />, label: 'Rect' },
-                  { id: 'circle', icon: <CircleIcon size={14} />, label: 'Circle' },
-                  { id: 'text', icon: <Type size={14} />, label: 'Text' },
-                  { id: 'none', icon: <Move size={14} />, label: 'Pan/View' }
-                ].map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => setTool(t.id)}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      padding: '0.4rem 0.2rem',
-                      background: tool === t.id ? 'var(--color-primary)' : 'var(--bg-main)',
-                      border: tool === t.id ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: tool === t.id ? 'white' : 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      fontSize: '0.65rem',
-                      fontWeight: 700,
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    {t.icon}
-                    <span>{t.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Text options */}
-            {tool === 'text' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
-                <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Text String</label>
-                <input
-                  type="text"
-                  value={textString}
-                  onChange={(e) => setTextString(e.target.value)}
-                  style={{
-                    padding: '0.35rem 0.5rem',
-                    background: 'var(--bg-main)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '0.8rem',
-                    outline: 'none',
-                    color: 'white'
-                  }}
-                />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                    <span>Font Size</span>
-                    <span>{fontSize}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="200"
-                    value={fontSize}
-                    onChange={(e) => setFontSize(parseInt(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {tool !== 'none' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                {/* Stroke/Fill checklist */}
-                {['rect', 'circle', 'text'].includes(tool) && (
-                  <div style={{ display: 'flex', gap: '1rem', padding: '0.25rem 0' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', cursor: 'pointer', color: 'white' }}>
+            {activeLayer ? (
+              <>
+                {/* 1. TEXT LAYER EDITORS */}
+                {activeLayer.type === 'text' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                    <h5 style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: 'var(--text-secondary)' }}>
+                      Text Label Options
+                    </h5>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Text Content</label>
                       <input
-                        type="checkbox"
-                        checked={strokeEnabled}
-                        onChange={(e) => setStrokeEnabled(e.target.checked)}
+                        type="text"
+                        value={activeLayer.text || ''}
+                        onChange={(e) => handleUpdateLayer(activeLayer.id, { text: e.target.value })}
+                        style={{
+                          padding: '0.35rem 0.5rem',
+                          background: 'var(--bg-main)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.8rem',
+                          color: 'white',
+                          outline: 'none'
+                        }}
                       />
-                      <span>Outline</span>
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', cursor: 'pointer', color: 'white' }}>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Font Style</label>
+                      <select
+                        value={activeLayer.fontFamily || 'NorseBold'}
+                        onChange={(e) => handleUpdateLayer(activeLayer.id, { fontFamily: e.target.value })}
+                        style={{
+                          padding: '0.35rem',
+                          background: 'var(--bg-main)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.75rem',
+                          color: 'white',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="NorseBold">NorseBold (Norse Game Header)</option>
+                        <option value="TitanOne">TitanOne (Heavy Accent)</option>
+                        <option value="MerriweatherSans">MerriweatherSans (Body Bold)</option>
+                        <option value="sans-serif">Standard System Font</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                        <span>Font Size</span>
+                        <span>{activeLayer.fontSize ?? 48}px</span>
+                      </div>
                       <input
-                        type="checkbox"
-                        checked={fillEnabled}
-                        onChange={(e) => setFillEnabled(e.target.checked)}
+                        type="range"
+                        min="12"
+                        max="300"
+                        value={activeLayer.fontSize ?? 48}
+                        onChange={(e) => handleUpdateLayer(activeLayer.id, { fontSize: parseInt(e.target.value) })}
                       />
-                      <span>Fill Shape</span>
-                    </label>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                        <span>Position X (mm)</span>
+                        <span>{activeLayer.textX ?? Math.round(activeComponent.widthMm / 2)} mm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max={activeComponent.widthMm}
+                        step="1"
+                        value={activeLayer.textX ?? Math.round(activeComponent.widthMm / 2)}
+                        onChange={(e) => handleUpdateLayer(activeLayer.id, { textX: parseInt(e.target.value) })}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                        <span>Position Y (mm)</span>
+                        <span>{activeLayer.textY ?? Math.round(activeComponent.heightMm / 2)} mm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max={activeComponent.heightMm}
+                        step="1"
+                        value={activeLayer.textY ?? Math.round(activeComponent.heightMm / 2)}
+                        onChange={(e) => handleUpdateLayer(activeLayer.id, { textY: parseInt(e.target.value) })}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', padding: '0.25rem 0' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', cursor: 'pointer', color: 'white' }}>
+                        <input
+                          type="checkbox"
+                          checked={activeLayer.fillEnabled ?? true}
+                          onChange={(e) => handleUpdateLayer(activeLayer.id, { fillEnabled: e.target.checked })}
+                        />
+                        <span>Draw Color Fill</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', cursor: 'pointer', color: 'white' }}>
+                        <input
+                          type="checkbox"
+                          checked={activeLayer.strokeEnabled ?? false}
+                          onChange={(e) => handleUpdateLayer(activeLayer.id, { strokeEnabled: e.target.checked })}
+                        />
+                        <span>Stroke Border Outline</span>
+                      </label>
+                    </div>
+
+                    {(activeLayer.fillEnabled ?? true) && (
+                      <ColorPickerPanel
+                        label="Text Fill Color"
+                        color={activeLayer.fillColor || '#ffffff'}
+                        onChange={(color) => handleUpdateLayer(activeLayer.id, { fillColor: color })}
+                      />
+                    )}
+
+                    {activeLayer.strokeEnabled && (
+                      <>
+                        <ColorPickerPanel
+                          label="Text Stroke Color"
+                          color={activeLayer.strokeColor || '#000000'}
+                          onChange={(color) => handleUpdateLayer(activeLayer.id, { strokeColor: color })}
+                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                            <span>Outline Thickness</span>
+                            <span>{activeLayer.lineWidth ?? 2}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="1"
+                            max="12"
+                            value={activeLayer.lineWidth ?? 2}
+                            onChange={(e) => handleUpdateLayer(activeLayer.id, { lineWidth: parseInt(e.target.value) })}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
-                {/* Thickness Slider */}
-                {strokeEnabled && tool !== 'text' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'white' }}>
-                      <span>Thickness / size</span>
-                      <span>{brushSize}px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="150"
-                      value={brushSize}
-                      onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                      style={{ width: '100%' }}
+                {/* 2. FILL LAYER EDITORS */}
+                {activeLayer.type === 'fill' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                    <h5 style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: 'var(--text-secondary)' }}>
+                      Background Solid Fill Color
+                    </h5>
+                    <ColorPickerPanel
+                      label="Solid Fill Color"
+                      color={activeLayer.fillColor || '#3b82f6'}
+                      onChange={(color) => handleUpdateLayer(activeLayer.id, { fillColor: color })}
                     />
                   </div>
                 )}
 
-                {/* Opacity slider */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'white' }}>
-                    <span>Opacity</span>
-                    <span>{Math.round(brushOpacity * 100)}%</span>
+                {/* 3. IMAGE LAYER EDITORS */}
+                {activeLayer.type === 'image' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                    <h5 style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: 'var(--text-secondary)' }}>
+                      Image Layer Properties
+                    </h5>
+                    
+                    {!activeLayer.imageDataUrl ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          padding: '2rem 1.25rem',
+                          background: 'rgba(255,255,255,0.02)',
+                          border: '1px dashed var(--border-color)',
+                          borderRadius: 'var(--radius-sm)',
+                          cursor: 'pointer',
+                          color: 'var(--text-secondary)'
+                        }}>
+                          <FileImage size={24} style={{ marginBottom: '0.4rem', color: 'var(--color-primary)' }} />
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Select Local Image File</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                handleUpdateLayer(activeLayer.id, { imageDataUrl: event.target.result, scale: 1, rotation: 0, transformX: 0, transformY: 0 });
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        <button
+                          onClick={() => handleUpdateLayer(activeLayer.id, { imageDataUrl: null })}
+                          className="btn-danger"
+                          style={{ padding: '0.4rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
+                        >
+                          <Trash2 size={12} /> Remove Graphic
+                        </button>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                            <span>Scale factor</span>
+                            <span>{Math.round((activeLayer.scale ?? 1) * 100)}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.05"
+                            max="4"
+                            step="0.05"
+                            value={activeLayer.scale ?? 1}
+                            onChange={(e) => handleUpdateLayer(activeLayer.id, { scale: parseFloat(e.target.value) })}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                            <span>Rotation Degrees</span>
+                            <span>{activeLayer.rotation ?? 0}°</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="-180"
+                            max="180"
+                            value={activeLayer.rotation ?? 0}
+                            onChange={(e) => handleUpdateLayer(activeLayer.id, { rotation: parseInt(e.target.value) })}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                            <span>Position X offset (mm)</span>
+                            <span>{activeLayer.transformX ?? 0} mm</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="-300"
+                            max="300"
+                            value={activeLayer.transformX ?? 0}
+                            onChange={(e) => handleUpdateLayer(activeLayer.id, { transformX: parseInt(e.target.value) })}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                            <span>Position Y offset (mm)</span>
+                            <span>{activeLayer.transformY ?? 0} mm</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="-300"
+                            max="300"
+                            value={activeLayer.transformY ?? 0}
+                            onChange={(e) => handleUpdateLayer(activeLayer.id, { transformY: parseInt(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="1"
-                    step="0.05"
-                    value={brushOpacity}
-                    onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </div>
+                )}
 
-                {/* Stroke Color */}
-                {strokeEnabled && (
-                  <ColorPickerPanel
-                    label="Border / Stroke Color"
-                    color={strokeColor}
-                    onChange={setStrokeColor}
+                {/* 4. GRID BUILDER EDITORS */}
+                {activeLayer.type === 'grid' && (
+                  <GridLayerEditor
+                    layer={activeLayer}
+                    onUpdateLayer={handleUpdateLayer}
                   />
                 )}
 
-                {/* Fill Color */}
-                {fillEnabled && ['rect', 'circle', 'text'].includes(tool) && (
-                  <ColorPickerPanel
-                    label="Fill Color"
-                    color={fillColor}
-                    onChange={setFillColor}
-                  />
+                {/* 5. DRAWING LAYER EDITORS (STANDARD DRAW TOOLKIT) */}
+                {activeLayer.type === 'drawing' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {/* Tool choice grid */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Choose Tool</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.35rem' }}>
+                        {[
+                          { id: 'brush', icon: <Paintbrush size={14} />, label: 'Brush' },
+                          { id: 'erase', icon: <Eraser size={14} />, label: 'Eraser' },
+                          { id: 'line', icon: <Minus size={14} style={{ transform: 'rotate(-45deg)' }} />, label: 'Line' },
+                          { id: 'rect', icon: <Square size={14} />, label: 'Rect' },
+                          { id: 'circle', icon: <CircleIcon size={14} />, label: 'Circle' },
+                          { id: 'text', icon: <Type size={14} />, label: 'Text' },
+                          { id: 'none', icon: <Move size={14} />, label: 'Pan/View' }
+                        ].map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => setTool(t.id)}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              padding: '0.4rem 0.2rem',
+                              background: tool === t.id ? 'var(--color-primary)' : 'var(--bg-main)',
+                              border: tool === t.id ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
+                              borderRadius: 'var(--radius-sm)',
+                              color: tool === t.id ? 'white' : 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              fontSize: '0.65rem',
+                              fontWeight: 700,
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            {t.icon}
+                            <span>{t.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Standard text overlays */}
+                    {tool === 'text' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
+                        <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Text String</label>
+                        <input
+                          type="text"
+                          value={textString}
+                          onChange={(e) => setTextString(e.target.value)}
+                          style={{
+                            padding: '0.35rem 0.5rem',
+                            background: 'var(--bg-main)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '0.8rem',
+                            outline: 'none',
+                            color: 'white'
+                          }}
+                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                            <span>Font Size</span>
+                            <span>{fontSize}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="200"
+                            value={fontSize}
+                            onChange={(e) => setFontSize(parseInt(e.target.value))}
+                            style={{ width: '100%' }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {tool !== 'none' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        {['rect', 'circle', 'text'].includes(tool) && (
+                          <div style={{ display: 'flex', gap: '1rem', padding: '0.25rem 0' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', cursor: 'pointer', color: 'white' }}>
+                              <input
+                                type="checkbox"
+                                checked={strokeEnabled}
+                                onChange={(e) => setStrokeEnabled(e.target.checked)}
+                              />
+                              <span>Outline Border</span>
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', cursor: 'pointer', color: 'white' }}>
+                              <input
+                                type="checkbox"
+                                checked={fillEnabled}
+                                onChange={(e) => setFillEnabled(e.target.checked)}
+                              />
+                              <span>Fill Shape</span>
+                            </label>
+                          </div>
+                        )}
+
+                        {strokeEnabled && tool !== 'text' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'white' }}>
+                              <span>Line Thickness</span>
+                              <span>{brushSize}px</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="150"
+                              value={brushSize}
+                              onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                              style={{ width: '100%' }}
+                            />
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'white' }}>
+                            <span>Brush Opacity</span>
+                            <span>{Math.round(brushOpacity * 100)}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="1"
+                            step="0.05"
+                            value={brushOpacity}
+                            onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
+                            style={{ width: '100%' }}
+                          />
+                        </div>
+
+                        {strokeEnabled && (
+                          <ColorPickerPanel
+                            label="Border / Stroke Color"
+                            color={strokeColor}
+                            onChange={setStrokeColor}
+                          />
+                        )}
+
+                        {fillEnabled && ['rect', 'circle', 'text'].includes(tool) && (
+                          <ColorPickerPanel
+                            label="Fill Color"
+                            color={fillColor}
+                            onChange={setFillColor}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
+              </>
+            ) : (
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '2rem 0' }}>
+                Please select a layer to view configuration details.
               </div>
             )}
           </div>
