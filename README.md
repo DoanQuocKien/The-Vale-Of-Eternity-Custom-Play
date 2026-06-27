@@ -208,7 +208,7 @@ The installer will be created in `release/`. Two formats are produced:
 ## 🗺️ Future Roadmap
 
 - [x] Custom token designer
-- [ ] Custom board component designer
+- [x] Custom board component designer
 - [ ] Custom standee designer
 - [ ] Customize family
 - [ ] Rulebook page editor with export to matching layout
