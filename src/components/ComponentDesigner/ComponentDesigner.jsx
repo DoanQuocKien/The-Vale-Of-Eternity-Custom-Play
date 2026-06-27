@@ -427,6 +427,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   // Canvas Refs
   const canvasRef = useRef(null);
   const drawingCanvasRef = useRef(null);
+  const imageFileInputRef = useRef(null);
 
   // Zoom & Pan
   const [zoom, setZoom] = useState(0.5);
@@ -819,6 +820,9 @@ export default function ComponentDesigner({ onShowArtImporter }) {
 
   // Viewport Pointer Handlers
   const handlePointerDown = (e) => {
+    // Don't intercept clicks on nested interactive elements (zoom buttons, etc.)
+    if (e.target.closest('button, a, input, select')) return;
+
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch (err) { }
@@ -1019,6 +1023,24 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   };
 
   // Layer Stack modifications
+  // Direct image file upload for image layers (bypasses ArtImporter for reliability)
+  const handleImageFileUpload = (e, layerId) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      handleUpdateLayer(layerId, {
+        imageDataUrl: evt.target.result,
+        scale: 1,
+        rotation: 0,
+        transformX: 0,
+        transformY: 0
+      });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   const handleAddLayer = (type) => {
     if (!activeComponent) return;
     const newLayer = {
@@ -1800,58 +1822,62 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                     
                     {!activeLayer.imageDataUrl ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <button
-                          onClick={() => {
-                            if (typeof onShowArtImporter === 'function') {
-                              onShowArtImporter({
-                                family: 'Water',
-                                existingArt: activeLayer.imageDataUrl,
-                                isComponentMode: true
-                              }, (artData) => {
-                                handleUpdateLayer(activeLayer.id, {
-                                  imageDataUrl: artData.dataUrl,
-                                  scale: 1,
-                                  rotation: 0,
-                                  transformX: 0,
-                                  transformY: 0
+                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Choose how to add an image to this layer:</p>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          {/* Option 1: Full Art Importer Pipeline */}
+                          <button
+                            onClick={() => {
+                              if (typeof onShowArtImporter === 'function') {
+                                onShowArtImporter({
+                                  family: 'Water',
+                                  existingArt: null,
+                                  isComponentMode: true
+                                }, (artData) => {
+                                  handleUpdateLayer(activeLayer.id, {
+                                    imageDataUrl: artData.dataUrl,
+                                    scale: 1, rotation: 0, transformX: 0, transformY: 0
+                                  });
                                 });
-                              });
-                            }
-                          }}
-                          className="btn"
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '2rem 1.25rem',
-                            background: 'rgba(99, 102, 241, 0.04)',
-                            border: '1px dashed var(--color-primary, #6366f1)',
-                            borderRadius: 'var(--radius-md, 8px)',
-                            cursor: 'pointer',
-                            color: 'var(--text-secondary, #9ca3af)',
-                            width: '100%',
-                            gap: '0.5rem',
-                            transition: 'all var(--transition-fast, 0.15s ease)',
-                            outline: 'none'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)';
-                            e.currentTarget.style.borderColor = 'var(--color-primary-hover, #4f46e5)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.04)';
-                            e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
-                          }}
-                        >
-                          <FileImage size={24} style={{ color: 'var(--color-primary, #6366f1)' }} />
-                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #f3f4f6)' }}>
-                            Upload & Process Art
-                          </span>
-                          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted, #6b7280)' }}>
-                            Opens the Art Integrator pipeline
-                          </span>
-                        </button>
+                              }
+                            }}
+                            className="btn"
+                            style={{
+                              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                              justifyContent: 'center', padding: '1.25rem 0.5rem',
+                              background: 'rgba(99,102,241,0.06)', border: '1px dashed var(--color-primary)',
+                              borderRadius: 'var(--radius-md)', cursor: 'pointer', gap: '0.35rem'
+                            }}
+                          >
+                            <FileImage size={20} style={{ color: 'var(--color-primary)' }} />
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-primary)' }}>Art Pipeline</span>
+                            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Enhance &amp; place</span>
+                          </button>
+
+                          {/* Option 2: Direct upload - always works */}
+                          <button
+                            onClick={() => imageFileInputRef.current?.click()}
+                            className="btn"
+                            style={{
+                              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                              justifyContent: 'center', padding: '1.25rem 0.5rem',
+                              background: 'rgba(16,185,129,0.06)', border: '1px dashed #10b981',
+                              borderRadius: 'var(--radius-md)', cursor: 'pointer', gap: '0.35rem'
+                            }}
+                          >
+                            <Plus size={20} style={{ color: '#10b981' }} />
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-primary)' }}>Quick Upload</span>
+                            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Raw image file</span>
+                          </button>
+                        </div>
+
+                        {/* Hidden file input for Quick Upload */}
+                        <input
+                          ref={imageFileInputRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => handleImageFileUpload(e, activeLayer.id)}
+                        />
                       </div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>

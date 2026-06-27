@@ -457,18 +457,18 @@ const CardEditor = ({ onShowArtImporter }) => {
             borderLeft: `2.5px solid var(--family-${backgroundFamily.toLowerCase()})`,
             boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
             position: 'relative',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            display: 'flex',
+            alignItems: 'center'
           }}>
             <div style={{
-              position: 'absolute',
-              left: `${textLeft}cqw`,
-              top: `${textTop}cqw`,
+              marginLeft: `${textLeft}cqw`,
               width: `${textWidth}%`,
-              height: `${textHeight}%`,
               textAlign: textAlign,
               lineHeight: 1.35,
               boxSizing: 'border-box',
-              overflow: 'visible'
+              overflow: 'visible',
+              flexShrink: 0
             }}>
               {parseEffectText(text, tokens)}
             </div>

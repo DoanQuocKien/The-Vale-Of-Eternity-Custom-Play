@@ -91,10 +91,11 @@ export default function LayerPanel({
               overflow: 'hidden'
             }}>
               {[
-                { type: 'drawing', label: 'Drawing Layer' },
-                { type: 'fill', label: 'Fill Layer' },
-                { type: 'text', label: 'Text Layer' },
-                { type: 'grid', label: 'Grid Layer' }
+                { type: 'drawing', label: 'Drawing Layer', color: '#818cf8' },
+                { type: 'fill',    label: 'Fill Layer',    color: '#10b981' },
+                { type: 'image',   label: 'Image Layer',   color: '#3b82f6' },
+                { type: 'text',    label: 'Text Layer',    color: '#ec4899' },
+                { type: 'grid',    label: 'Grid Layer',    color: '#f59e0b' }
               ].map(item => (
                 <button
                   key={item.type}
@@ -108,8 +109,9 @@ export default function LayerPanel({
                     textAlign: 'left',
                     background: 'none',
                     border: 'none',
-                    color: 'white',
+                    color: item.color,
                     fontSize: '0.75rem',
+                    fontWeight: 600,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
