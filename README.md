@@ -232,10 +232,19 @@ The installer will be created in `release/`. Two formats are produced:
 
 ## 🗺️ Future Roadmap
 
+### ✅ Released
 - [x] Custom token designer
 - [x] Custom board component designer
-- [ ] Custom standee designer
-- [ ] Customize family
-- [ ] Rulebook page editor with export to matching layout
-- [ ] Card import/export as JSON for sharing between users
+
+### 🔜 v1.3.0 — Pack Sharing & Community
+- [ ] Pack import/export as `.voe-pack` JSON — share entire packs (cards, tokens, components) between users
+- [ ] Custom family creator — define new families with custom names, colors, sell values, and background art
+
+### 📋 Planned
 - [ ] Undo/redo history in the Art Integrator
+- [ ] Card import/export as standalone JSON for individual card sharing
+- [ ] Rulebook page editor with export to matching print layout
+
+### 💭 Backlog / Under Consideration
+- [ ] Customize existing family visuals (recolor, replace background templates)
+- [ ] Online pack gallery / community sharing hub
