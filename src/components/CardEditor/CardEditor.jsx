@@ -432,7 +432,7 @@ const CardEditor = ({ onShowArtImporter }) => {
     const textTop = layout.effect.textTop ?? 1.5;
     const textWidth = layout.effect.textWidth ?? 100;
     const textHeight = layout.effect.textHeight ?? 70;
-    const textAlign = layout.effect.textAlign ?? 'center';
+    const textAlign = layout.effect.textAlign ?? 'left';
 
     return lines.map((line, idx) => {
       if (!line.trim()) return null;
@@ -965,7 +965,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               >
                 🎲 Random Card
               </button>
-              
+
               <button
                 onClick={() => handleSaveCard(false)}
                 style={{
@@ -1103,268 +1103,268 @@ const CardEditor = ({ onShowArtImporter }) => {
             </div>
 
             {/* Card Artwork Section */}
-          <div style={{
-            background: 'var(--bg-surface-elevated)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md)',
-            padding: '0.85rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-            marginBottom: '0.75rem'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Card Artwork</label>
-              <span style={{
-                fontSize: '0.68rem',
-                padding: '0.1rem 0.4rem',
-                borderRadius: '4px',
-                background: artImageData ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                color: artImageData ? '#10b981' : '#ef4444',
-                fontWeight: 700
-              }}>
-                {artImageData ? 'Art Loaded' : 'No Art Loaded'}
-              </span>
-            </div>
-            
-            {artImageData ? (
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                <div style={{
-                  width: '55px',
-                  height: '55px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-color)',
-                  overflow: 'hidden',
-                  background: '#030712',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
+            <div style={{
+              background: 'var(--bg-surface-elevated)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.85rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+              marginBottom: '0.75rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Card Artwork</label>
+                <span style={{
+                  fontSize: '0.68rem',
+                  padding: '0.1rem 0.4rem',
+                  borderRadius: '4px',
+                  background: artImageData ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  color: artImageData ? '#10b981' : '#ef4444',
+                  fontWeight: 700
                 }}>
-                  <img
-                    src={artImageData.dataUrl}
-                    alt="Card Art Preview"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
-                <div style={{ flexGrow: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
-                  <button
-                    onClick={() => onShowArtImporter({ family: backgroundFamily, existingArt: artImageData.dataUrl }, setArtImageData)}
-                    style={{
-                      padding: '0.35rem',
-                      background: 'rgba(236,72,153,0.12)',
-                      border: '1px solid rgba(236,72,153,0.3)',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      color: '#f472b6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.2rem'
-                    }}
-                    title="Edit, draw, scan or enhance art layers"
-                  >
-                    🎨 Edit Art
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedElement('name');
-                      setSidebarTab('calibration');
-                    }}
-                    style={{
-                      padding: '0.35rem',
-                      background: 'var(--bg-main)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      color: 'var(--text-secondary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.2rem'
-                    }}
-                    title="Calibrate card layout elements"
-                  >
-                    ⚙️ Calibrate Layout
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (window.confirm('Discard active artwork and import/sketch a new one?')) {
-                        setArtImageData(null);
-                        onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData);
-                      }
-                    }}
-                    style={{
-                      padding: '0.35rem',
-                      background: 'var(--bg-main)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      color: 'var(--text-secondary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.2rem',
-                      gridColumn: 'span 2'
-                    }}
-                  >
-                    🔄 Import New Art
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (window.confirm('Delete the custom artwork for this card?')) {
-                        setArtImageData(null);
-                      }
-                    }}
-                    style={{
-                      padding: '0.35rem',
-                      background: 'rgba(239, 68, 68, 0.08)',
-                      border: '1px solid var(--color-danger)',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      color: 'var(--color-danger)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.2rem',
-                      gridColumn: 'span 2'
-                    }}
-                  >
-                    🗑️ Delete Art
-                  </button>
-                </div>
+                  {artImageData ? 'Art Loaded' : 'No Art Loaded'}
+                </span>
               </div>
-            ) : (
-              <button
-                onClick={() => onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData)}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  background: 'rgba(99, 102, 241, 0.08)',
-                  border: '1.5px dashed rgba(99, 102, 241, 0.3)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  color: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <ImagePlus size={16} />
-                Add Custom Artwork (Sketch, Upload, Webcam)
-              </button>
-            )}
-          </div>
 
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>
-              Effect Description (Split timing with newline `\n`)
-            </label>
-            <textarea
-              value={cardEffectText}
-              onChange={(e) => { setCardEffectText(e.target.value); setHasUnsavedChanges(true); }}
-              rows="3"
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.6rem',
-                background: 'var(--bg-surface-elevated)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.85rem',
-                fontFamily: 'monospace',
-                lineHeight: '1.4',
-                resize: 'vertical'
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Insert:</span>
-            {[
-              { label: '⚡', tag: '⚡ ' },
-              { label: '♾️', tag: '♾️ ' },
-              { label: '⏳', tag: '⏳ ' },
-              { label: '⚡ Icon', tag: '\\icon(instant)' },
-              { label: '♾️ Icon', tag: '\\icon(permanent)' },
-              { label: '⏳ Icon', tag: '\\icon(active)' },
-              { label: 'Backside', tag: '\\icon(card)' },
-              { label: 'Water', tag: '\\icon(Water)' },
-              { label: 'Fire', tag: '\\icon(Fire)' },
-              { label: 'Wind', tag: '\\icon(Wind)' },
-              { label: 'Earth', tag: '\\icon(Earth)' },
-              { label: 'Dragon', tag: '\\icon(Dragon)' },
-              { label: 'Red St.', tag: '\\icon(Stone1)' },
-              { label: 'Blue St.', tag: '\\icon(Stone3)' },
-              { label: 'Purp. St.', tag: '\\icon(Stone6)' },
-              { label: 'VP', tag: '\\icon(Score, 1)' },
-              { label: 'Italic', tag: '\\italic(text)' }
-            ].map(t => (
-              <button
-                key={t.label}
-                onClick={() => insertTextTag(t.tag)}
-                style={{
-                  padding: '0.15rem 0.4rem',
-                  background: 'var(--bg-main)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.7rem',
-                  cursor: 'pointer',
-                  color: 'var(--text-secondary)'
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-            {/* Token icon insert buttons — one per pack token */}
-            {tokens.length > 0 && (
-              <>
-                <span style={{ fontSize: '0.65rem', color: '#a78bfa', fontWeight: 700, marginLeft: '0.2rem' }}>Tokens:</span>
-                {tokens.map(tok => {
-                  const tagName = tok.name.toLowerCase().replace(/\s+/g, '_');
-                  return (
+              {artImageData ? (
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <div style={{
+                    width: '55px',
+                    height: '55px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-color)',
+                    overflow: 'hidden',
+                    background: '#030712',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <img
+                      src={artImageData.dataUrl}
+                      alt="Card Art Preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                  <div style={{ flexGrow: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
                     <button
-                      key={tok.id}
-                      onClick={() => insertTextTag(`\\icon(${tagName})`)}
-                      title={`Insert \\icon(${tagName})`}
+                      onClick={() => onShowArtImporter({ family: backgroundFamily, existingArt: artImageData.dataUrl }, setArtImageData)}
                       style={{
-                        padding: '0.15rem 0.4rem',
-                        background: 'rgba(167,139,250,0.1)',
-                        border: '1px solid #a78bfa',
+                        padding: '0.35rem',
+                        background: 'rgba(236,72,153,0.12)',
+                        border: '1px solid rgba(236,72,153,0.3)',
                         borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.7rem',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
                         cursor: 'pointer',
-                        color: '#a78bfa',
+                        color: '#f472b6',
                         display: 'flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: '0.2rem'
                       }}
+                      title="Edit, draw, scan or enhance art layers"
                     >
-                      {tok.imageDataUrl && (
-                        <img
-                          src={tok.imageDataUrl}
-                          alt=""
-                          style={{ height: '1em', width: 'auto', verticalAlign: 'middle' }}
-                        />
-                      )}
-                      {tok.name}
+                      🎨 Edit Art
                     </button>
-                  );
-                })}
-              </>
-            )}
-          </div>
+                    <button
+                      onClick={() => {
+                        setSelectedElement('name');
+                        setSidebarTab('calibration');
+                      }}
+                      style={{
+                        padding: '0.35rem',
+                        background: 'var(--bg-main)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.2rem'
+                      }}
+                      title="Calibrate card layout elements"
+                    >
+                      ⚙️ Calibrate Layout
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Discard active artwork and import/sketch a new one?')) {
+                          setArtImageData(null);
+                          onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData);
+                        }
+                      }}
+                      style={{
+                        padding: '0.35rem',
+                        background: 'var(--bg-main)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.2rem',
+                        gridColumn: 'span 2'
+                      }}
+                    >
+                      🔄 Import New Art
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Delete the custom artwork for this card?')) {
+                          setArtImageData(null);
+                        }
+                      }}
+                      style={{
+                        padding: '0.35rem',
+                        background: 'rgba(239, 68, 68, 0.08)',
+                        border: '1px solid var(--color-danger)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        color: 'var(--color-danger)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.2rem',
+                        gridColumn: 'span 2'
+                      }}
+                    >
+                      🗑️ Delete Art
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: 'rgba(99, 102, 241, 0.08)',
+                    border: '1.5px dashed rgba(99, 102, 241, 0.3)',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    color: 'var(--color-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <ImagePlus size={16} />
+                  Add Custom Artwork (Sketch, Upload, Webcam)
+                </button>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '0.5rem' }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>
+                Effect Description (Split timing with newline `\n`)
+              </label>
+              <textarea
+                value={cardEffectText}
+                onChange={(e) => { setCardEffectText(e.target.value); setHasUnsavedChanges(true); }}
+                rows="3"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.6rem',
+                  background: 'var(--bg-surface-elevated)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.85rem',
+                  fontFamily: 'monospace',
+                  lineHeight: '1.4',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Insert:</span>
+              {[
+                { label: '⚡', tag: '⚡ ' },
+                { label: '♾️', tag: '♾️ ' },
+                { label: '⏳', tag: '⏳ ' },
+                { label: '⚡ Icon', tag: '\\icon(instant)' },
+                { label: '♾️ Icon', tag: '\\icon(permanent)' },
+                { label: '⏳ Icon', tag: '\\icon(active)' },
+                { label: 'Backside', tag: '\\icon(card)' },
+                { label: 'Water', tag: '\\icon(Water)' },
+                { label: 'Fire', tag: '\\icon(Fire)' },
+                { label: 'Wind', tag: '\\icon(Wind)' },
+                { label: 'Earth', tag: '\\icon(Earth)' },
+                { label: 'Dragon', tag: '\\icon(Dragon)' },
+                { label: 'Red St.', tag: '\\icon(Stone1)' },
+                { label: 'Blue St.', tag: '\\icon(Stone3)' },
+                { label: 'Purp. St.', tag: '\\icon(Stone6)' },
+                { label: 'VP', tag: '\\icon(Score, 1)' },
+                { label: 'Italic', tag: '\\italic(text)' }
+              ].map(t => (
+                <button
+                  key={t.label}
+                  onClick={() => insertTextTag(t.tag)}
+                  style={{
+                    padding: '0.15rem 0.4rem',
+                    background: 'var(--bg-main)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.7rem',
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)'
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+              {/* Token icon insert buttons — one per pack token */}
+              {tokens.length > 0 && (
+                <>
+                  <span style={{ fontSize: '0.65rem', color: '#a78bfa', fontWeight: 700, marginLeft: '0.2rem' }}>Tokens:</span>
+                  {tokens.map(tok => {
+                    const tagName = tok.name.toLowerCase().replace(/\s+/g, '_');
+                    return (
+                      <button
+                        key={tok.id}
+                        onClick={() => insertTextTag(`\\icon(${tagName})`)}
+                        title={`Insert \\icon(${tagName})`}
+                        style={{
+                          padding: '0.15rem 0.4rem',
+                          background: 'rgba(167,139,250,0.1)',
+                          border: '1px solid #a78bfa',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          color: '#a78bfa',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.2rem'
+                        }}
+                      >
+                        {tok.imageDataUrl && (
+                          <img
+                            src={tok.imageDataUrl}
+                            alt=""
+                            style={{ height: '1em', width: 'auto', verticalAlign: 'middle' }}
+                          />
+                        )}
+                        {tok.name}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+            </div>
 
             <div style={{
               marginTop: '0.5rem',
@@ -1428,809 +1428,809 @@ const CardEditor = ({ onShowArtImporter }) => {
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
               <Settings size={16} /> Layout & Typography Calibration
             </h3>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-            Select an element on the card to fine-tune its position, size, and styling properties.
-          </p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Select an element on the card to fine-tune its position, size, and styling properties.
+            </p>
 
-          <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '1rem', background: 'var(--bg-surface-elevated)', padding: '0.2rem', borderRadius: 'var(--radius-sm)' }}>
-            {[
-              { id: 'price', label: 'Cost' },
-              { id: 'name', label: 'Title' },
-              { id: 'effect', label: 'Effect Box' },
-              { id: 'credit', label: 'Credit' },
-              { id: 'tokens', label: 'Tokens' }
-            ].map(tab => {
-              const isActive = tab.id === 'tokens'
-                ? selectedElement === 'tokens'
-                : tab.id === 'price'
-                  ? ['priceTL', 'priceBR'].includes(selectedElement)
-                  : tab.id === 'effect'
-                    ? ['effect', 'effectIcon'].includes(selectedElement)
-                    : selectedElement === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setSelectedElement(tab.id === 'price' ? 'priceTL' : tab.id)}
-                  style={{
-                    flex: 1,
-                    padding: '0.35rem 0.2rem',
-                    background: isActive ? (tab.id === 'tokens' ? '#7c3aed' : 'var(--color-primary)') : 'transparent',
-                    border: 'none',
-                    borderRadius: '4px',
-                    color: isActive ? 'white' : 'var(--text-secondary)',
-                    fontSize: '0.68rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+            <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '1rem', background: 'var(--bg-surface-elevated)', padding: '0.2rem', borderRadius: 'var(--radius-sm)' }}>
+              {[
+                { id: 'price', label: 'Cost' },
+                { id: 'name', label: 'Title' },
+                { id: 'effect', label: 'Effect Box' },
+                { id: 'credit', label: 'Credit' },
+                { id: 'tokens', label: 'Tokens' }
+              ].map(tab => {
+                const isActive = tab.id === 'tokens'
+                  ? selectedElement === 'tokens'
+                  : tab.id === 'price'
+                    ? ['priceTL', 'priceBR'].includes(selectedElement)
+                    : tab.id === 'effect'
+                      ? ['effect', 'effectIcon'].includes(selectedElement)
+                      : selectedElement === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSelectedElement(tab.id === 'price' ? 'priceTL' : tab.id)}
+                    style={{
+                      flex: 1,
+                      padding: '0.35rem 0.2rem',
+                      background: isActive ? (tab.id === 'tokens' ? '#7c3aed' : 'var(--color-primary)') : 'transparent',
+                      border: 'none',
+                      borderRadius: '4px',
+                      color: isActive ? 'white' : 'var(--text-secondary)',
+                      fontSize: '0.68rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
 
 
-          {selectedElement === 'tokens' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(124,58,237,0.12)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #7c3aed' }}>
-                <span style={{ fontSize: '0.7rem', color: '#a78bfa' }}>Place token images onto the card. Each instance has its own position and size.</span>
-              </div>
-
-              {/* Token overlay instances list */}
-              {tokenOverlays.length === 0 ? (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem 0' }}>
-                  No token overlays yet. Add one below.
+            {selectedElement === 'tokens' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(124,58,237,0.12)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #7c3aed' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#a78bfa' }}>Place token images onto the card. Each instance has its own position and size.</span>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                  {tokenOverlays.map((ov, idx) => {
-                    const tok = tokens.find(t => t.id === ov.tokenId);
-                    return (
-                      <div key={ov.instanceId} style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#a78bfa' }}>{ov.instanceName || ov.tokenName}</span>
-                          <button
-                            onClick={() => setTokenOverlays(prev => prev.filter(o => o.instanceId !== ov.instanceId))}
-                            style={{ padding: '0.2rem 0.4rem', background: 'rgba(239,68,68,0.1)', border: '1px solid var(--color-danger)', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', cursor: 'pointer', color: 'var(--color-danger)' }}
-                          >✕ Remove</button>
-                        </div>
-                        {tok?.imageDataUrl && (
-                          <img src={tok.imageDataUrl} alt={tok.name} style={{ height: '40px', width: 'auto', objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--border-color)' }} />
-                        )}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {[
-                            { label: 'X Position (cx %)', key: 'cx', min: -20, max: 120, step: 0.5, val: ov.cx ?? 50 },
-                            { label: 'Y Position (cy %)', key: 'cy', min: -20, max: 120, step: 0.5, val: ov.cy ?? 50 },
-                            { label: 'Size (cqw)', key: 'size', min: 1, max: 80, step: 0.5, val: ov.size ?? 15 }
-                          ].map(ctrl => (
-                            <div key={ctrl.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
-                                <span>{ctrl.label}</span>
-                                <span style={{ fontWeight: 'bold', color: '#a78bfa' }}>{ctrl.val}</span>
-                              </div>
-                              <input
-                                type="range"
-                                min={ctrl.min}
-                                max={ctrl.max}
-                                step={ctrl.step}
-                                value={ctrl.val}
-                                onChange={e => {
-                                  const v = parseFloat(e.target.value);
-                                  setTokenOverlays(prev => prev.map(o => o.instanceId === ov.instanceId ? { ...o, [ctrl.key]: v } : o));
-                                }}
-                                style={{
-                                  width: '100%',
-                                  accentColor: '#7c3aed',
-                                  height: '4px',
-                                  cursor: 'pointer'
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
 
-              {/* Add Token section */}
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 600 }}>Add Token to Card</div>
-                {tokens.length === 0 ? (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No tokens in this pack yet. Create tokens in the Tokens Designer tab first.</div>
+                {/* Token overlay instances list */}
+                {tokenOverlays.length === 0 ? (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem 0' }}>
+                    No token overlays yet. Add one below.
+                  </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    {tokens.map(tok => {
-                      const existingCount = tokenOverlays.filter(o => o.tokenId === tok.id).length;
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    {tokenOverlays.map((ov, idx) => {
+                      const tok = tokens.find(t => t.id === ov.tokenId);
                       return (
-                        <button
-                          key={tok.id}
-                          onClick={() => {
-                            const normalised = tok.name.toLowerCase().replace(/\s+/g, '_');
-                            const baseName = normalised;
-                            const count = tokenOverlays.filter(o => o.tokenId === tok.id).length;
-                            const instanceName = count === 0 ? baseName : `${baseName}_${count + 1}`;
-                            const newOverlay = {
-                              instanceId: `ovl-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-                              tokenId: tok.id,
-                              tokenName: tok.name,
-                              instanceName,
-                              cx: 50,
-                              cy: 50,
-                              size: 15
-                            };
-                            setTokenOverlays(prev => [...prev, newOverlay]);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.5rem 0.75rem',
-                            background: 'rgba(124,58,237,0.08)',
-                            border: '1px solid rgba(124,58,237,0.3)',
-                            borderRadius: 'var(--radius-md)',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.15s'
-                          }}
-                        >
-                          {tok.imageDataUrl && (
-                            <img src={tok.imageDataUrl} alt="" style={{ height: '28px', width: 'auto', objectFit: 'contain', borderRadius: '3px' }} />
-                          )}
-                          <div>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#c4b5fd' }}>{tok.name}</div>
-                            {existingCount > 0 && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{existingCount} already placed</div>}
+                        <div key={ov.instanceId} style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#a78bfa' }}>{ov.instanceName || ov.tokenName}</span>
+                            <button
+                              onClick={() => setTokenOverlays(prev => prev.filter(o => o.instanceId !== ov.instanceId))}
+                              style={{ padding: '0.2rem 0.4rem', background: 'rgba(239,68,68,0.1)', border: '1px solid var(--color-danger)', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', cursor: 'pointer', color: 'var(--color-danger)' }}
+                            >✕ Remove</button>
                           </div>
-                          <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#7c3aed', fontWeight: 700 }}>+ Add</span>
-                        </button>
+                          {tok?.imageDataUrl && (
+                            <img src={tok.imageDataUrl} alt={tok.name} style={{ height: '40px', width: 'auto', objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--border-color)' }} />
+                          )}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {[
+                              { label: 'X Position (cx %)', key: 'cx', min: -20, max: 120, step: 0.5, val: ov.cx ?? 50 },
+                              { label: 'Y Position (cy %)', key: 'cy', min: -20, max: 120, step: 0.5, val: ov.cy ?? 50 },
+                              { label: 'Size (cqw)', key: 'size', min: 1, max: 80, step: 0.5, val: ov.size ?? 15 }
+                            ].map(ctrl => (
+                              <div key={ctrl.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
+                                  <span>{ctrl.label}</span>
+                                  <span style={{ fontWeight: 'bold', color: '#a78bfa' }}>{ctrl.val}</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={ctrl.min}
+                                  max={ctrl.max}
+                                  step={ctrl.step}
+                                  value={ctrl.val}
+                                  onChange={e => {
+                                    const v = parseFloat(e.target.value);
+                                    setTokenOverlays(prev => prev.map(o => o.instanceId === ov.instanceId ? { ...o, [ctrl.key]: v } : o));
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    accentColor: '#7c3aed',
+                                    height: '4px',
+                                    cursor: 'pointer'
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
                 )}
-              </div>
-            </div>
-          ) : ['priceTL', 'priceBR'].includes(selectedElement) ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
-                <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>
-              </div>
 
-              {/* Single Shared Color Control for both tags */}
-              <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                  <span>Shared Cost Tags Color</span>
-                  <span>{backgroundFamily} Theme</span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <input
-                    type="color"
-                    value={resolvedPriceTL.colors?.[backgroundFamily] && resolvedPriceTL.colors[backgroundFamily] !== 'default' ? resolvedPriceTL.colors[backgroundFamily] : (resolvedPriceTL.color || '#ffffff')}
-                    onChange={(e) => {
-                      updateSetting('color', e.target.value, 'priceTL');
-                      updateSetting('color', e.target.value, 'priceBR');
-                    }}
-                    style={{
-                      flexGrow: 1,
-                      height: '30px',
-                      padding: '0',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'transparent',
-                      cursor: 'pointer'
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      updateSetting('color', 'default', 'priceTL');
-                      updateSetting('color', 'default', 'priceBR');
-                    }}
-                    style={{
-                      padding: '0.35rem 0.5rem',
-                      background: 'var(--bg-main)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.65rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Reset Default
-                  </button>
-                </div>
-              </div>
-
-              {/* Panel 1: Top-Left Price Tag */}
-              <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Top-Left Cost Tag</span>
-                  {selectedElement === 'priceTL' && <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600 }}>● Editing</span>}
-                </h4>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Pos X</span>
-                      <span>{resolvedPriceTL.left}%</span>
+                {/* Add Token section */}
+                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 600 }}>Add Token to Card</div>
+                  {tokens.length === 0 ? (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No tokens in this pack yet. Create tokens in the Tokens Designer tab first.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      {tokens.map(tok => {
+                        const existingCount = tokenOverlays.filter(o => o.tokenId === tok.id).length;
+                        return (
+                          <button
+                            key={tok.id}
+                            onClick={() => {
+                              const normalised = tok.name.toLowerCase().replace(/\s+/g, '_');
+                              const baseName = normalised;
+                              const count = tokenOverlays.filter(o => o.tokenId === tok.id).length;
+                              const instanceName = count === 0 ? baseName : `${baseName}_${count + 1}`;
+                              const newOverlay = {
+                                instanceId: `ovl-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                                tokenId: tok.id,
+                                tokenName: tok.name,
+                                instanceName,
+                                cx: 50,
+                                cy: 50,
+                                size: 15
+                              };
+                              setTokenOverlays(prev => [...prev, newOverlay]);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.5rem 0.75rem',
+                              background: 'rgba(124,58,237,0.08)',
+                              border: '1px solid rgba(124,58,237,0.3)',
+                              borderRadius: 'var(--radius-md)',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            {tok.imageDataUrl && (
+                              <img src={tok.imageDataUrl} alt="" style={{ height: '28px', width: 'auto', objectFit: 'contain', borderRadius: '3px' }} />
+                            )}
+                            <div>
+                              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#c4b5fd' }}>{tok.name}</div>
+                              {existingCount > 0 && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{existingCount} already placed</div>}
+                            </div>
+                            <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#7c3aed', fontWeight: 700 }}>+ Add</span>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <input
-                      type="range"
-                      min="-10"
-                      max="110"
-                      step="0.1"
-                      value={resolvedPriceTL.left}
-                      onChange={(e) => updateSetting('left', parseFloat(e.target.value), 'priceTL')}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Pos Y</span>
-                      <span>{resolvedPriceTL.top}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-10"
-                      max="110"
-                      step="0.1"
-                      value={resolvedPriceTL.top}
-                      onChange={(e) => updateSetting('top', parseFloat(e.target.value), 'priceTL')}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Size</span>
-                      <span>{resolvedPriceTL.fontSize}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="30"
-                      step="0.1"
-                      value={resolvedPriceTL.fontSize ?? 5}
-                      onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value), 'priceTL')}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
+                  )}
                 </div>
               </div>
+            ) : ['priceTL', 'priceBR'].includes(selectedElement) ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>
+                </div>
 
-              {/* Panel 2: Bottom-Right Price Tag */}
-              <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Bottom-Right Cost Tag</span>
-                  {selectedElement === 'priceBR' && <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600 }}>● Editing</span>}
-                </h4>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Pos X</span>
-                      <span>{resolvedPriceBR.left}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-10"
-                      max="110"
-                      step="0.1"
-                      value={resolvedPriceBR.left}
-                      onChange={(e) => updateSetting('left', parseFloat(e.target.value), 'priceBR')}
-                      style={{ width: '100%' }}
-                    />
+                {/* Single Shared Color Control for both tags */}
+                <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                    <span>Shared Cost Tags Color</span>
+                    <span>{backgroundFamily} Theme</span>
                   </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Pos Y</span>
-                      <span>{resolvedPriceBR.top}%</span>
-                    </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <input
-                      type="range"
-                      min="-10"
-                      max="110"
-                      step="0.1"
-                      value={resolvedPriceBR.top}
-                      onChange={(e) => updateSetting('top', parseFloat(e.target.value), 'priceBR')}
-                      style={{ width: '100%' }}
+                      type="color"
+                      value={resolvedPriceTL.colors?.[backgroundFamily] && resolvedPriceTL.colors[backgroundFamily] !== 'default' ? resolvedPriceTL.colors[backgroundFamily] : (resolvedPriceTL.color || '#ffffff')}
+                      onChange={(e) => {
+                        updateSetting('color', e.target.value, 'priceTL');
+                        updateSetting('color', e.target.value, 'priceBR');
+                      }}
+                      style={{
+                        flexGrow: 1,
+                        height: '30px',
+                        padding: '0',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'transparent',
+                        cursor: 'pointer'
+                      }}
                     />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Size</span>
-                      <span>{resolvedPriceBR.fontSize}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="30"
-                      step="0.1"
-                      value={resolvedPriceBR.fontSize ?? 5}
-                      onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value), 'priceBR')}
-                      style={{ width: '100%' }}
-                    />
+                    <button
+                      onClick={() => {
+                        updateSetting('color', 'default', 'priceTL');
+                        updateSetting('color', 'default', 'priceBR');
+                      }}
+                      style={{
+                        padding: '0.35rem 0.5rem',
+                        background: 'var(--bg-main)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.65rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Reset Default
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <>
-              {['name', 'credit', 'effect'].includes(selectedElement) && (
-                <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    {['credit'].includes(selectedElement) && (
-                      <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>
-                      </div>
-                    )}
 
+                {/* Panel 1: Top-Left Price Tag */}
+                <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Top-Left Cost Tag</span>
+                    {selectedElement === 'priceTL' && <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600 }}>● Editing</span>}
+                  </h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                        <span>Left Position (X)</span>
-                        <span>{resolvedSelected.left}%</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Pos X</span>
+                        <span>{resolvedPriceTL.left}%</span>
                       </div>
                       <input
                         type="range"
                         min="-10"
                         max="110"
                         step="0.1"
-                        value={resolvedSelected.left}
-                        onChange={(e) => updateSetting('left', parseFloat(e.target.value))}
+                        value={resolvedPriceTL.left}
+                        onChange={(e) => updateSetting('left', parseFloat(e.target.value), 'priceTL')}
                         style={{ width: '100%' }}
                       />
                     </div>
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                        <span>Top Position (Y)</span>
-                        <span>{resolvedSelected.top}%</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Pos Y</span>
+                        <span>{resolvedPriceTL.top}%</span>
                       </div>
                       <input
                         type="range"
                         min="-10"
                         max="110"
                         step="0.1"
-                        value={resolvedSelected.top}
-                        onChange={(e) => updateSetting('top', parseFloat(e.target.value))}
+                        value={resolvedPriceTL.top}
+                        onChange={(e) => updateSetting('top', parseFloat(e.target.value), 'priceTL')}
                         style={{ width: '100%' }}
                       />
                     </div>
-                  </div>
-
-                  {selectedElement !== 'effect' && (
-                    <div style={{ marginBottom: '0.75rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                        <span>Font Size (cqw)</span>
-                        <span>{resolvedSelected.fontSize}</span>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Size</span>
+                        <span>{resolvedPriceTL.fontSize}</span>
                       </div>
                       <input
                         type="range"
                         min="1"
                         max="30"
                         step="0.1"
-                        value={resolvedSelected.fontSize ?? 5}
+                        value={resolvedPriceTL.fontSize ?? 5}
+                        onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value), 'priceTL')}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Panel 2: Bottom-Right Price Tag */}
+                <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Bottom-Right Cost Tag</span>
+                    {selectedElement === 'priceBR' && <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600 }}>● Editing</span>}
+                  </h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Pos X</span>
+                        <span>{resolvedPriceBR.left}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-10"
+                        max="110"
+                        step="0.1"
+                        value={resolvedPriceBR.left}
+                        onChange={(e) => updateSetting('left', parseFloat(e.target.value), 'priceBR')}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Pos Y</span>
+                        <span>{resolvedPriceBR.top}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-10"
+                        max="110"
+                        step="0.1"
+                        value={resolvedPriceBR.top}
+                        onChange={(e) => updateSetting('top', parseFloat(e.target.value), 'priceBR')}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Size</span>
+                        <span>{resolvedPriceBR.fontSize}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="30"
+                        step="0.1"
+                        value={resolvedPriceBR.fontSize ?? 5}
+                        onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value), 'priceBR')}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {['name', 'credit', 'effect'].includes(selectedElement) && (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      {['credit'].includes(selectedElement) && (
+                        <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>
+                        </div>
+                      )}
+
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                          <span>Left Position (X)</span>
+                          <span>{resolvedSelected.left}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-10"
+                          max="110"
+                          step="0.1"
+                          value={resolvedSelected.left}
+                          onChange={(e) => updateSetting('left', parseFloat(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                          <span>Top Position (Y)</span>
+                          <span>{resolvedSelected.top}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-10"
+                          max="110"
+                          step="0.1"
+                          value={resolvedSelected.top}
+                          onChange={(e) => updateSetting('top', parseFloat(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                    </div>
+
+                    {selectedElement !== 'effect' && (
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                          <span>Font Size (cqw)</span>
+                          <span>{resolvedSelected.fontSize}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="30"
+                          step="0.1"
+                          value={resolvedSelected.fontSize ?? 5}
+                          onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                    )}
+
+                    {['name', 'effect', 'credit'].includes(selectedElement) && (
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                          <span>Width (%)</span>
+                          <span>{resolvedSelected.width}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="100"
+                          step="1"
+                          value={resolvedSelected.width ?? 80}
+                          onChange={(e) => updateSetting('width', parseInt(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                    )}
+
+                    {['name', 'effect', 'credit'].includes(selectedElement) && (
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                          <span>Text Color</span>
+                        </div>
+                        {selectedElement === 'credit' ? (
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <input
+                              type="color"
+                              value={getPriceColor('credit', backgroundFamily, layout)}
+                              onChange={(e) => updateSetting('color', e.target.value)}
+                              style={{
+                                flexGrow: 1,
+                                height: '32px',
+                                padding: '0',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 'var(--radius-sm)',
+                                background: 'transparent',
+                                cursor: 'pointer'
+                              }}
+                            />
+                            <button
+                              onClick={() => updateSetting('color', 'default')}
+                              style={{
+                                padding: '0.35rem 0.5rem',
+                                background: 'var(--bg-surface-elevated)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 'var(--radius-sm)',
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.7rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Default
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <input
+                              type="color"
+                              value={layout[selectedElement]?.color || '#ffffff'}
+                              onChange={(e) => updateSetting('color', e.target.value)}
+                              style={{
+                                width: '100%',
+                                height: '32px',
+                                padding: '0',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 'var(--radius-sm)',
+                                background: 'transparent',
+                                cursor: 'pointer'
+                              }}
+                            />
+                            <span style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>{layout[selectedElement]?.color || '#ffffff'}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+
+            {['effect', 'effectIcon'].includes(selectedElement) && (
+              <>
+                <div style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    <span>Background Color & Opacity</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <input
+                      type="color"
+                      value={layout.effect.bgColor ?? '#000000'}
+                      onChange={(e) => updateSetting('bgColor', e.target.value)}
+                      style={{
+                        flex: 1,
+                        height: '32px',
+                        padding: '0',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'transparent',
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={layout.effect.bgOpacity ?? 0.6}
+                      onChange={(e) => updateSetting('bgOpacity', parseFloat(e.target.value))}
+                      style={{ flex: 2 }}
+                      title={`Opacity: ${layout.effect.bgOpacity ?? 0.6}`}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Panel Height (cqw)</span>
+                      <span>{layout.effect.panelHeight ?? 8.5}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="2"
+                      max="35"
+                      step="0.5"
+                      value={layout.effect.panelHeight ?? 8.5}
+                      onChange={(e) => updateSetting('panelHeight', parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      <span>Panel Gap (cqw)</span>
+                      <span>{layout.effect.panelGap ?? 1.5}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="20"
+                      step="0.5"
+                      value={layout.effect.panelGap ?? 1.5}
+                      onChange={(e) => updateSetting('panelGap', parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0', paddingTop: '0.5rem' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Timing Icon Properties</h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Size</span>
+                        <span>{layout.effectIcon?.size ?? layout.effect?.iconSize ?? 6.0}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="15"
+                        step="0.1"
+                        value={layout.effectIcon?.size ?? layout.effect?.iconSize ?? 6.0}
+                        onChange={(e) => {
+                          setLayout(prev => ({
+                            ...prev,
+                            effectIcon: {
+                              ...prev.effectIcon,
+                              size: parseFloat(e.target.value)
+                            }
+                          }));
+                        }}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Left Off.</span>
+                        <span>{layout.effectIcon?.left ?? 0}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-20"
+                        max="20"
+                        step="0.1"
+                        value={layout.effectIcon?.left ?? 0}
+                        onChange={(e) => {
+                          setLayout(prev => ({
+                            ...prev,
+                            effectIcon: {
+                              ...prev.effectIcon,
+                              left: parseFloat(e.target.value)
+                            }
+                          }));
+                        }}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Top Off.</span>
+                        <span>{layout.effectIcon?.top ?? layout.effect?.iconOffset ?? 0.2}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-5"
+                        max="15"
+                        step="0.1"
+                        value={layout.effectIcon?.top ?? layout.effect?.iconOffset ?? 0.2}
+                        onChange={(e) => {
+                          setLayout(prev => ({
+                            ...prev,
+                            effectIcon: {
+                              ...prev.effectIcon,
+                              top: parseFloat(e.target.value)
+                            }
+                          }));
+                        }}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0', paddingTop: '0.5rem' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Internal Text Properties</h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Font Size (cqw)</span>
+                        <span>{layout.effect.fontSize ?? 3.8}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="20"
+                        step="0.1"
+                        value={layout.effect.fontSize ?? 3.8}
                         onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))}
                         style={{ width: '100%' }}
                       />
                     </div>
-                  )}
-
-                  {['name', 'effect', 'credit'].includes(selectedElement) && (
-                    <div style={{ marginBottom: '0.75rem' }}>
+                    <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                        <span>Width (%)</span>
-                        <span>{resolvedSelected.width}%</span>
+                        <span>Border Radius (cqw)</span>
+                        <span>{layout.effect.borderRadius ?? 1.5}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="8"
+                        step="0.1"
+                        value={layout.effect.borderRadius ?? 1.5}
+                        onChange={(e) => updateSetting('borderRadius', parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Text Left (cqw)</span>
+                        <span>{layout.effect.textLeft ?? 10.0}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="50"
+                        step="0.5"
+                        value={layout.effect.textLeft ?? 10.0}
+                        onChange={(e) => updateSetting('textLeft', parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Text Top (cqw)</span>
+                        <span>{layout.effect.textTop ?? 1.5}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-5"
+                        max="15"
+                        step="0.5"
+                        value={layout.effect.textTop ?? 1.5}
+                        onChange={(e) => updateSetting('textTop', parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Text Width (%)</span>
+                        <span>{layout.effect.textWidth ?? 80}%</span>
                       </div>
                       <input
                         type="range"
                         min="10"
                         max="100"
                         step="1"
-                        value={resolvedSelected.width ?? 80}
-                        onChange={(e) => updateSetting('width', parseInt(e.target.value))}
+                        value={layout.effect.textWidth ?? 80}
+                        onChange={(e) => updateSetting('textWidth', parseInt(e.target.value))}
                         style={{ width: '100%' }}
                       />
                     </div>
-                  )}
-
-                  {['name', 'effect', 'credit'].includes(selectedElement) && (
-                    <div style={{ marginBottom: '0.75rem' }}>
+                    <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                        <span>Text Color</span>
+                        <span>Text Height (%)</span>
+                        <span>{layout.effect.textHeight ?? 70}%</span>
                       </div>
-                      {selectedElement === 'credit' ? (
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                          <input
-                            type="color"
-                            value={getPriceColor('credit', backgroundFamily, layout)}
-                            onChange={(e) => updateSetting('color', e.target.value)}
-                            style={{
-                              flexGrow: 1,
-                              height: '32px',
-                              padding: '0',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: 'var(--radius-sm)',
-                              background: 'transparent',
-                              cursor: 'pointer'
-                            }}
-                          />
-                          <button
-                            onClick={() => updateSetting('color', 'default')}
-                            style={{
-                              padding: '0.35rem 0.5rem',
-                              background: 'var(--bg-surface-elevated)',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: 'var(--radius-sm)',
-                              color: 'var(--text-secondary)',
-                              fontSize: '0.7rem',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Default
-                          </button>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                          <input
-                            type="color"
-                            value={layout[selectedElement]?.color || '#ffffff'}
-                            onChange={(e) => updateSetting('color', e.target.value)}
-                            style={{
-                              width: '100%',
-                              height: '32px',
-                              padding: '0',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: 'var(--radius-sm)',
-                              background: 'transparent',
-                              cursor: 'pointer'
-                            }}
-                          />
-                          <span style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>{layout[selectedElement]?.color || '#ffffff'}</span>
-                        </div>
-                      )}
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        step="1"
+                        value={layout.effect.textHeight ?? 70}
+                        onChange={(e) => updateSetting('textHeight', parseInt(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
                     </div>
-                  )}
-                </>
-              )}
-            </>
-          )}
-
-          {['effect', 'effectIcon'].includes(selectedElement) && (
-            <>
-              <div style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                  <span>Background Color & Opacity</span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <input
-                    type="color"
-                    value={layout.effect.bgColor ?? '#000000'}
-                    onChange={(e) => updateSetting('bgColor', e.target.value)}
-                    style={{
-                      flex: 1,
-                      height: '32px',
-                      padding: '0',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'transparent',
-                      cursor: 'pointer'
-                    }}
-                  />
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={layout.effect.bgOpacity ?? 0.6}
-                    onChange={(e) => updateSetting('bgOpacity', parseFloat(e.target.value))}
-                    style={{ flex: 2 }}
-                    title={`Opacity: ${layout.effect.bgOpacity ?? 0.6}`}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                    <span>Panel Height (cqw)</span>
-                    <span>{layout.effect.panelHeight ?? 8.5}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="2"
-                    max="35"
-                    step="0.5"
-                    value={layout.effect.panelHeight ?? 8.5}
-                    onChange={(e) => updateSetting('panelHeight', parseFloat(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                    <span>Panel Gap (cqw)</span>
-                    <span>{layout.effect.panelGap ?? 1.5}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="20"
-                    step="0.5"
-                    value={layout.effect.panelGap ?? 1.5}
-                    onChange={(e) => updateSetting('panelGap', parseFloat(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0', paddingTop: '0.5rem' }}>
-                <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Timing Icon Properties</h4>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Size</span>
-                      <span>{layout.effectIcon?.size ?? layout.effect?.iconSize ?? 6.0}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="15"
-                      step="0.1"
-                      value={layout.effectIcon?.size ?? layout.effect?.iconSize ?? 6.0}
-                      onChange={(e) => {
-                        setLayout(prev => ({
-                          ...prev,
-                          effectIcon: {
-                            ...prev.effectIcon,
-                            size: parseFloat(e.target.value)
-                          }
-                        }));
-                      }}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Left Off.</span>
-                      <span>{layout.effectIcon?.left ?? 0}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-20"
-                      max="20"
-                      step="0.1"
-                      value={layout.effectIcon?.left ?? 0}
-                      onChange={(e) => {
-                        setLayout(prev => ({
-                          ...prev,
-                          effectIcon: {
-                            ...prev.effectIcon,
-                            left: parseFloat(e.target.value)
-                          }
-                        }));
-                      }}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Top Off.</span>
-                      <span>{layout.effectIcon?.top ?? layout.effect?.iconOffset ?? 0.2}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-5"
-                      max="15"
-                      step="0.1"
-                      value={layout.effectIcon?.top ?? layout.effect?.iconOffset ?? 0.2}
-                      onChange={(e) => {
-                        setLayout(prev => ({
-                          ...prev,
-                          effectIcon: {
-                            ...prev.effectIcon,
-                            top: parseFloat(e.target.value)
-                          }
-                        }));
-                      }}
-                      style={{ width: '100%' }}
-                    />
                   </div>
                 </div>
-              </div>
 
-              <div style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0', paddingTop: '0.5rem' }}>
-                <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Internal Text Properties</h4>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Font Size (cqw)</span>
-                      <span>{layout.effect.fontSize ?? 3.8}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="20"
-                      step="0.1"
-                      value={layout.effect.fontSize ?? 3.8}
-                      onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Border Radius (cqw)</span>
-                      <span>{layout.effect.borderRadius ?? 1.5}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="8"
-                      step="0.1"
-                      value={layout.effect.borderRadius ?? 1.5}
-                      onChange={(e) => updateSetting('borderRadius', parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Text Left (cqw)</span>
-                      <span>{layout.effect.textLeft ?? 10.0}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="50"
-                      step="0.5"
-                      value={layout.effect.textLeft ?? 10.0}
-                      onChange={(e) => updateSetting('textLeft', parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Text Top (cqw)</span>
-                      <span>{layout.effect.textTop ?? 1.5}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-5"
-                      max="15"
-                      step="0.5"
-                      value={layout.effect.textTop ?? 1.5}
-                      onChange={(e) => updateSetting('textTop', parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Text Width (%)</span>
-                      <span>{layout.effect.textWidth ?? 80}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="10"
-                      max="100"
-                      step="1"
-                      value={layout.effect.textWidth ?? 80}
-                      onChange={(e) => updateSetting('textWidth', parseInt(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      <span>Text Height (%)</span>
-                      <span>{layout.effect.textHeight ?? 70}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="10"
-                      max="100"
-                      step="1"
-                      value={layout.effect.textHeight ?? 70}
-                      onChange={(e) => updateSetting('textHeight', parseInt(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Section 3: Configuration JSON Import/Export */}
-      {sidebarTab === 'calibration' && (
-        <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem', color: '#f472b6', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Download size={16} /> 3. Layout JSON Configuration
-          </h3>
-
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <button
-              onClick={copyLayoutToClipboard}
-              style={{
-                flexGrow: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.4rem',
-                padding: '0.45rem 0.6rem',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-surface-elevated)',
-                border: '1px solid var(--border-color)',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                fontWeight: 600
-              }}
-            >
-              <Copy size={14} /> Copy Config
-            </button>
-
-            <button
-              onClick={() => {
-                setJsonInput(JSON.stringify(layout, null, 2));
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.4rem',
-                padding: '0.45rem 0.6rem',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-surface-elevated)',
-                border: '1px solid var(--border-color)',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                fontWeight: 600
-              }}
-            >
-              View JSON
-            </button>
+              </>
+            )}
           </div>
+        )}
 
-          <div>
-            <textarea
-              value={jsonInput}
-              onChange={(e) => setJsonInput(e.target.value)}
-              placeholder="Paste Layout JSON configuration here to import..."
-              rows="4"
-              style={{
-                width: '100%',
-                padding: '0.4rem 0.5rem',
-                background: 'var(--bg-main)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.8rem',
-                fontFamily: 'monospace',
-                lineHeight: '1.3',
-                resize: 'vertical',
-                marginBottom: '0.5rem'
-              }}
-            />
-            <button
-              onClick={importLayoutConfig}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.4rem',
-                padding: '0.45rem 0.6rem',
-                borderRadius: 'var(--radius-sm)',
-                background: 'linear-gradient(135deg, #ec4899, #db2777)',
-                border: 'none',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)'
-              }}
-            >
-              <Upload size={14} /> Import Layout Configuration
-            </button>
+        {/* Section 3: Configuration JSON Import/Export */}
+        {sidebarTab === 'calibration' && (
+          <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem', color: '#f472b6', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Download size={16} /> 3. Layout JSON Configuration
+            </h3>
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <button
+                onClick={copyLayoutToClipboard}
+                style={{
+                  flexGrow: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.6rem',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-surface-elevated)',
+                  border: '1px solid var(--border-color)',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 600
+                }}
+              >
+                <Copy size={14} /> Copy Config
+              </button>
+
+              <button
+                onClick={() => {
+                  setJsonInput(JSON.stringify(layout, null, 2));
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.6rem',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-surface-elevated)',
+                  border: '1px solid var(--border-color)',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 600
+                }}
+              >
+                View JSON
+              </button>
+            </div>
+
+            <div>
+              <textarea
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+                placeholder="Paste Layout JSON configuration here to import..."
+                rows="4"
+                style={{
+                  width: '100%',
+                  padding: '0.4rem 0.5rem',
+                  background: 'var(--bg-main)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.8rem',
+                  fontFamily: 'monospace',
+                  lineHeight: '1.3',
+                  resize: 'vertical',
+                  marginBottom: '0.5rem'
+                }}
+              />
+              <button
+                onClick={importLayoutConfig}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.6rem',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'linear-gradient(135deg, #ec4899, #db2777)',
+                  border: 'none',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)'
+                }}
+              >
+                <Upload size={14} /> Import Layout Configuration
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       </div>
     </div>

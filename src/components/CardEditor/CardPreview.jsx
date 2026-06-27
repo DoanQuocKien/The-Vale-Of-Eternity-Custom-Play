@@ -1,8 +1,8 @@
 import React from 'react';
-import { 
-  getResolvedElementLayout, 
-  getPriceColor, 
-  getBackgroundPath, 
+import {
+  getResolvedElementLayout,
+  getPriceColor,
+  getBackgroundPath,
   getTimingIcon,
   parseEffectText
 } from '../../utils/constants.jsx';
@@ -10,11 +10,11 @@ import {
 const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
   const { name, cost, family, credit, effect, artImageData, layout } = card;
   const cardLayout = layout || defaultLayout;
-  
+
   const resolvedPriceTL = getResolvedElementLayout('priceTL', family, cardLayout);
   const resolvedPriceBR = getResolvedElementLayout('priceBR', family, cardLayout);
   const resolvedCredit = getResolvedElementLayout('credit', family, cardLayout);
-  
+
   const priceColorTL = getPriceColor('priceTL', family, cardLayout);
   const priceColorBR = getPriceColor('priceBR', family, cardLayout);
 
@@ -30,12 +30,12 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
     const textTop = cardLayout.effect.textTop ?? 1.5;
     const textWidth = cardLayout.effect.textWidth ?? 100;
     const textHeight = cardLayout.effect.textHeight ?? 70;
-    const textAlign = cardLayout.effect.textAlign ?? 'center';
+    const textAlign = cardLayout.effect.textAlign ?? 'left';
 
     return lines.map((line, idx) => {
       if (!line.trim()) return null;
       const { icon, text } = getTimingIcon(line);
-      
+
       return (
         <div key={idx} style={{
           position: 'relative',
@@ -71,9 +71,9 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
             </div>
           </div>
           {icon && (
-            <img 
-              src={icon} 
-              alt="Timing" 
+            <img
+              src={icon}
+              alt="Timing"
               style={{
                 position: 'absolute',
                 left: `${iconLeft}cqw`,
@@ -92,7 +92,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
   };
 
   return (
-    <div 
+    <div
       ref={ref}
       style={{
         width: '744px',
@@ -105,9 +105,9 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
         borderRadius: '32px'
       }}
     >
-      <img 
-        src={getBackgroundPath(family)} 
-        alt="Background" 
+      <img
+        src={getBackgroundPath(family)}
+        alt="Background"
         style={{
           width: '100%',
           height: '100%',
@@ -117,11 +117,11 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
           zIndex: 0
         }}
       />
-      
+
       {artImageData?.dataUrl && (
-        <img 
-          src={artImageData.dataUrl} 
-          alt="Art" 
+        <img
+          src={artImageData.dataUrl}
+          alt="Art"
           style={{
             position: 'absolute',
             left: `${artImageData.transform?.x || 50}%`,
@@ -182,9 +182,9 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
       </div>
 
       {/* Card Layout Border at zIndex: 2 */}
-      <img 
-        src="./img/Layout/CardLayout.png" 
-        alt="Card Layout Border" 
+      <img
+        src="./img/Layout/CardLayout.png"
+        alt="Card Layout Border"
         style={{
           width: '100%',
           height: '100%',
