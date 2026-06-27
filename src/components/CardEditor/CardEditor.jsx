@@ -2085,51 +2085,6 @@ const CardEditor = ({ onShowArtImporter }) => {
                         style={{ width: '100%' }}
                       />
                     </div>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                        <span>Text Top (cqw)</span>
-                        <span>{layout.effect.textTop ?? 1.5}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="-5"
-                        max="15"
-                        step="0.5"
-                        value={layout.effect.textTop ?? 1.5}
-                        onChange={(e) => updateSetting('textTop', parseFloat(e.target.value))}
-                        style={{ width: '100%' }}
-                      />
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                        <span>Text Width (%)</span>
-                        <span>{layout.effect.textWidth ?? 80}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="10"
-                        max="100"
-                        step="1"
-                        value={layout.effect.textWidth ?? 80}
-                        onChange={(e) => updateSetting('textWidth', parseInt(e.target.value))}
-                        style={{ width: '100%' }}
-                      />
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                        <span>Text Height (%)</span>
-                        <span>{layout.effect.textHeight ?? 70}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="10"
-                        max="100"
-                        step="1"
-                        value={layout.effect.textHeight ?? 70}
-                        onChange={(e) => updateSetting('textHeight', parseInt(e.target.value))}
-                        style={{ width: '100%' }}
-                      />
-                    </div>
                   </div>
                 </div>
 

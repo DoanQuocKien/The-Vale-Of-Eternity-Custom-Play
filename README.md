@@ -57,8 +57,9 @@ Based on the official rules of *The Vale of Eternity*, each creature card follow
 - Edit **Name**, **Summoning Cost**, **Effect Text** (multi-line, with timing icons), and **Credit Line**.
 - **5 Family backgrounds** (Fire, Water, Earth, Wind, Dragon) with family-appropriate color theming for price indicators.
 - **Preset cards** for quick inspiration — includes sample cards from each family.
-- **Random card generator** — generates a random card with name, family, cost, effects and credits.
+- **Random card generator** — generates a random card with name, family, cost, effects and credits. Warns if there are unsaved changes before generating.
 - **Save to Pack** — save the active card design to any pack in the local database.
+- **Overwrite** — re-save an existing card; warns if another card in the pack already shares the same name.
 - **Load from Pack** — double-click a card in Pack Explorer to load it back into the editor.
 - **Element layout controls** — fine-tune position and font size of each card element (name, prices, effect box, credit line) with per-family overrides.
 - **Export Card to PDF** — export the current card as a print-ready PDF (63.5 × 88 mm on A4, with optional duplex backside).
@@ -103,6 +104,15 @@ A dedicated multi-stage art processing pipeline, opened via the "Set Art" button
 - **Transparent backing** — tokens save with clear backgrounds.
 - **Automatic bounding box detection** — scans canvas pixels to capture the tightest crop boundary (`bbox`) and saves cropped target frames (`croppedDataUrl`).
 
+### 🗺️ Board Component Designer (Components Tab)
+- **Design custom board components** — boards, score trackers, tiles, and more on a fully configurable canvas with bleed margins and fold-line guides.
+- **Multiple layer types** — Drawing, Fill, Image, Text, and Grid layers, each independently adjustable with opacity controls and reordering.
+- **Built-in rulers and bleed guides** — physical size in mm with a red bleed safety margin overlay and configurable fold lines.
+- **Integrated Art tools** — same Art Integrator pipeline (scan → enhance → paint → place) available for Image layers, plus a Quick Upload option for direct file loading.
+- **Pan & Zoom** — scroll to zoom, click-drag or select the Pan tool to navigate; zoom +/− buttons and a fit-to-screen reset.
+- **Export to PDF** — centered (one component per page, auto-orientation) or tiled grid layout. Supports bleed boundary and fold-line overlays in the output.
+- **Export to Packs** — bundle components into a named pack for organized storage and batch printing.
+
 ### 🎴 Token Overlay Placement & Inline Icons
 - **Interactive Drag & Drop** — drag placed tokens directly on the card preview layout for quick positioning.
 - **Precision Sliders** — calibrate X/Y coordinates (`cx`, `cy`) and size (`cqw`) using smooth range sliders.
@@ -113,20 +123,28 @@ A dedicated multi-stage art processing pipeline, opened via the "Set Art" button
 - **Card & token libraries** — browse cards and custom tokens within a pack.
 - **Search and filter** — search by name, filter by family, filter by cost, sort by name/cost/family/date.
 - **Actions** — edit (load cards/tokens into designers), duplicate/clone, move to other packs, delete.
-- **Export Cards to PDF** — export all filtered cards in the pack as a multi-page print-ready PDF.
+- **Export Cards to PDF** — export all filtered cards in the pack as multi-page print-ready PDFs (with batch size control).
 - **Export Tokens to PDF** — open configure dialog to print custom tokens with adjustable base sizes, gaps, and quantities.
 
 ### 🖨️ Print-Ready PDF Export
+All PDFs are exported as lossless **PNG images** for print-quality output.
+
 - **Cards Sheet**:
   - Standard card size: **63.5 × 88 mm** (standard card game size).
   - **3 × 3 grid** per A4 page (9 cards/page) with centered margins and **2 mm gutters**.
   - Thin light-gray **cutting guide lines** around each card slot.
   - **Fronts Only** and **Duplex** (mirrored backsides) print options.
+  - **Configurable batch size** — set how many cards per output file (default 18 = 2 sheets). When the pack exceeds this limit, multiple numbered PDFs are automatically produced (`_part1.pdf`, `_part2.pdf`, …). This prevents memory crashes with large packs.
+  - ⚠️ A warning is shown when batch size exceeds 27 cards (3 pages).
 - **Tokens Sheet**:
   - Standalone printing of custom-shaped tokens on A4 sheets.
   - Automatic wrapping flow based on token bounding boxes, chosen base size (`20mm`–`60mm`), and margins (`2mm`–`10mm`).
   - Lightweight guide lines around bounding boxes to assist scissors/cutting.
   - Print multi-copy counts per token.
+- **Components Sheet**:
+  - **Centered** — one component per A4 page, auto-oriented (portrait/landscape).
+  - **Tiled Grid** — components flow across pages with configurable spacing.
+  - Optional **bleed boundary** (red dashed) and **fold line** (blue dashed) overlays in the PDF.
 
 ---
 
@@ -138,7 +156,7 @@ A dedicated multi-stage art processing pipeline, opened via the "Set Art" button
 | Desktop wrapper | Electron 35 + electron-builder |
 | Styling | Vanilla CSS (custom properties, glassmorphism, animations) |
 | Database | IndexedDB (browser-native, persisted locally) |
-| PDF export | jsPDF + html2canvas |
+| PDF export | jsPDF + html2canvas (lossless PNG) |
 | Art scanning | jscanify (OpenCV.js) for perspective correction |
 | AI background removal | Hugging Face Transformers.js — `Xenova/modnet` (WASM, client-side) |
 | AI upscaling | UpscalerJS — ESRGAN Medium (WASM, client-side) |
@@ -191,13 +209,20 @@ The installer will be created in `release/`. Two formats are produced:
 │       ├── TextIcon/     # Timing and resource icons
 │       └── ...
 ├── src/
-│   ├── App.jsx           # Main application (designer, pack explorer, PDF export)
-│   ├── ArtImporter.jsx   # Art pipeline modal (scan → enhance → paint → place)
-│   ├── index.css         # Design system tokens and global styles
-│   ├── main.jsx          # React entry point
-│   └── workers/
-│       ├── bgRemoval.worker.js   # Web Worker: AI background removal (Transformers.js)
-│       └── upscale.worker.js     # Web Worker: AI upscaling (UpscalerJS / ESRGAN)
+│   ├── App.jsx                     # Main application shell and tab routing
+│   ├── components/
+│   │   ├── ArtImporter/            # Art pipeline modal (scan → enhance → paint → place)
+│   │   ├── CardEditor/             # Card designer and live preview
+│   │   ├── ComponentDesigner/      # Board component designer (layers, pan/zoom, export)
+│   │   ├── Export/                 # PDF export modals (cards, tokens, components)
+│   │   ├── PackExplorer/           # Pack browser, search, and card/token management
+│   │   └── TokenDesigner/          # Token canvas designer
+│   ├── store/
+│   │   └── useAppStore.js          # Global state (IndexedDB, packs, cards, tokens, components)
+│   ├── utils/
+│   │   └── pdfUtils.js             # Chunked PDF generation (cards, tokens, components)
+│   ├── index.css                   # Design system tokens and global styles
+│   └── main.jsx                    # React entry point
 ├── index.html
 ├── vite.config.js
 └── package.json
@@ -214,4 +239,3 @@ The installer will be created in `release/`. Two formats are produced:
 - [ ] Rulebook page editor with export to matching layout
 - [ ] Card import/export as JSON for sharing between users
 - [ ] Undo/redo history in the Art Integrator
-

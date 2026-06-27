@@ -1,18 +1,33 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
+/**
+ * Export cards to one or more PDF files, splitting by cardsPerFile to avoid
+ * the jsPDF "invalid string length" crash that occurs with too many large PNG blobs.
+ *
+ * @param {object} opts
+ * @param {HTMLElement[]} opts.elements   - Offscreen rendered card DOM elements
+ * @param {object[]}      opts.cards      - Card data objects (for names/progress)
+ * @param {boolean}       opts.includeBackside
+ * @param {string}        opts.backsideImgDataUrl
+ * @param {string}        opts.packName
+ * @param {number}        opts.cardsPerFile  - Max cards per output PDF (default 18)
+ * @param {Function}      opts.onProgress    - (progress, total, statusText) => void
+ * @param {Function}      opts.onFileCount   - (n) => void  called with number of files being produced
+ */
 export async function generatePdfFromElements({
   elements,
   cards,
   includeBackside,
-  backsideImgDataUrl, // if includeBackside is true, pass the data URL of the backside image here
+  backsideImgDataUrl,
   packName,
-  onProgress, // callback: (progress, total, statusText) => void
+  cardsPerFile = 18,
+  onProgress,
+  onFileCount,
 }) {
   const total = cards.length;
   onProgress(0, total, 'Preparing cards...');
 
-  // Bounded wait for React offscreen render and asset loading
   await document.fonts.ready;
   await new Promise(resolve => setTimeout(resolve, 1200));
 
@@ -28,89 +43,121 @@ export async function generatePdfFromElements({
     });
   }
 
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
-
   const cardWidth = 63.5;
   const cardHeight = 88.0;
-  const gapX = 2.0; // 2mm margin/gap between cards horizontally
-  const gapY = 2.0; // 2mm margin/gap between cards vertically
-  const xStart = (210 - (cardWidth * 3 + gapX * 2)) / 2; // Centered margin: 7.75 mm
-  const yStart = (297 - (cardHeight * 3 + gapY * 2)) / 2; // Centered margin: 14.5 mm
+  const gapX = 2.0;
+  const gapY = 2.0;
+  const xStart = (210 - (cardWidth * 3 + gapX * 2)) / 2;
+  const yStart = (297 - (cardHeight * 3 + gapY * 2)) / 2;
   const cardsPerPage = 9;
-  const totalPages = Math.ceil(cards.length / cardsPerPage);
 
-  for (let pageNum = 0; pageNum < totalPages; pageNum++) {
-    if (pageNum > 0) {
-      pdf.addPage();
-    }
+  // Split card indices into chunks
+  const chunks = [];
+  for (let i = 0; i < total; i += cardsPerFile) {
+    chunks.push(cards.slice(i, i + cardsPerFile).map((_, j) => i + j));
+  }
 
-    const startIdx = pageNum * cardsPerPage;
-    const endIdx = Math.min(startIdx + cardsPerPage, cards.length);
-    const pageCardsCount = endIdx - startIdx;
+  if (onFileCount) onFileCount(chunks.length);
 
-    // 1. Draw card fronts
-    for (let i = startIdx; i < endIdx; i++) {
-      const slotIdx = i - startIdx;
-      const row = Math.floor(slotIdx / 3);
-      const col = slotIdx % 3;
+  for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
+    const chunkCardIndices = chunks[chunkIdx];
+    const chunkCards = chunkCardIndices.map(i => cards[i]);
+    const chunkElements = chunkCardIndices.map(i => elements[i]);
+    const chunkTotal = chunkCards.length;
+    const totalPages = Math.ceil(chunkTotal / cardsPerPage);
 
-      const cardElement = elements[i];
-      if (!cardElement) continue;
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
 
-      onProgress(i, total, `Capturing "${cards[i].name}" (${i + 1}/${cards.length})...`);
-      
-      const canvas = await html2canvas(cardElement, {
-        scale: 3.0,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false
-      });
+    for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+      if (pageNum > 0) pdf.addPage();
 
-      const imgData = canvas.toDataURL('image/png');
-      const x = xStart + col * (cardWidth + gapX);
-      const y = yStart + row * (cardHeight + gapY);
+      const startIdx = pageNum * cardsPerPage;
+      const endIdx = Math.min(startIdx + cardsPerPage, chunkTotal);
+      const pageCardsCount = endIdx - startIdx;
 
-      pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
-
-      // Thin cutting guide border
-      pdf.setDrawColor(220, 220, 220);
-      pdf.setLineWidth(0.05);
-      pdf.rect(x, y, cardWidth, cardHeight);
-
-      onProgress(i + 1, total, `Captured "${cards[i].name}"`);
-    }
-
-    // 2. Draw corresponding backsides
-    if (includeBackside && backsideImg) {
-      pdf.addPage();
-      onProgress(endIdx, total, `Generating backside sheet for page ${pageNum + 1}...`);
-      
-      for (let slotIdx = 0; slotIdx < pageCardsCount; slotIdx++) {
+      // Draw card fronts
+      for (let i = startIdx; i < endIdx; i++) {
+        const slotIdx = i - startIdx;
         const row = Math.floor(slotIdx / 3);
         const col = slotIdx % 3;
-        // Mirror columns for duplex printing
-        const mirroredCol = 2 - col;
 
-        const x = xStart + mirroredCol * (cardWidth + gapX);
+        const globalIdx = chunkCardIndices[i];
+        const cardElement = chunkElements[i];
+        if (!cardElement) continue;
+
+        onProgress(
+          globalIdx,
+          total,
+          `File ${chunkIdx + 1}/${chunks.length} — Capturing "${chunkCards[i].name}" (${i + 1}/${chunkTotal})...`
+        );
+
+        const canvas = await html2canvas(cardElement, {
+          scale: 3.0,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const x = xStart + col * (cardWidth + gapX);
         const y = yStart + row * (cardHeight + gapY);
 
-        pdf.addImage(backsideImg, 'PNG', x, y, cardWidth, cardHeight);
+        pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
 
-        // Thin cutting guide border
         pdf.setDrawColor(220, 220, 220);
         pdf.setLineWidth(0.05);
         pdf.rect(x, y, cardWidth, cardHeight);
+
+        onProgress(globalIdx + 1, total, `Captured "${chunkCards[i].name}"`);
+      }
+
+      // Backsides page
+      if (includeBackside && backsideImg) {
+        pdf.addPage();
+        onProgress(
+          chunkCardIndices[endIdx - 1],
+          total,
+          `Generating backside sheet (file ${chunkIdx + 1}, page ${pageNum + 1})...`
+        );
+
+        for (let slotIdx = 0; slotIdx < pageCardsCount; slotIdx++) {
+          const row = Math.floor(slotIdx / 3);
+          const col = slotIdx % 3;
+          const mirroredCol = 2 - col;
+
+          const x = xStart + mirroredCol * (cardWidth + gapX);
+          const y = yStart + row * (cardHeight + gapY);
+
+          pdf.addImage(backsideImg, 'PNG', x, y, cardWidth, cardHeight);
+
+          pdf.setDrawColor(220, 220, 220);
+          pdf.setLineWidth(0.05);
+          pdf.rect(x, y, cardWidth, cardHeight);
+        }
       }
     }
-  }
 
-  onProgress(total, total, 'Saving PDF...');
-  const fileName = packName ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_pack.pdf` : 'custom_cards.pdf';
-  pdf.save(fileName);
+    onProgress(
+      chunkCardIndices[chunkCardIndices.length - 1] + 1,
+      total,
+      `Saving file ${chunkIdx + 1} of ${chunks.length}...`
+    );
+
+    const suffix = chunks.length > 1 ? `_part${chunkIdx + 1}` : '';
+    const baseName = packName
+      ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_pack`
+      : 'custom_cards';
+    pdf.save(`${baseName}${suffix}.pdf`);
+
+    // Brief pause between files so the browser doesn't freeze
+    if (chunkIdx < chunks.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 400));
+    }
+  }
 }
 
 export async function generatePdfForTokens({
@@ -123,7 +170,6 @@ export async function generatePdfForTokens({
 }) {
   onProgress('Preparing tokens...');
 
-  // Wait for assets/fonts to be ready
   await document.fonts.ready;
 
   const pdf = new jsPDF({
@@ -155,7 +201,6 @@ export async function generatePdfForTokens({
     const tok = printItems[i];
     onProgress(`Adding token ${i + 1} of ${printItems.length}...`);
 
-    // Get bounding box dimensions relative to canvas (512 x 512 default)
     const bbox = tok.bbox || { x: 0, y: 0, w: 512, h: 512 };
     const canvasW = tok.canvasW || 512;
     const canvasH = tok.canvasH || 512;
@@ -163,14 +208,12 @@ export async function generatePdfForTokens({
     const w_mm = (bbox.w / canvasW) * baseSize;
     const h_mm = (bbox.h / canvasH) * baseSize;
 
-    // Check wrapping horizontally
     if (x + w_mm + margin > 210) {
       x = margin;
       y = y + currentRowHeight + gap;
       currentRowHeight = 0;
     }
 
-    // Check wrapping vertically (new page)
     if (y > margin && y + h_mm + margin > 297) {
       pdf.addPage();
       x = margin;
@@ -183,7 +226,6 @@ export async function generatePdfForTokens({
       pdf.addImage(srcImage, 'PNG', x, y, w_mm, h_mm);
     }
 
-    // Draw light grey cutting guide border around bounding box
     pdf.setDrawColor(220, 220, 220);
     pdf.setLineWidth(0.05);
     pdf.rect(x, y, w_mm, h_mm);
@@ -193,7 +235,9 @@ export async function generatePdfForTokens({
   }
 
   onProgress('Saving PDF...');
-  const fileName = packName ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_tokens.pdf` : 'custom_tokens.pdf';
+  const fileName = packName
+    ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_tokens.pdf`
+    : 'custom_tokens.pdf';
   pdf.save(fileName);
 }
 
@@ -207,7 +251,6 @@ export async function generatePdfForComponents({
   onProgress(0, 100, 'Preparing components...');
   await document.fonts.ready;
 
-  // Filter components with quantity > 0
   const printItems = [];
   components.forEach(c => {
     const qty = quantities[c.id] || 0;
@@ -224,7 +267,6 @@ export async function generatePdfForComponents({
   const total = printItems.length;
 
   if (options.printType === 'centered') {
-    // Determine orientation of first page
     const firstComp = printItems[0];
     const firstLandscape = firstComp.widthMm > firstComp.heightMm;
     const pdf = new jsPDF({
@@ -246,7 +288,6 @@ export async function generatePdfForComponents({
       const pageW = isLandscape ? 297 : 210;
       const pageH = isLandscape ? 210 : 297;
 
-      // Draw component centered
       const w_mm = comp.widthMm;
       const h_mm = comp.heightMm;
       const x = (pageW - w_mm) / 2;
@@ -256,12 +297,10 @@ export async function generatePdfForComponents({
         pdf.addImage(comp.canvasData, 'PNG', x, y, w_mm, h_mm);
       }
 
-      // Draw physical border outline
       pdf.setDrawColor(200, 200, 200);
       pdf.setLineWidth(0.05);
       pdf.rect(x, y, w_mm, h_mm);
 
-      // Draw bleed boundary if checked
       if (options.includeBleed && comp.bleedMm > 0) {
         pdf.setDrawColor(239, 68, 68);
         pdf.setLineWidth(0.1);
@@ -270,7 +309,6 @@ export async function generatePdfForComponents({
         pdf.setLineDashPattern([], 0);
       }
 
-      // Draw fold lines if checked
       if (options.includeFolds && comp.foldLines && comp.foldLines.length > 0) {
         pdf.setDrawColor(59, 130, 246);
         pdf.setLineWidth(0.15);
@@ -281,13 +319,9 @@ export async function generatePdfForComponents({
           if (isNaN(pos) || pos <= 0) return;
 
           if (fold.type === 'vertical') {
-            if (pos < w_mm) {
-              pdf.line(x + pos, y, x + pos, y + h_mm);
-            }
+            if (pos < w_mm) pdf.line(x + pos, y, x + pos, y + h_mm);
           } else if (fold.type === 'horizontal') {
-            if (pos < h_mm) {
-              pdf.line(x, y + pos, x + w_mm, y + pos);
-            }
+            if (pos < h_mm) pdf.line(x, y + pos, x + w_mm, y + pos);
           }
         });
         pdf.setLineDashPattern([], 0);
@@ -295,11 +329,13 @@ export async function generatePdfForComponents({
     }
 
     onProgress(total, total, 'Saving PDF...');
-    const fileName = packName ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_components.pdf` : 'custom_components.pdf';
+    const fileName = packName
+      ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_components.pdf`
+      : 'custom_components.pdf';
     pdf.save(fileName);
 
   } else {
-    // Tiled Grid Flow layout wrapping
+    // Tiled Grid Flow
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -319,7 +355,6 @@ export async function generatePdfForComponents({
       const w_mm = comp.widthMm;
       const h_mm = comp.heightMm;
 
-      // Wrapping checks
       if (x + w_mm + margin > 210) {
         x = margin;
         y = y + currentRowHeight + gap;
@@ -337,12 +372,10 @@ export async function generatePdfForComponents({
         pdf.addImage(comp.canvasData, 'PNG', x, y, w_mm, h_mm);
       }
 
-      // Cut guide
       pdf.setDrawColor(220, 220, 220);
       pdf.setLineWidth(0.05);
       pdf.rect(x, y, w_mm, h_mm);
 
-      // Bleed
       if (options.includeBleed && comp.bleedMm > 0) {
         pdf.setDrawColor(239, 68, 68);
         pdf.setLineWidth(0.08);
@@ -351,7 +384,6 @@ export async function generatePdfForComponents({
         pdf.setLineDashPattern([], 0);
       }
 
-      // Folds
       if (options.includeFolds && comp.foldLines && comp.foldLines.length > 0) {
         pdf.setDrawColor(59, 130, 246);
         pdf.setLineWidth(0.12);
@@ -362,13 +394,9 @@ export async function generatePdfForComponents({
           if (isNaN(pos) || pos <= 0) return;
 
           if (fold.type === 'vertical') {
-            if (pos < w_mm) {
-              pdf.line(x + pos, y, x + pos, y + h_mm);
-            }
+            if (pos < w_mm) pdf.line(x + pos, y, x + pos, y + h_mm);
           } else if (fold.type === 'horizontal') {
-            if (pos < h_mm) {
-              pdf.line(x, y + pos, x + w_mm, y + pos);
-            }
+            if (pos < h_mm) pdf.line(x, y + pos, x + w_mm, y + pos);
           }
         });
         pdf.setLineDashPattern([], 0);
@@ -379,9 +407,9 @@ export async function generatePdfForComponents({
     }
 
     onProgress(total, total, 'Saving PDF...');
-    const fileName = packName ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_components_grid.pdf` : 'custom_components_grid.pdf';
+    const fileName = packName
+      ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_components_grid.pdf`
+      : 'custom_components_grid.pdf';
     pdf.save(fileName);
   }
 }
-
-

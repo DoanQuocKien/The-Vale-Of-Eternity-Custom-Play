@@ -788,6 +788,9 @@ export default function TokenDesigner({ onShowArtImporter }) {
   };
 
   const handlePointerDown = (e) => {
+    // Don't intercept clicks on nested interactive elements (zoom buttons, etc.)
+    if (e.target.closest('button, a, input, select')) return;
+
     // Capture pointer to track dragging outside canvas boundary
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
