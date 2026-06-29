@@ -145,14 +145,18 @@ export function drawShape(ctx, type, start, end, params) {
     brushSize,
     opacity,
     fontSize,
-    textString
+    textString,
+    fontWeight,
+    strokeSize
   } = params;
 
   ctx.save();
   ctx.globalAlpha = opacity;
   ctx.strokeStyle = strokeColor;
   ctx.fillStyle = fillColor;
-  ctx.lineWidth = brushSize;
+  
+  // Use specific strokeSize if available (e.g. for text outlines), otherwise general brushSize
+  ctx.lineWidth = strokeSize !== undefined ? strokeSize : brushSize;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
@@ -179,7 +183,8 @@ export function drawShape(ctx, type, start, end, params) {
     if (fillEnabled) ctx.fill();
     if (strokeEnabled) ctx.stroke();
   } else if (type === 'text') {
-    ctx.font = `bold ${fontSize}px sans-serif`;
+    const fw = fontWeight !== undefined ? fontWeight : 'bold';
+    ctx.font = `${fw} ${fontSize}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if (fillEnabled) {

@@ -2,6 +2,29 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
 /**
+ * Save a jsPDF document.
+ * - In Electron: writes the PDF buffer to the user's Downloads folder via IPC,
+ *   returning the absolute saved path so CMYK conversion can reference it.
+ * - In browser: falls back to the normal jsPDF download behaviour.
+ *
+ * @param {jsPDF} pdf
+ * @param {string} fileName
+ * @returns {Promise<string|null>} Absolute path (Electron only) or null (browser)
+ */
+async function savePdf(pdf, fileName) {
+  if (typeof window !== 'undefined' && window.electronAPI?.savePdf) {
+    const buffer = pdf.output('arraybuffer');
+    const uint8 = new Uint8Array(buffer);
+    const result = await window.electronAPI.savePdf(fileName, uint8);
+    if (!result.ok) throw new Error(result.error);
+    return result.savedPath;
+  }
+  // Browser fallback
+  pdf.save(fileName);
+  return null;
+}
+
+/**
  * Export cards to one or more PDF files, splitting by cardsPerFile to avoid
  * the jsPDF "invalid string length" crash that occurs with too many large PNG blobs.
  *
@@ -14,6 +37,7 @@ import html2canvas from 'html2canvas';
  * @param {number}        opts.cardsPerFile  - Max cards per output PDF (default 18)
  * @param {Function}      opts.onProgress    - (progress, total, statusText) => void
  * @param {Function}      opts.onFileCount   - (n) => void  called with number of files being produced
+ * @returns {Promise<string[]>} Absolute paths of saved files (Electron) or [] (browser)
  */
 export async function generatePdfFromElements({
   elements,
@@ -58,6 +82,8 @@ export async function generatePdfFromElements({
   }
 
   if (onFileCount) onFileCount(chunks.length);
+
+  const savedPaths = [];
 
   for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
     const chunkCardIndices = chunks[chunkIdx];
@@ -106,7 +132,8 @@ export async function generatePdfFromElements({
         const x = xStart + col * (cardWidth + gapX);
         const y = yStart + row * (cardHeight + gapY);
 
-        pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
+        // OPTIMIZATION: 'FAST' compression prevents huge uncompressed image sizes in the PDF
+        pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight, undefined, 'FAST');
 
         pdf.setDrawColor(220, 220, 220);
         pdf.setLineWidth(0.05);
@@ -132,7 +159,7 @@ export async function generatePdfFromElements({
           const x = xStart + mirroredCol * (cardWidth + gapX);
           const y = yStart + row * (cardHeight + gapY);
 
-          pdf.addImage(backsideImg, 'PNG', x, y, cardWidth, cardHeight);
+          pdf.addImage(backsideImg, 'PNG', x, y, cardWidth, cardHeight, undefined, 'FAST');
 
           pdf.setDrawColor(220, 220, 220);
           pdf.setLineWidth(0.05);
@@ -151,15 +178,25 @@ export async function generatePdfFromElements({
     const baseName = packName
       ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_pack`
       : 'custom_cards';
-    pdf.save(`${baseName}${suffix}.pdf`);
+    const fileName = `${baseName}${suffix}.pdf`;
+
+    const savedPath = await savePdf(pdf, fileName);
+    if (savedPath) savedPaths.push(savedPath);
 
     // Brief pause between files so the browser doesn't freeze
     if (chunkIdx < chunks.length - 1) {
       await new Promise(resolve => setTimeout(resolve, 400));
     }
   }
+
+  return savedPaths;
 }
 
+/**
+ * Export tokens to a PDF file.
+ *
+ * @returns {Promise<string|null>} Absolute path (Electron) or null (browser)
+ */
 export async function generatePdfForTokens({
   tokens,
   quantities,
@@ -194,7 +231,7 @@ export async function generatePdfForTokens({
 
   if (printItems.length === 0) {
     onProgress('No tokens to print.');
-    return;
+    return null;
   }
 
   for (let i = 0; i < printItems.length; i++) {
@@ -223,7 +260,7 @@ export async function generatePdfForTokens({
 
     const srcImage = tok.croppedDataUrl || tok.imageDataUrl;
     if (srcImage) {
-      pdf.addImage(srcImage, 'PNG', x, y, w_mm, h_mm);
+      pdf.addImage(srcImage, 'PNG', x, y, w_mm, h_mm, undefined, 'FAST');
     }
 
     pdf.setDrawColor(220, 220, 220);
@@ -238,9 +275,15 @@ export async function generatePdfForTokens({
   const fileName = packName
     ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_tokens.pdf`
     : 'custom_tokens.pdf';
-  pdf.save(fileName);
+
+  return await savePdf(pdf, fileName);
 }
 
+/**
+ * Export board components to a PDF file.
+ *
+ * @returns {Promise<string|null>} Absolute path (Electron) or null (browser)
+ */
 export async function generatePdfForComponents({
   components,
   quantities,
@@ -261,7 +304,7 @@ export async function generatePdfForComponents({
 
   if (printItems.length === 0) {
     onProgress(0, 100, 'No components to print.');
-    return;
+    return null;
   }
 
   const total = printItems.length;
@@ -294,7 +337,7 @@ export async function generatePdfForComponents({
       const y = (pageH - h_mm) / 2;
 
       if (comp.canvasData) {
-        pdf.addImage(comp.canvasData, 'PNG', x, y, w_mm, h_mm);
+        pdf.addImage(comp.canvasData, 'PNG', x, y, w_mm, h_mm, undefined, 'FAST');
       }
 
       pdf.setDrawColor(200, 200, 200);
@@ -332,7 +375,8 @@ export async function generatePdfForComponents({
     const fileName = packName
       ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_components.pdf`
       : 'custom_components.pdf';
-    pdf.save(fileName);
+
+    return await savePdf(pdf, fileName);
 
   } else {
     // Tiled Grid Flow
@@ -369,7 +413,7 @@ export async function generatePdfForComponents({
       }
 
       if (comp.canvasData) {
-        pdf.addImage(comp.canvasData, 'PNG', x, y, w_mm, h_mm);
+        pdf.addImage(comp.canvasData, 'PNG', x, y, w_mm, h_mm, undefined, 'FAST');
       }
 
       pdf.setDrawColor(220, 220, 220);
@@ -410,6 +454,7 @@ export async function generatePdfForComponents({
     const fileName = packName
       ? `${packName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_components_grid.pdf`
       : 'custom_components_grid.pdf';
-    pdf.save(fileName);
+
+    return await savePdf(pdf, fileName);
   }
 }

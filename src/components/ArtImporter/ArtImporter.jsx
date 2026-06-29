@@ -416,6 +416,7 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
   const [fontSize, setFontSize] = useState(30);
   const [textString, setTextString] = useState('Creature');
   const [polygonPoints, setPolygonPoints] = useState([]);
+  const [fontWeight, setFontWeight] = useState(700);
 
   // Refs for drawing preview
   const isDrawingShape = useRef(false);
@@ -1037,7 +1038,8 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
         brushSize,
         opacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
       setProcessedDataUrl(canvasToDataUrl(cvs));
       return;
@@ -1100,7 +1102,8 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
           brushSize,
           opacity,
           fontSize,
-          textString
+          textString,
+          fontWeight
         });
         setProcessedDataUrl(canvasToDataUrl(cvs));
       }
@@ -1666,14 +1669,17 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                   {tool !== 'pan' && (
                     <div style={{ padding: '0.6rem', borderRadius: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       
-                      {/* Brush size */}
-                      {['brush', 'line', 'rect', 'circle', 'polygon', 'erase', 'restore'].includes(tool) && (
+                      {/* Brush size / Line width / Text Outline size */}
+                      {((['brush', 'line', 'rect', 'circle', 'polygon', 'erase', 'restore'].includes(tool)) || 
+                        (tool === 'text' && strokeEnabled)) && (
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.1rem' }}>
-                            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Brush/Line Width</span>
+                            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                              {tool === 'text' ? 'Text Border Thickness' : 'Brush/Line Width'}
+                            </span>
                             <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{brushSize}px</span>
                           </div>
-                          <input type="range" min={1} max={100} step={1} value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} style={{ width: '100%' }} />
+                          <input type="range" min={1} max={tool === 'text' ? 30 : 100} step={1} value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} style={{ width: '100%' }} />
                         </div>
                       )}
 
@@ -1743,6 +1749,13 @@ export default function ArtImporter({ isOpen, onClose, onArtConfirmed, cardFamil
                               <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{fontSize}px</span>
                             </div>
                             <input type="range" min={10} max={120} step={1} value={fontSize} onChange={(e) => setFontSize(parseInt(e.target.value))} style={{ width: '100%' }} />
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.1rem' }}>
+                              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Font Weight (Thickness)</span>
+                              <span style={{ color: 'var(--color-primary)', fontWeight: fontWeight }}>{fontWeight}</span>
+                            </div>
+                            <input type="range" min={100} max={900} step={100} value={fontWeight} onChange={(e) => setFontWeight(parseInt(e.target.value))} style={{ width: '100%' }} />
                           </div>
                           <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>* Click canvas to place text</span>
                         </div>

@@ -1,5 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '../../store/useAppStore.js';
+import { dbGetTokens, dbGetCards, dbGetPacks } from '../../services/db.js';
+import CardPreview from '../CardEditor/CardPreview.jsx';
+import html2canvas from 'html2canvas';
+import { DEFAULT_LAYOUT } from '../../utils/constants.jsx';
 import {
   Trash2, Plus, FileText, Undo, RotateCcw,
   ZoomIn, ZoomOut, Move, Square, Circle as CircleIcon, Type,
@@ -416,6 +420,16 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   const [activeLayerId, setActiveLayerId] = useState(null);
   const imageCacheRef = useRef({});
 
+  // Library picker state for image layers
+  const [showLibraryPicker, setShowLibraryPicker] = useState(false);
+  const [libraryTab, setLibraryTab] = useState('icons'); // 'icons' | 'tokens' | 'cards'
+  const [libraryItems, setLibraryItems] = useState({ icons: [], tokens: [], cards: [] });
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [pendingLayerId, setPendingLayerId] = useState(null);
+  const [renderingCard, setRenderingCard] = useState(null);
+  const cardRenderRef = useRef(null);
+
+
   // New component modal state
   const [showNewModal, setShowNewModal] = useState(false);
   const [newPresetType, setNewPresetType] = useState('board'); // 'board' | 'track' | 'tile' | 'tile-sheet' | 'custom'
@@ -448,6 +462,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   const [brushOpacity, setBrushOpacity] = useState(1);
   const [fontSize, setFontSize] = useState(48);
   const [textString, setTextString] = useState('Text Label');
+  const [fontWeight, setFontWeight] = useState(700);
 
   // Drawing state tracking
   const isDrawing = useRef(false);
@@ -458,6 +473,131 @@ export default function ComponentDesigner({ onShowArtImporter }) {
 
   // Undo list
   const [undoList, setUndoList] = useState([]);
+
+  // ── Library Picker Loader ──────────────────────────────────────────────────
+  // Built-in game icons from public/img
+  const BUILTIN_ICONS = [
+    // TextIcon (family/resource icons)
+    { id: 'icon-score',  label: 'Score',   src: './img/TextIcon/Score.png',   group: 'Resources' },
+    { id: 'icon-stone1', label: 'Stone×1', src: './img/TextIcon/Stone1.png',  group: 'Resources' },
+    { id: 'icon-stone3', label: 'Stone×3', src: './img/TextIcon/Stone3.png',  group: 'Resources' },
+    { id: 'icon-stone6', label: 'Stone×6', src: './img/TextIcon/Stone6.png',  group: 'Resources' },
+    // Families
+    { id: 'icon-fire',   label: 'Fire',    src: './img/TextIcon/Fire.png',    group: 'Families' },
+    { id: 'icon-water',  label: 'Water',   src: './img/TextIcon/Water.png',   group: 'Families' },
+    { id: 'icon-earth',  label: 'Earth',   src: './img/TextIcon/Earth.png',   group: 'Families' },
+    { id: 'icon-wind',   label: 'Wind',    src: './img/TextIcon/Wind.png',    group: 'Families' },
+    { id: 'icon-dragon', label: 'Dragon',  src: './img/TextIcon/Dragon.png',  group: 'Families' },
+    // Effect types
+    { id: 'icon-eff-instant',  label: 'Instant Effect',    src: './img/Effect/InstantEffect.png',    group: 'Effects' },
+    { id: 'icon-eff-perm',     label: 'Permanent Effect',  src: './img/Effect/PermanentEffect.png',  group: 'Effects' },
+    { id: 'icon-eff-res',      label: 'Resolution Effect', src: './img/Effect/ResolutionEffect.png', group: 'Effects' },
+    // Backgrounds
+    { id: 'bg-fire',   label: 'Fire BG',   src: './img/Background/FireBackground.png',   group: 'Backgrounds' },
+    { id: 'bg-water',  label: 'Water BG',  src: './img/Background/WaterBackground.png',  group: 'Backgrounds' },
+    { id: 'bg-earth',  label: 'Earth BG',  src: './img/Background/EarthBackground.png',  group: 'Backgrounds' },
+    { id: 'bg-wind',   label: 'Air BG',    src: './img/Background/AirBackground.png',    group: 'Backgrounds' },
+    { id: 'bg-dragon', label: 'Dragon BG', src: './img/Background/DragonBackground.png', group: 'Backgrounds' },
+    // Card layouts
+    { id: 'layout-card',     label: 'Card Layout',     src: './img/Layout/CardLayout.png', group: 'Layouts' },
+    { id: 'layout-backside', label: 'Card Backside',   src: './img/Layout/Backside.png',   group: 'Layouts' },
+  ];
+
+  const openLibraryPicker = useCallback(async (layerId) => {
+    setPendingLayerId(layerId);
+    setShowLibraryPicker(true);
+    setLibraryLoading(true);
+    setLibraryTab('icons');
+
+    try {
+      // Load all packs → collect tokens and cards across all packs
+      const allPacks = await dbGetPacks();
+
+      const allTokens = [];
+      const allCards = [];
+
+      await Promise.all(allPacks.map(async (pack) => {
+        try {
+          const tokens = await dbGetTokens(pack.id);
+          tokens.forEach(t => allTokens.push({ ...t, _packName: pack.name }));
+        } catch (_) {}
+        try {
+          const cards = await dbGetCards(pack.id);
+          cards.forEach(c => allCards.push({ ...c, _packName: pack.name }));
+        } catch (_) {}
+      }));
+
+      setLibraryItems({
+        icons: BUILTIN_ICONS,
+        tokens: allTokens,
+        cards: allCards
+      });
+    } catch (err) {
+      console.error('[LibraryPicker] Failed to load library:', err);
+    } finally {
+      setLibraryLoading(false);
+    }
+  }, []);
+
+  const handlePickLibraryItem = useCallback((dataUrl) => {
+    if (!pendingLayerId) return;
+    handleUpdateLayer(pendingLayerId, {
+      imageDataUrl: dataUrl,
+      scale: 1, rotation: 0, transformX: 0, transformY: 0
+    });
+    setShowLibraryPicker(false);
+    setPendingLayerId(null);
+  }, [pendingLayerId]);
+
+  // Convert a public-path src (like './img/...') to a dataUrl for layers
+  const loadIconAsDataUrl = useCallback((src) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = reject;
+      img.src = src;
+    });
+  }, []);
+
+  const handleRenderAndPickCard = useCallback(async (card) => {
+    setLibraryLoading(true);
+    setRenderingCard(card);
+    
+    // Wait for state change to mount CardPreview, then capture it
+    setTimeout(async () => {
+      try {
+        if (!cardRenderRef.current) {
+          throw new Error('Render container not available');
+        }
+        
+        // Brief sleep to make sure images inside CardPreview have rendered
+        await new Promise(r => setTimeout(r, 600));
+
+        const canvas = await html2canvas(cardRenderRef.current, {
+          scale: 3.0,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+        
+        const dataUrl = canvas.toDataURL('image/png');
+        handlePickLibraryItem(dataUrl);
+      } catch (err) {
+        console.error('[LibraryCardRender] Failed:', err);
+        alert('Failed to import card: ' + err.message);
+      } finally {
+        setRenderingCard(null);
+        setLibraryLoading(false);
+      }
+    }, 300);
+  }, [pendingLayerId, handlePickLibraryItem]);
 
   // Spacebar pan listener
   useEffect(() => {
@@ -867,7 +1007,8 @@ export default function ComponentDesigner({ onShowArtImporter }) {
         brushSize,
         opacity: brushOpacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
       saveComponentDrawing();
       redrawComposite();
@@ -984,7 +1125,8 @@ export default function ComponentDesigner({ onShowArtImporter }) {
         brushSize,
         opacity: brushOpacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
       isDrawingShape.current = false;
       startPosRef.current = null;
@@ -1655,7 +1797,200 @@ export default function ComponentDesigner({ onShowArtImporter }) {
 
           {/* RIGHT PANEL: Properties Configuration Panel */}
           <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {activeLayer ? (
+            {showLibraryPicker ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                  <h5 style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: 'var(--color-warning)' }}>
+                    📚 From Library
+                  </h5>
+                  <button
+                    onClick={() => { setShowLibraryPicker(false); setPendingLayerId(null); }}
+                    className="btn"
+                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                {libraryLoading ? (
+                  <div style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                    Loading library items...
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', gap: '0.2rem', background: 'rgba(255,255,255,0.03)', padding: '0.2rem', borderRadius: 'var(--radius-sm)' }}>
+                      {[
+                        { id: 'icons', label: 'Built-in' },
+                        { id: 'tokens', label: 'Tokens' },
+                        { id: 'cards', label: 'Cards' }
+                      ].map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => setLibraryTab(t.id)}
+                          style={{
+                            flex: 1,
+                            padding: '0.35rem 0.2rem',
+                            border: 'none',
+                            background: libraryTab === t.id ? 'var(--color-primary)' : 'transparent',
+                            color: libraryTab === t.id ? 'white' : 'var(--text-secondary)',
+                            fontWeight: 700,
+                            fontSize: '0.7rem',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ maxHeight: '420px', overflowY: 'auto', paddingRight: '0.25rem' }} className="comp-scroll">
+                      {libraryTab === 'icons' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                          {['Resources', 'Families', 'Effects', 'Backgrounds', 'Layouts'].map(group => {
+                            const items = libraryItems.icons.filter(i => i.group === group);
+                            if (items.length === 0) return null;
+                            return (
+                              <div key={group}>
+                                <h6 style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.4rem 0' }}>
+                                  {group}
+                                </h6>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
+                                  {items.map(item => (
+                                    <button
+                                      key={item.id}
+                                      onClick={async () => {
+                                        try {
+                                          const dataUrl = await loadIconAsDataUrl(item.src);
+                                          handlePickLibraryItem(dataUrl);
+                                        } catch (err) {
+                                          alert('Error loading asset: ' + err.message);
+                                        }
+                                      }}
+                                      style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '0.25rem',
+                                        background: 'rgba(0,0,0,0.15)',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        padding: '0.4rem 0.2rem',
+                                        cursor: 'pointer'
+                                      }}
+                                      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
+                                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                                    >
+                                      <img
+                                        src={item.src}
+                                        alt={item.label}
+                                        style={{
+                                          width: '32px',
+                                          height: '32px',
+                                          objectFit: 'contain',
+                                          background: item.group === 'Layouts' ? 'rgba(255,255,255,0.05)' : 'transparent',
+                                          borderRadius: '2px'
+                                        }}
+                                      />
+                                      <span style={{ fontSize: '0.58rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
+                                        {item.label}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {libraryTab === 'tokens' && (
+                        libraryItems.tokens.length === 0 ? (
+                          <div style={{ padding: '2rem 0', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            No tokens in packs.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
+                            {libraryItems.tokens.map(token => (
+                              <button
+                                key={token.id}
+                                onClick={() => handlePickLibraryItem(token.croppedDataUrl || token.imageDataUrl)}
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  gap: '0.25rem',
+                                  background: 'rgba(0,0,0,0.15)',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  padding: '0.4rem 0.2rem',
+                                  cursor: 'pointer'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
+                                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                                title={`${token.name} (${token._packName})`}
+                              >
+                                <img
+                                  src={token.croppedDataUrl || token.imageDataUrl}
+                                  alt={token.name}
+                                  style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+                                />
+                                <span style={{ fontSize: '0.58rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
+                                  {token.name}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )
+                      )}
+
+                      {libraryTab === 'cards' && (
+                        libraryItems.cards.length === 0 ? (
+                          <div style={{ padding: '2rem 0', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            No cards in packs.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            {libraryItems.cards.map(card => (
+                              <button
+                                key={card.id}
+                                onClick={() => handleRenderAndPickCard(card)}
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  background: 'rgba(0,0,0,0.15)',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  padding: '0.45rem 0.6rem',
+                                  cursor: 'pointer',
+                                  textAlign: 'left'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
+                                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                              >
+                                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                                  <strong style={{ fontSize: '0.72rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {card.name}
+                                  </strong>
+                                  <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>
+                                    {card.family} • {card._packName}
+                                  </span>
+                                </div>
+                                <span style={{ fontSize: '0.6rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
+                                  Import &rarr;
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : activeLayer ? (
               <>
                 {/* 1. TEXT LAYER EDITORS */}
                 {activeLayer.type === 'text' && (
@@ -1843,30 +2178,46 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                             className="btn"
                             style={{
                               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                              justifyContent: 'center', padding: '1.25rem 0.5rem',
+                              justifyContent: 'center', padding: '1rem 0.4rem',
                               background: 'rgba(99,102,241,0.06)', border: '1px dashed var(--color-primary)',
                               borderRadius: 'var(--radius-md)', cursor: 'pointer', gap: '0.35rem'
                             }}
                           >
-                            <FileImage size={20} style={{ color: 'var(--color-primary)' }} />
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-primary)' }}>Art Pipeline</span>
-                            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Enhance &amp; place</span>
+                            <FileImage size={18} style={{ color: 'var(--color-primary)' }} />
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-primary)' }}>Art Pipeline</span>
+                            <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>Enhance &amp; place</span>
                           </button>
 
-                          {/* Option 2: Direct upload - always works */}
+                          {/* Option 2: Direct upload */}
                           <button
                             onClick={() => imageFileInputRef.current?.click()}
                             className="btn"
                             style={{
                               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                              justifyContent: 'center', padding: '1.25rem 0.5rem',
+                              justifyContent: 'center', padding: '1rem 0.4rem',
                               background: 'rgba(16,185,129,0.06)', border: '1px dashed #10b981',
                               borderRadius: 'var(--radius-md)', cursor: 'pointer', gap: '0.35rem'
                             }}
                           >
-                            <Plus size={20} style={{ color: '#10b981' }} />
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-primary)' }}>Quick Upload</span>
-                            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Raw image file</span>
+                            <Plus size={18} style={{ color: '#10b981' }} />
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-primary)' }}>Upload</span>
+                            <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>Raw image</span>
+                          </button>
+
+                          {/* Option 3: From Library */}
+                          <button
+                            onClick={() => openLibraryPicker(activeLayer.id)}
+                            className="btn"
+                            style={{
+                              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                              justifyContent: 'center', padding: '1rem 0.4rem',
+                              background: 'rgba(245,158,11,0.06)', border: '1px dashed #f59e0b',
+                              borderRadius: 'var(--radius-md)', cursor: 'pointer', gap: '0.35rem'
+                            }}
+                          >
+                            <Sliders size={18} style={{ color: '#f59e0b' }} />
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-primary)' }}>Library</span>
+                            <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>Tokens &amp; icons</span>
                           </button>
                         </div>
 
@@ -1879,9 +2230,10 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                           onChange={(e) => handleImageFileUpload(e, activeLayer.id)}
                         />
                       </div>
+
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
                           <button
                             onClick={() => {
                               if (typeof onShowArtImporter === 'function') {
@@ -1904,16 +2256,35 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                             style={{
                               flex: 1,
                               padding: '0.4rem',
-                              fontSize: '0.75rem',
+                              fontSize: '0.7rem',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               gap: '0.25rem',
                               fontWeight: 700,
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              minWidth: '70px'
                             }}
                           >
-                            <FileImage size={12} /> Change Art
+                            <FileImage size={11} /> Pipeline
+                          </button>
+                          <button
+                            onClick={() => openLibraryPicker(activeLayer.id)}
+                            className="btn"
+                            style={{
+                              flex: 1,
+                              padding: '0.4rem',
+                              fontSize: '0.7rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.25rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              minWidth: '70px'
+                            }}
+                          >
+                            <Sliders size={11} style={{ color: '#f59e0b' }} /> Library
                           </button>
                           <button
                             onClick={() => handleUpdateLayer(activeLayer.id, { imageDataUrl: null })}
@@ -1921,16 +2292,17 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                             style={{
                               flex: 1,
                               padding: '0.4rem',
-                              fontSize: '0.75rem',
+                              fontSize: '0.7rem',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               gap: '0.25rem',
                               fontWeight: 700,
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              minWidth: '70px'
                             }}
                           >
-                            <Trash2 size={12} /> Remove
+                            <Trash2 size={11} /> Remove
                           </button>
                         </div>
 
@@ -2077,6 +2449,21 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                             style={{ width: '100%' }}
                           />
                         </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
+                            <span>Font Weight (Thickness)</span>
+                            <span style={{ fontWeight: fontWeight }}>{fontWeight}</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="100"
+                            max="900"
+                            step="100"
+                            value={fontWeight}
+                            onChange={(e) => setFontWeight(parseInt(e.target.value))}
+                            style={{ width: '100%' }}
+                          />
+                        </div>
                       </div>
                     )}
 
@@ -2103,16 +2490,16 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                           </div>
                         )}
 
-                        {strokeEnabled && tool !== 'text' && (
+                        {strokeEnabled && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'white' }}>
-                              <span>Line Thickness</span>
+                              <span>{tool === 'text' ? 'Text Border Thickness' : 'Line Thickness'}</span>
                               <span>{brushSize}px</span>
                             </div>
                             <input
                               type="range"
                               min="1"
-                              max="150"
+                              max={tool === 'text' ? 30 : 150}
                               value={brushSize}
                               onChange={(e) => setBrushSize(parseInt(e.target.value))}
                               style={{ width: '100%' }}
@@ -2352,6 +2739,14 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Hidden Card Preview for rendering cards to library image */}
+      {renderingCard && (
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div ref={cardRenderRef} style={{ width: '240px', height: '333px' }}>
+            <CardPreview card={renderingCard} defaultLayout={DEFAULT_LAYOUT} />
           </div>
         </div>
       )}

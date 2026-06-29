@@ -348,6 +348,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
   const [fontSize, setFontSize] = useState(60);
   const [textString, setTextString] = useState('Token');
   const [polygonPoints, setPolygonPoints] = useState([]);
+  const [fontWeight, setFontWeight] = useState(700);
 
   // Drawing state tracking
   const isDrawing = useRef(false);
@@ -835,7 +836,8 @@ export default function TokenDesigner({ onShowArtImporter }) {
         brushSize,
         opacity: brushOpacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
       saveTokenDrawing();
       redrawComposite();
@@ -1625,6 +1627,21 @@ export default function TokenDesigner({ onShowArtImporter }) {
                         style={{ width: '100%' }}
                       />
                     </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
+                        <span>Font Weight (Thickness)</span>
+                        <span style={{ fontWeight: fontWeight }}>{fontWeight}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="100"
+                        max="900"
+                        step="100"
+                        value={fontWeight}
+                        onChange={(e) => setFontWeight(parseInt(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -1656,13 +1673,13 @@ export default function TokenDesigner({ onShowArtImporter }) {
                     {strokeEnabled && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                          <span>Thickness / Size</span>
+                          <span>{tool === 'text' ? 'Text Border Thickness' : 'Thickness / Size'}</span>
                           <span>{brushSize}px</span>
                         </div>
                         <input
                           type="range"
                           min="1"
-                          max="150"
+                          max={tool === 'text' ? 30 : 150}
                           value={brushSize}
                           onChange={(e) => setBrushSize(parseInt(e.target.value))}
                           style={{ width: '100%' }}

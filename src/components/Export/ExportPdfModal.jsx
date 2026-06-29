@@ -8,6 +8,7 @@ const WARN_THRESHOLD = 27; // 3 pages — above this can cause memory issues
 const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => {
   const [includeBackside, setIncludeBackside] = useState(true);
   const [cardsPerFile, setCardsPerFile] = useState(18);
+  const [downloadCmykConverter, setDownloadCmykConverter] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [progress, setProgress] = useState(0);
@@ -34,6 +35,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
         backsideImgDataUrl: './img/Layout/Backside.png',
         packName,
         cardsPerFile,
+        downloadCmykConverter,
         onProgress: (prog, tot, text) => {
           setProgress(prog);
           if (tot) setTotal(tot);
@@ -238,6 +240,21 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
                   <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Duplex-ready backing</span>
                 </button>
               </div>
+            </div>
+
+            {/* CMYK Post-Processing Choice */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', marginTop: '0.25rem', marginBottom: '0.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={downloadCmykConverter}
+                  onChange={(e) => setDownloadCmykConverter(e.target.checked)}
+                />
+                <span>Generate Ghostscript CMYK Conversion Script</span>
+              </label>
+              <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0, paddingLeft: '1.2rem', lineHeight: 1.4 }}>
+                Downloads a helper Python script next to your PDF. Run it to convert the PDF colors to a print-friendly CMYK space using Ghostscript.
+              </p>
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>

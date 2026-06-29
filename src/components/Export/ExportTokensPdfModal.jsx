@@ -12,6 +12,7 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
     });
     return initial;
   });
+  const [downloadCmykConverter, setDownloadCmykConverter] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState('');
 
@@ -28,6 +29,7 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
         baseSize,
         spacing,
         packName,
+        downloadCmykConverter,
         onProgress: (text) => setStatusText(text)
       });
       setIsGenerating(false);
@@ -305,6 +307,21 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
                   );
                 })
               )}
+            </div>
+
+            {/* CMYK Post-Processing Choice */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={downloadCmykConverter}
+                  onChange={(e) => setDownloadCmykConverter(e.target.checked)}
+                />
+                <span>Generate Ghostscript CMYK Conversion Script</span>
+              </label>
+              <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0, paddingLeft: '1.2rem', lineHeight: 1.4 }}>
+                Downloads a helper Python script next to your PDF. Run it to convert the PDF colors to a print-friendly CMYK space using Ghostscript.
+              </p>
             </div>
 
             {/* Footer Summary & Buttons */}
