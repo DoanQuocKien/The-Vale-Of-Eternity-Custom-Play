@@ -18,8 +18,9 @@ function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: 'The Vale of Eternity: Card Creator',
-    icon: path.join(__dirname, '../public/img/TextIcon/Score.png'),
+    icon: process.platform === 'win32'
+      ? path.join(__dirname, 'icon.ico')
+      : path.join(__dirname, 'icon.png'),
     backgroundColor: '#060913',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

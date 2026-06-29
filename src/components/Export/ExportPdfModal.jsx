@@ -1,41 +1,52 @@
 import React, { useState, useRef } from 'react';
-import { X, Download, AlertTriangle } from 'lucide-react';
+import { X, Download, AlertTriangle, Printer, CheckCircle, Loader } from 'lucide-react';
 import { generatePdfFromElements } from '../../utils/pdfUtils.js';
 import CardPreview from '../CardEditor/CardPreview.jsx';
 
 const WARN_THRESHOLD = 27; // 3 pages — above this can cause memory issues
+const IS_ELECTRON = typeof window !== 'undefined' && !!window.electronAPI?.convertToCmyk;
 
 const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => {
   const [includeBackside, setIncludeBackside] = useState(true);
   const [cardsPerFile, setCardsPerFile] = useState(18);
-  const [downloadCmykConverter, setDownloadCmykConverter] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
   const [fileCount, setFileCount] = useState(null);
+
+  // Post-export CMYK state (Electron only)
+  const [savedPaths, setSavedPaths] = useState([]);
+  const [cmykStatus, setCmykStatus] = useState(null); // null | 'converting' | 'done' | 'error'
+  const [cmykError, setCmykError] = useState('');
+  const [cmykOutputPaths, setCmykOutputPaths] = useState([]);
+
   const refs = useRef([]);
 
   if (!isOpen) return null;
 
   const numFiles = Math.ceil(cards.length / Math.max(1, cardsPerFile));
   const showWarning = cardsPerFile > WARN_THRESHOLD;
+  const exportDone = savedPaths.length > 0;
 
   const handleStartExport = async () => {
     setIsGenerating(true);
     setTotal(cards.length);
     setProgress(0);
     setFileCount(null);
+    setSavedPaths([]);
+    setCmykStatus(null);
+    setCmykError('');
+    setCmykOutputPaths([]);
 
     try {
-      await generatePdfFromElements({
+      const paths = await generatePdfFromElements({
         elements: refs.current,
         cards,
         includeBackside,
         backsideImgDataUrl: './img/Layout/Backside.png',
         packName,
         cardsPerFile,
-        downloadCmykConverter,
         onProgress: (prog, tot, text) => {
           setProgress(prog);
           if (tot) setTotal(tot);
@@ -44,11 +55,44 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
         onFileCount: (n) => setFileCount(n),
       });
       setIsGenerating(false);
-      onClose();
+      // In Electron, stay open and show post-export actions
+      if (IS_ELECTRON && paths && paths.length > 0) {
+        setSavedPaths(paths);
+        setStatusText('');
+      } else {
+        onClose();
+      }
     } catch (err) {
       console.error(err);
       alert('Error generating PDF: ' + err.message);
       setIsGenerating(false);
+    }
+  };
+
+  const handleConvertToCmyk = async () => {
+    if (!savedPaths.length) return;
+    setCmykStatus('converting');
+    setCmykError('');
+    setCmykOutputPaths([]);
+
+    const outputs = [];
+    for (const inputPath of savedPaths) {
+      const result = await window.electronAPI.convertToCmyk(inputPath);
+      if (!result.ok) {
+        setCmykStatus('error');
+        setCmykError(result.error);
+        return;
+      }
+      outputs.push(result.outputPath);
+    }
+
+    setCmykOutputPaths(outputs);
+    setCmykStatus('done');
+  };
+
+  const handleOpenFolder = (filePath) => {
+    if (window.electronAPI?.openPath) {
+      window.electronAPI.openPath(filePath);
     }
   };
 
@@ -127,6 +171,123 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
               Card {progress} of {total} processed
             </span>
           </div>
+
+        ) : exportDone ? (
+          /* ─── Post-export actions panel ─── */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+            {/* Success banner */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.6rem',
+              padding: '0.75rem',
+              background: 'rgba(16,185,129,0.08)',
+              border: '1px solid rgba(16,185,129,0.3)',
+              borderRadius: 'var(--radius-sm)'
+            }}>
+              <CheckCircle size={18} color="#10b981" />
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#10b981' }}>
+                  {savedPaths.length} PDF file{savedPaths.length > 1 ? 's' : ''} saved to Downloads
+                </p>
+                {savedPaths.map((p, i) => (
+                  <p key={i} style={{ margin: '0.15rem 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    {p.split(/[/\\]/).pop()}
+                  </p>
+                ))}
+              </div>
+              <button
+                onClick={() => handleOpenFolder(savedPaths[0])}
+                style={{ background: 'none', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 'var(--radius-sm)', padding: '0.25rem 0.5rem', color: '#10b981', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}
+              >
+                Open folder
+              </button>
+            </div>
+
+            {/* CMYK conversion section */}
+            <div style={{
+              padding: '0.75rem',
+              background: 'rgba(139,92,246,0.05)',
+              border: '1px solid rgba(139,92,246,0.2)',
+              borderRadius: 'var(--radius-sm)',
+              display: 'flex', flexDirection: 'column', gap: '0.6rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <Printer size={16} color="#a78bfa" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, color: '#a78bfa' }}>
+                    Convert to Print-Safe CMYK
+                  </p>
+                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                    Uses Ghostscript to convert the exported RGB PDF to CMYK color space — ideal for professional printing. Requires <strong style={{ color: 'var(--text-secondary)' }}>Ghostscript</strong> to be installed on your system.
+                  </p>
+                </div>
+              </div>
+
+              {cmykStatus === null && (
+                <button
+                  onClick={handleConvertToCmyk}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                    border: 'none', borderRadius: 'var(--radius-sm)',
+                    color: 'white', fontWeight: 700, cursor: 'pointer',
+                    fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                    boxShadow: '0 4px 12px rgba(139,92,246,0.25)'
+                  }}
+                >
+                  🎨 Convert to CMYK
+                </button>
+              )}
+
+              {cmykStatus === 'converting' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#a78bfa' }}>
+                  <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                  Converting via Ghostscript…
+                </div>
+              )}
+
+              {cmykStatus === 'done' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#10b981', fontWeight: 700 }}>
+                    <CheckCircle size={14} />
+                    CMYK conversion complete!
+                  </div>
+                  {cmykOutputPaths.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem' }}>
+                      <span style={{ color: 'var(--text-muted)', fontFamily: 'monospace' }}>{p.split(/[/\\]/).pop()}</span>
+                      <button
+                        onClick={() => handleOpenFolder(p)}
+                        style={{ background: 'none', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 'var(--radius-sm)', padding: '0.2rem 0.4rem', color: '#10b981', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600 }}
+                      >
+                        Open folder
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {cmykStatus === 'error' && (
+                <div style={{
+                  padding: '0.5rem 0.75rem',
+                  background: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.72rem', color: '#f87171', lineHeight: 1.45
+                }}>
+                  <strong>Conversion failed:</strong><br />
+                  <span style={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{cmykError}</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={onClose}
+              style={{ padding: '0.55rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem' }}
+            >
+              Close
+            </button>
+          </div>
+
         ) : (
           <>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
@@ -242,20 +403,12 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
               </div>
             </div>
 
-            {/* CMYK Post-Processing Choice */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', marginTop: '0.25rem', marginBottom: '0.5rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={downloadCmykConverter}
-                  onChange={(e) => setDownloadCmykConverter(e.target.checked)}
-                />
-                <span>Generate Ghostscript CMYK Conversion Script</span>
-              </label>
-              <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0, paddingLeft: '1.2rem', lineHeight: 1.4 }}>
-                Downloads a helper Python script next to your PDF. Run it to convert the PDF colors to a print-friendly CMYK space using Ghostscript.
+            {/* CMYK hint (Electron only) */}
+            {IS_ELECTRON && (
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0, borderTop: '1px solid var(--border-color)', paddingTop: '0.6rem' }}>
+                🎨 After exporting, you'll be offered to convert the PDF to print-friendly <strong style={{ color: 'var(--text-secondary)' }}>CMYK</strong> color space via Ghostscript.
               </p>
-            </div>
+            )}
 
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
               <button
