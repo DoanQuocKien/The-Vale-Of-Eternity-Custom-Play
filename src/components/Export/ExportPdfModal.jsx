@@ -223,7 +223,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
                 </div>
               </div>
 
-              {cmykStatus === null && (
+              {(cmykStatus === null || cmykStatus === 'error') && (
                 <button
                   onClick={handleConvertToCmyk}
                   style={{
@@ -235,7 +235,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
                     boxShadow: '0 4px 12px rgba(139,92,246,0.25)'
                   }}
                 >
-                  🎨 Convert to CMYK
+                  {cmykStatus === 'error' ? '🔄 Retry CMYK Conversion' : '🎨 Convert to CMYK'}
                 </button>
               )}
 

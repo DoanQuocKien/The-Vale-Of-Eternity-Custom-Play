@@ -77,6 +77,15 @@ export const useAppStore = create((set, get) => ({
     await get().setActivePackId(newPack.id);
   },
 
+  renamePack: async (packId, name) => {
+    const packs = get().packs;
+    const pack = packs.find(p => p.id === packId);
+    if (!pack) return;
+    const updatedPack = { ...pack, name, updatedAt: Date.now() };
+    await dbSavePack(updatedPack);
+    await get().loadPacks();
+  },
+
   deletePack: async (packId) => {
     await dbDeletePack(packId);
     const packs = await get().loadPacks();

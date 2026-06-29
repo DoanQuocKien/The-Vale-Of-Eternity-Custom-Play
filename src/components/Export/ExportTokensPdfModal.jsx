@@ -189,8 +189,10 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
                   <p style={{ margin: '0.2rem 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>Uses Ghostscript to convert the exported RGB PDF to CMYK — ideal for professional printing. Requires <strong style={{ color: 'var(--text-secondary)' }}>Ghostscript</strong> to be installed on your system.</p>
                 </div>
               </div>
-              {cmykStatus === null && (
-                <button onClick={handleConvertToCmyk} style={{ padding: '0.5rem 0.75rem', background: 'linear-gradient(135deg, #7c3aed, #a855f7)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', boxShadow: '0 4px 12px rgba(139,92,246,0.25)' }}>🎨 Convert to CMYK</button>
+              {(cmykStatus === null || cmykStatus === 'error') && (
+                <button onClick={handleConvertToCmyk} style={{ padding: '0.5rem 0.75rem', background: 'linear-gradient(135deg, #7c3aed, #a855f7)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', boxShadow: '0 4px 12px rgba(139,92,246,0.25)' }}>
+                  {cmykStatus === 'error' ? '🔄 Retry CMYK Conversion' : '🎨 Convert to CMYK'}
+                </button>
               )}
               {cmykStatus === 'converting' && (<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#a78bfa' }}><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />Converting via Ghostscript…</div>)}
               {cmykStatus === 'done' && (
