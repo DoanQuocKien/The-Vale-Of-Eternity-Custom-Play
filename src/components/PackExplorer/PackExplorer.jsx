@@ -24,6 +24,8 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
   const [subTab, setSubTab] = useState('cards'); // 'cards' | 'tokens' | 'components'
   const [isAddingPack, setIsAddingPack] = useState(false);
   const [newPackName, setNewPackName] = useState('');
+  const [renamingPackId, setRenamingPackId] = useState(null);
+  const [renamePackValue, setRenamePackValue] = useState('');
 
   const handleDuplicateToken = async (token) => {
     const newToken = {
@@ -89,13 +91,20 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
     }
   };
 
-  const renamePack = useAppStore(state => state.renamePack); // Add this hook
+  const renamePack = useAppStore(state => state.renamePack);
 
-  const handleRenamePack = async (pack) => {
-    const newName = window.prompt('Enter new name for this pack:', pack.name);
-    if (newName && newName.trim() && newName.trim() !== pack.name) {
-      await renamePack(pack.id, newName.trim());
+  const handleRenamePack = (pack) => {
+    setRenamingPackId(pack.id);
+    setRenamePackValue(pack.name);
+  };
+
+  const submitRenamePack = async (packId) => {
+    const trimmed = renamePackValue.trim();
+    if (trimmed && trimmed !== packs.find(p => p.id === packId)?.name) {
+      await renamePack(packId, trimmed);
     }
+    setRenamingPackId(null);
+    setRenamePackValue('');
   };
 
   return (
@@ -189,10 +198,36 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
                 transition: 'all var(--transition-fast)'
               }}
             >
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activePackId === p.id ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                  {p.name}
-                </span>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                {renamingPackId === p.id ? (
+                  <input
+                    type="text"
+                    value={renamePackValue}
+                    autoFocus
+                    onChange={(e) => setRenamePackValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') submitRenamePack(p.id);
+                      if (e.key === 'Escape') { setRenamingPackId(null); setRenamePackValue(''); }
+                    }}
+                    onBlur={() => submitRenamePack(p.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      background: 'var(--bg-main)',
+                      border: '1px solid var(--color-primary)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.1rem 0.4rem',
+                      outline: 'none',
+                      width: '100%'
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '0.9rem', fontWeight: 600, color: activePackId === p.id ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                    {p.name}
+                  </span>
+                )}
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                   {p.id === 'starter-pack' ? 'Built-in set' : 'Custom set'}
                 </span>
@@ -200,20 +235,33 @@ const PackExplorer = ({ onEditCard, onEditToken, onEditComponent, onExportPack, 
 
               {p.id !== 'starter-pack' && (
                 <div style={{ display: 'flex', gap: '0.35rem' }} onClick={e => e.stopPropagation()}>
-                  <button
-                    onClick={() => handleRenamePack(p)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
-                    title="Rename Pack"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    onClick={() => handleDeletePack(p)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--color-danger)' }}
-                    title="Delete Pack"
-                  >
-                    🗑️
-                  </button>
+                  {renamingPackId === p.id ? (
+                    <>
+                      <button
+                        onClick={() => submitRenamePack(p.id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--color-primary)' }}
+                        title="Confirm Rename"
+                      >✔️</button>
+                      <button
+                        onClick={() => { setRenamingPackId(null); setRenamePackValue(''); }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                        title="Cancel"
+                      >✕</button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleRenamePack(p)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                        title="Rename Pack"
+                      >✏️</button>
+                      <button
+                        onClick={() => handleDeletePack(p)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--color-danger)' }}
+                        title="Delete Pack"
+                      >🗑️</button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
