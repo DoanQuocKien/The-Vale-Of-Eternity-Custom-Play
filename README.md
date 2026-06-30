@@ -238,12 +238,11 @@ The installer will be created in `release/`. Two formats are produced:
 
 ### 🔜 v1.3.0 — Pack Sharing & Community
 - [ ] Pack import/export as `.voe-pack` JSON — share entire packs (cards, tokens, components) between users
-- [ ] Custom family creator — define new families with custom names, colors, sell values, and background art
 
 ### 📋 Planned
-- [ ] Undo/redo history in the Art Integrator
-- [ ] Card import/export as standalone JSON for individual card sharing
+- [ ] Custom family creator — define new families with custom names, colors, sell values, and background art
 - [ ] Rulebook page editor with export to matching print layout
+- [ ] Undo/redo history in the Art Integrator
 
 ### 💭 Backlog / Under Consideration
 - [ ] Customize existing family visuals (recolor, replace background templates)
