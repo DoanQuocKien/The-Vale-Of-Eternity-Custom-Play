@@ -15,6 +15,7 @@ import {
   DEFAULT_PACK_ID,
   seedDefaultData
 } from '../services/db.js';
+import { saveImportedPack } from '../utils/packSharing.js';
 
 export const useAppStore = create((set, get) => ({
   // Navigation State
@@ -84,6 +85,13 @@ export const useAppStore = create((set, get) => ({
     const updatedPack = { ...pack, name, updatedAt: Date.now() };
     await dbSavePack(updatedPack);
     await get().loadPacks();
+  },
+
+  importPack: async (importedData) => {
+    const packId = await saveImportedPack(importedData);
+    await get().loadPacks();
+    await get().setActivePackId(packId);
+    return packId;
   },
 
   deletePack: async (packId) => {

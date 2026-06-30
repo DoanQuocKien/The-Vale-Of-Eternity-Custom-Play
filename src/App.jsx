@@ -68,23 +68,13 @@ export default function App() {
   };
 
   const exportPack = async (pack) => {
-    const { dbGetCards, dbGetTokens, dbGetComponents } = await import('./services/db.js');
-    const packCards = await dbGetCards(pack.id);
-    const packTokens = await dbGetTokens(pack.id);
-    const packComponents = await dbGetComponents(pack.id);
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
-      type: 'vale-pack',
-      pack: pack,
-      cards: packCards,
-      tokens: packTokens,
-      components: packComponents
-    }, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `${pack.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_pack.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    try {
+      const { serializePack, downloadPackFile } = await import('./utils/packSharing.js');
+      const serialized = await serializePack(pack);
+      downloadPackFile(pack.name, serialized);
+    } catch (err) {
+      alert('Failed to export pack: ' + err.message);
+    }
   };
 
   const exportEntireLibrary = async () => {
@@ -115,30 +105,12 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
-        const parsed = JSON.parse(event.target.result);
-        const { dbSavePack, dbSaveCard, dbSaveToken, dbSaveComponent } = await import('./services/db.js');
+        const fileContent = event.target.result;
+        const parsed = JSON.parse(fileContent);
         
-        if (parsed.type === 'vale-pack') {
-          const pack = parsed.pack;
-          pack.createdAt = pack.createdAt || Date.now();
-          await dbSavePack(pack);
-          if (parsed.cards) {
-            for (const card of parsed.cards) {
-              await dbSaveCard(card);
-            }
-          }
-          if (parsed.tokens) {
-            for (const tok of parsed.tokens) {
-              await dbSaveToken(tok);
-            }
-          }
-          if (parsed.components) {
-            for (const comp of parsed.components) {
-              await dbSaveComponent(comp);
-            }
-          }
-          alert(`Pack "${pack.name}" imported successfully!`);
-        } else if (parsed.type === 'vale-library') {
+        const { dbSavePack, dbSaveCard, dbSaveToken, dbSaveComponent } = await import('./services/db.js');
+
+        if (parsed.type === 'vale-library') {
           for (const item of parsed.packs) {
             await dbSavePack(item.pack);
             if (item.cards) {
@@ -159,11 +131,15 @@ export default function App() {
           }
           alert('Entire library imported successfully!');
         } else {
-          alert('Unknown file format.');
+          // Standard single pack (.voe-pack or old format)
+          const { processImportedPack, saveImportedPack } = await import('./utils/packSharing.js');
+          const importedData = processImportedPack(fileContent);
+          await saveImportedPack(importedData);
+          alert(`Pack "${importedData.pack.name}" imported successfully as a new copy!`);
         }
         useAppStore.getState().loadPacks();
       } catch (err) {
-        alert('Failed to parse JSON file: ' + err.message);
+        alert('Failed to parse and import pack file: ' + err.message);
       }
     };
     reader.readAsText(file);

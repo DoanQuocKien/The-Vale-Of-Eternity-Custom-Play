@@ -1,397 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '../../store/useAppStore.js';
-import { dbGetTokens, dbGetCards, dbGetPacks } from '../../services/db.js';
-import CardPreview from '../CardEditor/CardPreview.jsx';
-import html2canvas from 'html2canvas';
 import { DEFAULT_LAYOUT } from '../../utils/constants.jsx';
-import {
-  Trash2, Plus, FileText, Undo, RotateCcw,
-  ZoomIn, ZoomOut, Move, Square, Circle as CircleIcon, Type,
-  Paintbrush, Eraser, Check, Settings, Minus, FileImage, Sliders
-} from 'lucide-react';
+import { Plus, FileText, Trash2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import { drawShape } from '../../utils/canvasUtils.js';
-import LayerPanel from './LayerPanel.jsx';
-import GridLayerEditor from './GridLayerEditor.jsx';
 
-// ─── Custom Color Picker Helpers ─────────────────────────────────────────────
-function hexToHsl(hex) {
-  hex = hex.replace(/^#/, '');
-  if (hex.length === 3) {
-    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-  }
-  let r = parseInt(hex.substring(0, 2), 16) / 255;
-  let g = parseInt(hex.substring(2, 4), 16) / 255;
-  let b = parseInt(hex.substring(4, 6), 16) / 255;
-
-  let max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h, s, l = (max + min) / 2;
-
-  if (max === min) {
-    h = s = 0;
-  } else {
-    let d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-
-  return {
-    h: Math.round(h * 360),
-    s: Math.round(s * 100),
-    l: Math.round(l * 100)
-  };
-}
-
-function hslToHex(h, s, l) {
-  s /= 100;
-  l /= 100;
-  let c = (1 - Math.abs(2 * l - 1)) * s;
-  let x = c * (1 - Math.abs((h / 60) % 2 - 1));
-  let m = l - c / 2;
-  let r = 0, g = 0, b = 0;
-
-  if (0 <= h && h < 60) {
-    r = c; g = x; b = 0;
-  } else if (60 <= h && h < 120) {
-    r = x; g = c; b = 0;
-  } else if (120 <= h && h < 180) {
-    r = 0; g = c; b = x;
-  } else if (180 <= h && h < 240) {
-    r = 0; g = x; b = c;
-  } else if (240 <= h && h < 300) {
-    r = x; g = 0; b = c;
-  } else if (300 <= h && h <= 360) {
-    r = c; g = 0; b = x;
-  }
-
-  let rHex = Math.round((r + m) * 255).toString(16).padStart(2, '0');
-  let gHex = Math.round((g + m) * 255).toString(16).padStart(2, '0');
-  let bHex = Math.round((b + m) * 255).toString(16).padStart(2, '0');
-
-  return `#${rHex}${gHex}${bHex}`;
-}
-
-const colorPickerStyles = `
-  .custom-color-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
-    outline: none;
-    margin: 6px 0;
-    cursor: pointer;
-  }
-  .custom-color-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 2px solid var(--color-primary, #6366f1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-    transition: transform 0.1s;
-  }
-  .custom-color-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-  }
-  .custom-color-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 2px solid var(--color-primary, #6366f1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-    transition: transform 0.1s;
-  }
-  .custom-color-slider::-moz-range-thumb:hover {
-    transform: scale(1.15);
-  }
-`;
-
-function ColorPickerPanel({ color, onChange, label }) {
-  const [hsl, setHsl] = useState({ h: 200, s: 80, l: 50 });
-  const [hexInput, setHexInput] = useState(color);
-
-  useEffect(() => {
-    if (color && color.startsWith('#')) {
-      const parsed = hexToHsl(color);
-      setHsl(parsed);
-      setHexInput(color);
-    }
-  }, [color]);
-
-  const handleHslChange = (h, s, l) => {
-    setHsl({ h, s, l });
-    const hex = hslToHex(h, s, l);
-    setHexInput(hex);
-    onChange(hex);
-  };
-
-  const handleHexInputChange = (e) => {
-    const val = e.target.value;
-    setHexInput(val);
-    if (/^#[0-9A-F]{6}$/i.test(val) || /^#[0-9A-F]{3}$/i.test(val)) {
-      onChange(val);
-      const parsed = hexToHsl(val);
-      setHsl(parsed);
-    }
-  };
-
-  const presets = ['#ffffff', '#000000', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#ec4899', '#a78bfa', '#f472b6'];
-
-  return (
-    <div style={{
-      background: 'rgba(255, 255, 255, 0.03)',
-      border: '1px solid var(--border-color)',
-      borderRadius: 'var(--radius-md)',
-      padding: '0.75rem',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.6rem',
-      marginTop: '0.25rem'
-    }}>
-      <style>{colorPickerStyles}</style>
-      {label && <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{label}</span>}
-
-      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-        {presets.map(p => (
-          <button
-            key={p}
-            onClick={() => {
-              onChange(p);
-              const parsed = hexToHsl(p);
-              setHsl(parsed);
-              setHexInput(p);
-            }}
-            style={{
-              width: '18px',
-              height: '18px',
-              background: p,
-              border: color.toLowerCase() === p.toLowerCase() ? '2px solid var(--color-primary)' : '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              padding: 0
-            }}
-            title={p}
-          />
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-            <span>Hue</span>
-            <span>{hsl.h}°</span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="360"
-            value={hsl.h}
-            onChange={(e) => handleHslChange(parseInt(e.target.value), hsl.s, hsl.l)}
-            className="custom-color-slider"
-            style={{
-              background: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
-            }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-            <span>Saturation</span>
-            <span>{hsl.s}%</span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={hsl.s}
-            onChange={(e) => handleHslChange(hsl.h, parseInt(e.target.value), hsl.l)}
-            className="custom-color-slider"
-            style={{
-              background: `linear-gradient(to right, hsl(${hsl.h}, 0%, 50%), hsl(${hsl.h}, 100%, 50%))`,
-            }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-            <span>Lightness</span>
-            <span>{hsl.l}%</span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={hsl.l}
-            onChange={(e) => handleHslChange(hsl.h, hsl.s, parseInt(e.target.value))}
-            className="custom-color-slider"
-            style={{
-              background: `linear-gradient(to right, #000000, hsl(${hsl.h}, 100%, 50%), #ffffff)`,
-            }}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.2rem' }}>
-        <div style={{
-          position: 'relative',
-          width: '32px',
-          height: '32px',
-          borderRadius: '6px',
-          background: color,
-          border: '1px solid var(--border-color)',
-          boxShadow: 'inset 0 0 4px rgba(0,0,0,0.2)',
-          cursor: 'pointer',
-          overflow: 'hidden'
-        }} title="Click to open color picker">
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => {
-              onChange(e.target.value);
-              const parsed = hexToHsl(e.target.value);
-              setHsl(parsed);
-              setHexInput(e.target.value);
-            }}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              opacity: 0,
-              cursor: 'pointer'
-            }}
-          />
-        </div>
-        <input
-          type="text"
-          value={hexInput}
-          onChange={handleHexInputChange}
-          placeholder="#ffffff"
-          style={{
-            flexGrow: 1,
-            padding: '0.4rem 0.6rem',
-            background: 'var(--bg-main)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '4px',
-            color: 'white',
-            fontSize: '0.8rem',
-            fontFamily: 'monospace',
-            outline: 'none'
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ─── SVG Rulers ─────────────────────────────────────────────────────────────
-function HorizontalRuler({ widthMm, widthPx }) {
-  const pxPerMm = widthPx / widthMm;
-  const ticks = [];
-
-  for (let i = 0; i <= widthMm; i++) {
-    const x = i * pxPerMm;
-    let tickHeight = 5;
-    let showLabel = false;
-
-    if (i % 10 === 0) {
-      tickHeight = 12;
-      showLabel = true;
-    } else if (i % 5 === 0) {
-      tickHeight = 8;
-    }
-
-    ticks.push(
-      <g key={i}>
-        <line
-          x1={x}
-          y1={25}
-          x2={x}
-          y2={25 - tickHeight}
-          stroke="rgba(255, 255, 255, 0.35)"
-          strokeWidth="1"
-        />
-        {showLabel && (
-          <text
-            x={x + 3}
-            y={12}
-            fill="rgba(255, 255, 255, 0.5)"
-            fontSize="8px"
-            fontFamily="monospace"
-            textAnchor="start"
-          >
-            {i}
-          </text>
-        )}
-      </g>
-    );
-  }
-
-  return (
-    <svg width={widthPx} height={25} style={{ background: '#111827', display: 'block' }}>
-      {ticks}
-    </svg>
-  );
-}
-
-function VerticalRuler({ heightMm, heightPx }) {
-  const pxPerMm = heightPx / heightMm;
-  const ticks = [];
-
-  for (let i = 0; i <= heightMm; i++) {
-    const y = i * pxPerMm;
-    let tickWidth = 5;
-    let showLabel = false;
-
-    if (i % 10 === 0) {
-      tickWidth = 12;
-      showLabel = true;
-    } else if (i % 5 === 0) {
-      tickWidth = 8;
-    }
-
-    ticks.push(
-      <g key={i}>
-        <line
-          x1={25}
-          y1={y}
-          x2={25 - tickWidth}
-          y2={y}
-          stroke="rgba(255, 255, 255, 0.35)"
-          strokeWidth="1"
-        />
-        {showLabel && (
-          <text
-            x={2}
-            y={y + 8}
-            fill="rgba(255, 255, 255, 0.5)"
-            fontSize="8px"
-            fontFamily="monospace"
-          >
-            {i}
-          </text>
-        )}
-      </g>
-    );
-  }
-
-  return (
-    <svg width={25} height={heightPx} style={{ background: '#111827', display: 'block' }}>
-      {ticks}
-    </svg>
-  );
-}
+// ─── Sub-components ─────────────────────────────────────────────────────────
+import CardPreview from '../CardEditor/CardPreview.jsx';
+import CanvasWorkspace from './CanvasWorkspace.jsx';
+import PropertySidebar from './PropertySidebar.jsx';
 
 const PRESETS = [
   { name: 'Player Board (A4 Landscape)', type: 'board', widthMm: 297, heightMm: 210, bleedMm: 3 },
@@ -422,17 +39,13 @@ export default function ComponentDesigner({ onShowArtImporter }) {
 
   // Library picker state for image layers
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
-  const [libraryTab, setLibraryTab] = useState('icons'); // 'icons' | 'tokens' | 'cards'
-  const [libraryItems, setLibraryItems] = useState({ icons: [], tokens: [], cards: [] });
-  const [libraryLoading, setLibraryLoading] = useState(false);
   const [pendingLayerId, setPendingLayerId] = useState(null);
   const [renderingCard, setRenderingCard] = useState(null);
   const cardRenderRef = useRef(null);
 
-
   // New component modal state
   const [showNewModal, setShowNewModal] = useState(false);
-  const [newPresetType, setNewPresetType] = useState('board'); // 'board' | 'track' | 'tile' | 'tile-sheet' | 'custom'
+  const [newPresetType, setNewPresetType] = useState('board');
   const [newWidthMm, setNewWidthMm] = useState(297);
   const [newHeightMm, setNewHeightMm] = useState(210);
   const [newBleedMm, setNewBleedMm] = useState(3);
@@ -450,7 +63,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   const isPanning = useRef(false);
   const [isPanningState, setIsPanningState] = useState(false);
   const lastPanPos = useRef({ x: 0, y: 0 });
-  const panRef = useRef({ x: 20, y: 20 }); // mirror of pan state for non-stale access
+  const panRef = useRef({ x: 20, y: 20 });
 
   // Drawing tools state
   const [tool, setTool] = useState('brush'); // 'brush', 'erase', 'line', 'rect', 'circle', 'text', 'none'
@@ -474,69 +87,9 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   // Undo list
   const [undoList, setUndoList] = useState([]);
 
-  // ── Library Picker Loader ──────────────────────────────────────────────────
-  // Built-in game icons from public/img
-  const BUILTIN_ICONS = [
-    // TextIcon (family/resource icons)
-    { id: 'icon-score',  label: 'Score',   src: './img/TextIcon/Score.png',   group: 'Resources' },
-    { id: 'icon-stone1', label: 'Stone×1', src: './img/TextIcon/Stone1.png',  group: 'Resources' },
-    { id: 'icon-stone3', label: 'Stone×3', src: './img/TextIcon/Stone3.png',  group: 'Resources' },
-    { id: 'icon-stone6', label: 'Stone×6', src: './img/TextIcon/Stone6.png',  group: 'Resources' },
-    // Families
-    { id: 'icon-fire',   label: 'Fire',    src: './img/TextIcon/Fire.png',    group: 'Families' },
-    { id: 'icon-water',  label: 'Water',   src: './img/TextIcon/Water.png',   group: 'Families' },
-    { id: 'icon-earth',  label: 'Earth',   src: './img/TextIcon/Earth.png',   group: 'Families' },
-    { id: 'icon-wind',   label: 'Wind',    src: './img/TextIcon/Wind.png',    group: 'Families' },
-    { id: 'icon-dragon', label: 'Dragon',  src: './img/TextIcon/Dragon.png',  group: 'Families' },
-    // Effect types
-    { id: 'icon-eff-instant',  label: 'Instant Effect',    src: './img/Effect/InstantEffect.png',    group: 'Effects' },
-    { id: 'icon-eff-perm',     label: 'Permanent Effect',  src: './img/Effect/PermanentEffect.png',  group: 'Effects' },
-    { id: 'icon-eff-res',      label: 'Resolution Effect', src: './img/Effect/ResolutionEffect.png', group: 'Effects' },
-    // Backgrounds
-    { id: 'bg-fire',   label: 'Fire BG',   src: './img/Background/FireBackground.png',   group: 'Backgrounds' },
-    { id: 'bg-water',  label: 'Water BG',  src: './img/Background/WaterBackground.png',  group: 'Backgrounds' },
-    { id: 'bg-earth',  label: 'Earth BG',  src: './img/Background/EarthBackground.png',  group: 'Backgrounds' },
-    { id: 'bg-wind',   label: 'Air BG',    src: './img/Background/AirBackground.png',    group: 'Backgrounds' },
-    { id: 'bg-dragon', label: 'Dragon BG', src: './img/Background/DragonBackground.png', group: 'Backgrounds' },
-    // Card layouts
-    { id: 'layout-card',     label: 'Card Layout',     src: './img/Layout/CardLayout.png', group: 'Layouts' },
-    { id: 'layout-backside', label: 'Card Backside',   src: './img/Layout/Backside.png',   group: 'Layouts' },
-  ];
-
-  const openLibraryPicker = useCallback(async (layerId) => {
+  const openLibraryPicker = useCallback((layerId) => {
     setPendingLayerId(layerId);
     setShowLibraryPicker(true);
-    setLibraryLoading(true);
-    setLibraryTab('icons');
-
-    try {
-      // Load all packs → collect tokens and cards across all packs
-      const allPacks = await dbGetPacks();
-
-      const allTokens = [];
-      const allCards = [];
-
-      await Promise.all(allPacks.map(async (pack) => {
-        try {
-          const tokens = await dbGetTokens(pack.id);
-          tokens.forEach(t => allTokens.push({ ...t, _packName: pack.name }));
-        } catch (_) {}
-        try {
-          const cards = await dbGetCards(pack.id);
-          cards.forEach(c => allCards.push({ ...c, _packName: pack.name }));
-        } catch (_) {}
-      }));
-
-      setLibraryItems({
-        icons: BUILTIN_ICONS,
-        tokens: allTokens,
-        cards: allCards
-      });
-    } catch (err) {
-      console.error('[LibraryPicker] Failed to load library:', err);
-    } finally {
-      setLibraryLoading(false);
-    }
   }, []);
 
   const handlePickLibraryItem = useCallback((dataUrl) => {
@@ -549,35 +102,12 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     setPendingLayerId(null);
   }, [pendingLayerId]);
 
-  // Convert a public-path src (like './img/...') to a dataUrl for layers
-  const loadIconAsDataUrl = useCallback((src) => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
-      };
-      img.onerror = reject;
-      img.src = src;
-    });
-  }, []);
-
   const handleRenderAndPickCard = useCallback(async (card) => {
-    setLibraryLoading(true);
     setRenderingCard(card);
     
-    // Wait for state change to mount CardPreview, then capture it
     setTimeout(async () => {
       try {
-        if (!cardRenderRef.current) {
-          throw new Error('Render container not available');
-        }
-        
-        // Brief sleep to make sure images inside CardPreview have rendered
+        if (!cardRenderRef.current) throw new Error('Render container not available');
         await new Promise(r => setTimeout(r, 600));
 
         const canvas = await html2canvas(cardRenderRef.current, {
@@ -594,7 +124,6 @@ export default function ComponentDesigner({ onShowArtImporter }) {
         alert('Failed to import card: ' + err.message);
       } finally {
         setRenderingCard(null);
-        setLibraryLoading(false);
       }
     }, 300);
   }, [pendingLayerId, handlePickLibraryItem]);
@@ -627,25 +156,22 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       setCompBleed(activeComponent.bleedMm ?? 3);
       setFoldLines(activeComponent.foldLines || []);
 
-      // Default active layer if none selected or if component changed
       const layers = activeComponent.layers || [];
       if (layers.length > 0) {
         const hasActive = layers.some(l => l.id === activeLayerId);
         if (!hasActive) {
-          setActiveLayerId(layers[layers.length - 1].id); // select top layer
+          setActiveLayerId(layers[layers.length - 1].id);
         }
       }
 
       const widthPx = Math.round(activeComponent.widthMm * 11.811);
       const heightPx = Math.round(activeComponent.heightMm * 11.811);
 
-      // Initialize drawing layer backing canvas size
       const drawCvs = drawingCanvasRef.current || document.createElement('canvas');
       drawCvs.width = widthPx;
       drawCvs.height = heightPx;
       drawingCanvasRef.current = drawCvs;
 
-      // Compute fitting default zoom
       const workspaceWidth = 800;
       const workspaceHeight = 550;
       const fitZoom = Math.min((workspaceWidth - 60) / widthPx, (workspaceHeight - 60) / heightPx);
@@ -710,8 +236,6 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     ctx.clearRect(0, 0, widthPx, heightPx);
 
     const layers = activeComponent.layers || [];
-    
-    // Check if we need to load any images first
     let needsLoading = false;
     layers.forEach(layer => {
       if (layer.type === 'drawing' && layer.drawingData) {
@@ -746,7 +270,6 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       return;
     }
 
-    // Compose layers bottom-to-top
     layers.forEach(layer => {
       if (!layer.visible) return;
 
@@ -762,8 +285,6 @@ export default function ComponentDesigner({ onShowArtImporter }) {
         if (cachedImg) {
           ctx.drawImage(cachedImg, 0, 0);
         }
-        
-        // If this drawing layer is active and we are dragging live strokes, draw them
         if (layer.id === activeLayerId && isDrawingShape.current && startPosRef.current && activeCoordsRef.current) {
           drawShape(ctx, tool, startPosRef.current, activeCoordsRef.current, {
             strokeColor,
@@ -871,7 +392,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       ctx.restore();
     });
 
-    // 6. Draw safety/bleed border (dashed red)
+    // Draw safety/bleed border (dashed red)
     const bleedPx = Math.round((activeComponent.bleedMm ?? 3) * 11.811);
     if (bleedPx > 0) {
       ctx.save();
@@ -922,12 +443,10 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     }
   };
 
-  // Saves current drawing backing canvas to the active drawing layer
   const saveComponentDrawing = () => {
     if (!activeComponent || !drawingCanvasRef.current || !canvasRef.current) return;
     
     const drawingDataUrl = drawingCanvasRef.current.toDataURL('image/png');
-    
     const updatedLayers = activeComponent.layers.map(l => {
       if (l.id === activeLayerId) {
         return { ...l, drawingData: drawingDataUrl };
@@ -942,25 +461,19 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     });
   };
 
-  // Convert click/drag events relative to backing canvas
   const getCanvasCoords = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
     return {
-      x: x * scaleX,
-      y: y * scaleY
+      x: x * (canvas.width / rect.width),
+      y: y * (canvas.height / rect.height)
     };
   };
 
-  // Viewport Pointer Handlers
   const handlePointerDown = (e) => {
-    // Don't intercept clicks on nested interactive elements (zoom buttons, etc.)
     if (e.target.closest('button, a, input, select')) return;
 
     try {
@@ -972,7 +485,6 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       isPanning.current = true;
       setIsPanningState(true);
       lastPanPos.current = { x: e.clientX, y: e.clientY };
-      // Sync panRef from state so delta calculations are always correct
       setPan(currentPan => {
         panRef.current = currentPan;
         return currentPan;
@@ -984,8 +496,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     if (!drawingCanvasRef.current || !activeComponent) return;
 
     const activeLayer = activeComponent.layers?.find(l => l.id === activeLayerId);
-    const isDrawingLayerActive = activeLayer && activeLayer.type === 'drawing';
-    if (!isDrawingLayerActive) return; // ignore draws if non-drawing layer is selected
+    if (!activeLayer || activeLayer.type !== 'drawing') return;
 
     const coords = getCanvasCoords(e);
     if (!coords) return;
@@ -993,8 +504,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     const widthPx = Math.round(activeComponent.widthMm * 11.811);
     const heightPx = Math.round(activeComponent.heightMm * 11.811);
 
-    const clickedInside = coords.x >= 0 && coords.x <= widthPx && coords.y >= 0 && coords.y <= heightPx;
-    if (!clickedInside) return;
+    if (coords.x < 0 || coords.x > widthPx || coords.y < 0 || coords.y > heightPx) return;
 
     if (tool === 'text') {
       saveUndoState();
@@ -1022,7 +532,6 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       return;
     }
 
-    // Brush & Eraser
     saveUndoState();
     isDrawing.current = true;
     lastDrawingPos.current = coords;
@@ -1164,8 +673,6 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     setZoom(z => Math.max(0.05, Math.min(8, z * zoomFactor)));
   };
 
-  // Layer Stack modifications
-  // Direct image file upload for image layers (bypasses ArtImporter for reliability)
   const handleImageFileUpload = (e, layerId) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1183,7 +690,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     e.target.value = '';
   };
 
-  const handleAddLayer = (type) => {
+  const handleAddNewLayer = (type) => {
     if (!activeComponent) return;
     const newLayer = {
       id: 'layer-' + Date.now(),
@@ -1205,7 +712,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     setActiveLayerId(newLayer.id);
   };
 
-  const handleRemoveLayer = (layerId) => {
+  const handleDeleteLayer = (layerId) => {
     if (!activeComponent || (activeComponent.layers || []).length <= 1) return;
     if (window.confirm('Are you sure you want to delete this layer?')) {
       const updatedLayers = activeComponent.layers.filter(l => l.id !== layerId);
@@ -1233,11 +740,38 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     });
   };
 
-  const handleReorderLayers = (newLayers) => {
+  const handleToggleLayerVisibility = (layerId) => {
     if (!activeComponent) return;
+    const layer = activeComponent.layers.find(l => l.id === layerId);
+    if (layer) {
+      handleUpdateLayer(layerId, { visible: !layer.visible });
+    }
+  };
+
+  const handleDuplicateLayer = (layer) => {
+    if (!activeComponent) return;
+    const newLayer = {
+      ...layer,
+      id: 'layer-' + Date.now(),
+      name: `${layer.name} (Copy)`
+    };
+    const updatedLayers = [...activeComponent.layers, newLayer];
     saveComponent({
       ...activeComponent,
-      layers: newLayers
+      layers: updatedLayers
+    });
+    setActiveLayerId(newLayer.id);
+  };
+
+  const handleMoveLayer = (dragIndex, hoverIndex) => {
+    if (!activeComponent) return;
+    const dragLayers = [...activeComponent.layers];
+    const dragLayer = dragLayers[dragIndex];
+    dragLayers.splice(dragIndex, 1);
+    dragLayers.splice(hoverIndex, 0, dragLayer);
+    saveComponent({
+      ...activeComponent,
+      layers: dragLayers
     });
   };
 
@@ -1341,13 +875,12 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     alert('Settings updated successfully!');
   };
 
-  const handleDeleteComponent = async (compId) => {
+  const handleDeleteActiveComponent = async (compId) => {
     if (window.confirm('Are you sure you want to delete this component? This cannot be undone.')) {
       await deleteComponent(compId);
     }
   };
 
-  // Current calculations
   const widthPx = activeComponent ? Math.round(activeComponent.widthMm * 11.811) : 0;
   const heightPx = activeComponent ? Math.round(activeComponent.heightMm * 11.811) : 0;
   
@@ -1364,7 +897,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       alignItems: 'start',
       minHeight: '70vh'
     }}>
-      {/* SIDEBAR LEFT: List of components & layers panel */}
+      {/* SIDEBAR LEFT: List of components & settings */}
       <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
@@ -1440,7 +973,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
                   </span>
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); handleDeleteComponent(comp.id); }}
+                  onClick={(e) => { e.stopPropagation(); handleDeleteActiveComponent(comp.id); }}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -1460,22 +993,9 @@ export default function ComponentDesigner({ onShowArtImporter }) {
           )}
         </div>
 
-        {/* Dynamic Layer Stack panel */}
-        {activeComponent && (
-          <LayerPanel
-            layers={layers}
-            activeLayerId={activeLayerId}
-            onSelectLayer={setActiveLayerId}
-            onAddLayer={handleAddLayer}
-            onRemoveLayer={handleRemoveLayer}
-            onReorderLayers={handleReorderLayers}
-            onUpdateLayer={handleUpdateLayer}
-          />
-        )}
-
         {/* Active Component general configurations */}
         {activeComponent && (
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>Name</label>
               <input
@@ -1625,930 +1145,72 @@ export default function ComponentDesigner({ onShowArtImporter }) {
           alignItems: 'start'
         }}>
           {/* CENTER: Workspace Viewport */}
-          <div className="glass-panel" style={{
-            padding: '1.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            background: 'rgba(5, 8, 20, 0.5)',
-            position: 'relative'
-          }}>
-            {/* Viewport viewport */}
-            <div
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: '600px',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                background: '#04060b',
-                border: '1px solid rgba(255,255,255,0.05)',
-                cursor: isPanningState ? 'grabbing' : (panMode || tool === 'none' ? 'grab' : 'crosshair'),
-                touchAction: 'none'
-              }}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onWheel={handleWheel}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              {/* Scaled wrapper carrying Canvas and SVGRulers */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                transformOrigin: '0 0',
-                transition: 'none'
-              }}>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '25px 1fr',
-                  gridTemplateRows: '25px 1fr',
-                  boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
-                }}>
-                  <div style={{
-                    background: '#111827',
-                    borderRight: '1px solid rgba(255,255,255,0.1)',
-                    borderBottom: '1px solid rgba(255,255,255,0.1)'
-                  }} />
-
-                  <div style={{ overflow: 'hidden', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <HorizontalRuler widthMm={activeComponent.widthMm} widthPx={widthPx} />
-                  </div>
-
-                  <div style={{ overflow: 'hidden', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
-                    <VerticalRuler heightMm={activeComponent.heightMm} heightPx={heightPx} />
-                  </div>
-
-                  <div style={{ position: 'relative', width: `${widthPx}px`, height: `${heightPx}px` }}>
-                    <canvas
-                      ref={canvasRef}
-                      width={widthPx}
-                      height={heightPx}
-                      style={{ width: '100%', height: '100%', display: 'block' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Non-drawing layer warning badge (non-blocking) */}
-              {!isDrawingLayerActive && tool !== 'none' && (
-                <div style={{
-                  position: 'absolute',
-                  top: '0.6rem',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: 'rgba(99, 102, 241, 0.85)',
-                  color: 'white',
-                  padding: '0.3rem 0.8rem',
-                  borderRadius: '20px',
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  zIndex: 10,
-                  pointerEvents: 'none',
-                  backdropFilter: 'blur(4px)',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
-                }}>
-                  ✏️ Select a Drawing Layer to draw — pan/drag still works
-                </div>
-              )}
-
-              {/* Floating zoom controls */}
-              <div style={{
-                position: 'absolute',
-                bottom: '1rem',
-                right: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                background: 'var(--bg-surface-elevated)',
-                padding: '0.35rem 0.6rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-color)',
-                zIndex: 10,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-              }}>
-                <button
-                  onClick={handleZoomOut}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px', color: 'white' }}
-                  title="Zoom Out"
-                >
-                  <ZoomOut size={14} />
-                </button>
-                <span style={{ fontSize: '0.75rem', width: '35px', textAlign: 'center', fontWeight: 700, color: 'white' }}>
-                  {Math.round(zoom * 100)}%
-                </span>
-                <button
-                  onClick={handleZoomIn}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px', color: 'white' }}
-                  title="Zoom In"
-                >
-                  <ZoomIn size={14} />
-                </button>
-                <button
-                  onClick={handleZoomReset}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px', marginLeft: '2px', borderLeft: '1px solid var(--border-color)', paddingLeft: '4px', color: 'white' }}
-                  title="Fit Component Zoom"
-                >
-                  <RotateCcw size={12} />
-                </button>
-              </div>
-            </div>
-
-            {/* Canvas drawing actions */}
-            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', width: '100%', justifyContent: 'center' }}>
-              <button
-                onClick={handleUndo}
-                disabled={undoList.length === 0 || !isDrawingLayerActive}
-                className="btn"
-                style={{
-                  padding: '0.4rem 0.8rem',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  opacity: (undoList.length === 0 || !isDrawingLayerActive) ? 0.5 : 1
-                }}
-              >
-                <Undo size={12} /> Undo
-              </button>
-              <button
-                onClick={handleClearDrawing}
-                disabled={!isDrawingLayerActive}
-                className="btn-danger"
-                style={{
-                  padding: '0.4rem 0.8rem',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  opacity: !isDrawingLayerActive ? 0.5 : 1
-                }}
-              >
-                <Trash2 size={12} /> Clear Layer Drawing
-              </button>
-            </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem', textAlign: 'center' }}>
-              💡 Use the <b>Pan/View</b> tool or hold <b>Spacebar</b> to pan. <b>Scroll</b> to zoom. Grid lines are spaced at 10mm. Red margins show bleed safety guidelines.
-            </div>
-          </div>
+          <CanvasWorkspace
+            activeComponent={activeComponent}
+            widthPx={widthPx}
+            heightPx={heightPx}
+            canvasRef={canvasRef}
+            panMode={panMode}
+            tool={tool}
+            isPanningState={isPanningState}
+            zoom={zoom}
+            pan={pan}
+            isDrawingLayerActive={isDrawingLayerActive}
+            undoList={undoList}
+            handleUndo={handleUndo}
+            handleClearDrawing={handleClearDrawing}
+            handlePointerDown={handlePointerDown}
+            handlePointerMove={handlePointerMove}
+            handlePointerUp={handlePointerUp}
+            handleWheel={handleWheel}
+            handleZoomIn={handleZoomIn}
+            handleZoomOut={handleZoomOut}
+            handleZoomReset={handleZoomReset}
+            setTool={setTool}
+          />
 
           {/* RIGHT PANEL: Properties Configuration Panel */}
-          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {showLibraryPicker ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-                  <h5 style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: 'var(--color-warning)' }}>
-                    📚 From Library
-                  </h5>
-                  <button
-                    onClick={() => { setShowLibraryPicker(false); setPendingLayerId(null); }}
-                    className="btn"
-                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-
-                {libraryLoading ? (
-                  <div style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                    Loading library items...
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ display: 'flex', gap: '0.2rem', background: 'rgba(255,255,255,0.03)', padding: '0.2rem', borderRadius: 'var(--radius-sm)' }}>
-                      {[
-                        { id: 'icons', label: 'Built-in' },
-                        { id: 'tokens', label: 'Tokens' },
-                        { id: 'cards', label: 'Cards' }
-                      ].map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => setLibraryTab(t.id)}
-                          style={{
-                            flex: 1,
-                            padding: '0.35rem 0.2rem',
-                            border: 'none',
-                            background: libraryTab === t.id ? 'var(--color-primary)' : 'transparent',
-                            color: libraryTab === t.id ? 'white' : 'var(--text-secondary)',
-                            fontWeight: 700,
-                            fontSize: '0.7rem',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s'
-                          }}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div style={{ maxHeight: '420px', overflowY: 'auto', paddingRight: '0.25rem' }} className="comp-scroll">
-                      {libraryTab === 'icons' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                          {['Resources', 'Families', 'Effects', 'Backgrounds', 'Layouts'].map(group => {
-                            const items = libraryItems.icons.filter(i => i.group === group);
-                            if (items.length === 0) return null;
-                            return (
-                              <div key={group}>
-                                <h6 style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.4rem 0' }}>
-                                  {group}
-                                </h6>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
-                                  {items.map(item => (
-                                    <button
-                                      key={item.id}
-                                      onClick={async () => {
-                                        try {
-                                          const dataUrl = await loadIconAsDataUrl(item.src);
-                                          handlePickLibraryItem(dataUrl);
-                                        } catch (err) {
-                                          alert('Error loading asset: ' + err.message);
-                                        }
-                                      }}
-                                      style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        gap: '0.25rem',
-                                        background: 'rgba(0,0,0,0.15)',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: 'var(--radius-sm)',
-                                        padding: '0.4rem 0.2rem',
-                                        cursor: 'pointer'
-                                      }}
-                                      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-                                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
-                                    >
-                                      <img
-                                        src={item.src}
-                                        alt={item.label}
-                                        style={{
-                                          width: '32px',
-                                          height: '32px',
-                                          objectFit: 'contain',
-                                          background: item.group === 'Layouts' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                                          borderRadius: '2px'
-                                        }}
-                                      />
-                                      <span style={{ fontSize: '0.58rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
-                                        {item.label}
-                                      </span>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {libraryTab === 'tokens' && (
-                        libraryItems.tokens.length === 0 ? (
-                          <div style={{ padding: '2rem 0', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            No tokens in packs.
-                          </div>
-                        ) : (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
-                            {libraryItems.tokens.map(token => (
-                              <button
-                                key={token.id}
-                                onClick={() => handlePickLibraryItem(token.croppedDataUrl || token.imageDataUrl)}
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  gap: '0.25rem',
-                                  background: 'rgba(0,0,0,0.15)',
-                                  border: '1px solid var(--border-color)',
-                                  borderRadius: 'var(--radius-sm)',
-                                  padding: '0.4rem 0.2rem',
-                                  cursor: 'pointer'
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-                                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
-                                title={`${token.name} (${token._packName})`}
-                              >
-                                <img
-                                  src={token.croppedDataUrl || token.imageDataUrl}
-                                  alt={token.name}
-                                  style={{ width: '32px', height: '32px', objectFit: 'contain' }}
-                                />
-                                <span style={{ fontSize: '0.58rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
-                                  {token.name}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        )
-                      )}
-
-                      {libraryTab === 'cards' && (
-                        libraryItems.cards.length === 0 ? (
-                          <div style={{ padding: '2rem 0', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            No cards in packs.
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                            {libraryItems.cards.map(card => (
-                              <button
-                                key={card.id}
-                                onClick={() => handleRenderAndPickCard(card)}
-                                style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  background: 'rgba(0,0,0,0.15)',
-                                  border: '1px solid var(--border-color)',
-                                  borderRadius: 'var(--radius-sm)',
-                                  padding: '0.45rem 0.6rem',
-                                  cursor: 'pointer',
-                                  textAlign: 'left'
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-                                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
-                              >
-                                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                                  <strong style={{ fontSize: '0.72rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {card.name}
-                                  </strong>
-                                  <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>
-                                    {card.family} • {card._packName}
-                                  </span>
-                                </div>
-                                <span style={{ fontSize: '0.6rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
-                                  Import &rarr;
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : activeLayer ? (
-              <>
-                {/* 1. TEXT LAYER EDITORS */}
-                {activeLayer.type === 'text' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <h5 style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: 'var(--text-secondary)' }}>
-                      Text Label Options
-                    </h5>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Text Content</label>
-                      <input
-                        type="text"
-                        value={activeLayer.text || ''}
-                        onChange={(e) => handleUpdateLayer(activeLayer.id, { text: e.target.value })}
-                        style={{
-                          padding: '0.35rem 0.5rem',
-                          background: 'var(--bg-main)',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: 'var(--radius-sm)',
-                          fontSize: '0.8rem',
-                          color: 'white',
-                          outline: 'none'
-                        }}
-                      />
-                    </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Font Style</label>
-                      <select
-                        value={activeLayer.fontFamily || 'NorseBold'}
-                        onChange={(e) => handleUpdateLayer(activeLayer.id, { fontFamily: e.target.value })}
-                        style={{
-                          padding: '0.35rem',
-                          background: 'var(--bg-main)',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: 'var(--radius-sm)',
-                          fontSize: '0.75rem',
-                          color: 'white',
-                          outline: 'none'
-                        }}
-                      >
-                        <option value="NorseBold">NorseBold (Norse Game Header)</option>
-                        <option value="TitanOne">TitanOne (Heavy Accent)</option>
-                        <option value="MerriweatherSans">MerriweatherSans (Body Bold)</option>
-                        <option value="sans-serif">Standard System Font</option>
-                      </select>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                        <span>Font Size</span>
-                        <span>{activeLayer.fontSize ?? 48}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="12"
-                        max="300"
-                        value={activeLayer.fontSize ?? 48}
-                        onChange={(e) => handleUpdateLayer(activeLayer.id, { fontSize: parseInt(e.target.value) })}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                        <span>Position X (mm)</span>
-                        <span>{activeLayer.textX ?? Math.round(activeComponent.widthMm / 2)} mm</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max={activeComponent.widthMm}
-                        step="1"
-                        value={activeLayer.textX ?? Math.round(activeComponent.widthMm / 2)}
-                        onChange={(e) => handleUpdateLayer(activeLayer.id, { textX: parseInt(e.target.value) })}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                        <span>Position Y (mm)</span>
-                        <span>{activeLayer.textY ?? Math.round(activeComponent.heightMm / 2)} mm</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max={activeComponent.heightMm}
-                        step="1"
-                        value={activeLayer.textY ?? Math.round(activeComponent.heightMm / 2)}
-                        onChange={(e) => handleUpdateLayer(activeLayer.id, { textY: parseInt(e.target.value) })}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '1rem', padding: '0.25rem 0' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', cursor: 'pointer', color: 'white' }}>
-                        <input
-                          type="checkbox"
-                          checked={activeLayer.fillEnabled ?? true}
-                          onChange={(e) => handleUpdateLayer(activeLayer.id, { fillEnabled: e.target.checked })}
-                        />
-                        <span>Draw Color Fill</span>
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', cursor: 'pointer', color: 'white' }}>
-                        <input
-                          type="checkbox"
-                          checked={activeLayer.strokeEnabled ?? false}
-                          onChange={(e) => handleUpdateLayer(activeLayer.id, { strokeEnabled: e.target.checked })}
-                        />
-                        <span>Stroke Border Outline</span>
-                      </label>
-                    </div>
-
-                    {(activeLayer.fillEnabled ?? true) && (
-                      <ColorPickerPanel
-                        label="Text Fill Color"
-                        color={activeLayer.fillColor || '#ffffff'}
-                        onChange={(color) => handleUpdateLayer(activeLayer.id, { fillColor: color })}
-                      />
-                    )}
-
-                    {activeLayer.strokeEnabled && (
-                      <>
-                        <ColorPickerPanel
-                          label="Text Stroke Color"
-                          color={activeLayer.strokeColor || '#000000'}
-                          onChange={(color) => handleUpdateLayer(activeLayer.id, { strokeColor: color })}
-                        />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                            <span>Outline Thickness</span>
-                            <span>{activeLayer.lineWidth ?? 2}px</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="1"
-                            max="12"
-                            value={activeLayer.lineWidth ?? 2}
-                            onChange={(e) => handleUpdateLayer(activeLayer.id, { lineWidth: parseInt(e.target.value) })}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* 2. FILL LAYER EDITORS */}
-                {activeLayer.type === 'fill' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <h5 style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: 'var(--text-secondary)' }}>
-                      Background Solid Fill Color
-                    </h5>
-                    <ColorPickerPanel
-                      label="Solid Fill Color"
-                      color={activeLayer.fillColor || '#3b82f6'}
-                      onChange={(color) => handleUpdateLayer(activeLayer.id, { fillColor: color })}
-                    />
-                  </div>
-                )}
-
-                {/* 3. IMAGE LAYER EDITORS */}
-                {activeLayer.type === 'image' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <h5 style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: 'var(--text-secondary)' }}>
-                      Image Layer Properties
-                    </h5>
-                    
-                    {!activeLayer.imageDataUrl ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Choose how to add an image to this layer:</p>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          {/* Option 1: Full Art Importer Pipeline */}
-                          <button
-                            onClick={() => {
-                              if (typeof onShowArtImporter === 'function') {
-                                onShowArtImporter({
-                                  family: 'Water',
-                                  existingArt: null,
-                                  isComponentMode: true
-                                }, (artData) => {
-                                  handleUpdateLayer(activeLayer.id, {
-                                    imageDataUrl: artData.dataUrl,
-                                    scale: 1, rotation: 0, transformX: 0, transformY: 0
-                                  });
-                                });
-                              }
-                            }}
-                            className="btn"
-                            style={{
-                              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                              justifyContent: 'center', padding: '1rem 0.4rem',
-                              background: 'rgba(99,102,241,0.06)', border: '1px dashed var(--color-primary)',
-                              borderRadius: 'var(--radius-md)', cursor: 'pointer', gap: '0.35rem'
-                            }}
-                          >
-                            <FileImage size={18} style={{ color: 'var(--color-primary)' }} />
-                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-primary)' }}>Art Pipeline</span>
-                            <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>Enhance &amp; place</span>
-                          </button>
-
-                          {/* Option 2: Direct upload */}
-                          <button
-                            onClick={() => imageFileInputRef.current?.click()}
-                            className="btn"
-                            style={{
-                              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                              justifyContent: 'center', padding: '1rem 0.4rem',
-                              background: 'rgba(16,185,129,0.06)', border: '1px dashed #10b981',
-                              borderRadius: 'var(--radius-md)', cursor: 'pointer', gap: '0.35rem'
-                            }}
-                          >
-                            <Plus size={18} style={{ color: '#10b981' }} />
-                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-primary)' }}>Upload</span>
-                            <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>Raw image</span>
-                          </button>
-
-                          {/* Option 3: From Library */}
-                          <button
-                            onClick={() => openLibraryPicker(activeLayer.id)}
-                            className="btn"
-                            style={{
-                              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                              justifyContent: 'center', padding: '1rem 0.4rem',
-                              background: 'rgba(245,158,11,0.06)', border: '1px dashed #f59e0b',
-                              borderRadius: 'var(--radius-md)', cursor: 'pointer', gap: '0.35rem'
-                            }}
-                          >
-                            <Sliders size={18} style={{ color: '#f59e0b' }} />
-                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-primary)' }}>Library</span>
-                            <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>Tokens &amp; icons</span>
-                          </button>
-                        </div>
-
-                        {/* Hidden file input for Quick Upload */}
-                        <input
-                          ref={imageFileInputRef}
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => handleImageFileUpload(e, activeLayer.id)}
-                        />
-                      </div>
-
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                          <button
-                            onClick={() => {
-                              if (typeof onShowArtImporter === 'function') {
-                                onShowArtImporter({
-                                  family: 'Water',
-                                  existingArt: activeLayer.imageDataUrl,
-                                  isComponentMode: true
-                                }, (artData) => {
-                                  handleUpdateLayer(activeLayer.id, {
-                                    imageDataUrl: artData.dataUrl,
-                                    scale: 1,
-                                    rotation: 0,
-                                    transformX: 0,
-                                    transformY: 0
-                                  });
-                                });
-                              }
-                            }}
-                            className="btn"
-                            style={{
-                              flex: 1,
-                              padding: '0.4rem',
-                              fontSize: '0.7rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.25rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              minWidth: '70px'
-                            }}
-                          >
-                            <FileImage size={11} /> Pipeline
-                          </button>
-                          <button
-                            onClick={() => openLibraryPicker(activeLayer.id)}
-                            className="btn"
-                            style={{
-                              flex: 1,
-                              padding: '0.4rem',
-                              fontSize: '0.7rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.25rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              minWidth: '70px'
-                            }}
-                          >
-                            <Sliders size={11} style={{ color: '#f59e0b' }} /> Library
-                          </button>
-                          <button
-                            onClick={() => handleUpdateLayer(activeLayer.id, { imageDataUrl: null })}
-                            className="btn-danger"
-                            style={{
-                              flex: 1,
-                              padding: '0.4rem',
-                              fontSize: '0.7rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.25rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              minWidth: '70px'
-                            }}
-                          >
-                            <Trash2 size={11} /> Remove
-                          </button>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                            <span>Scale factor</span>
-                            <span>{Math.round((activeLayer.scale ?? 1) * 100)}%</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="0.05"
-                            max="4"
-                            step="0.05"
-                            value={activeLayer.scale ?? 1}
-                            onChange={(e) => handleUpdateLayer(activeLayer.id, { scale: parseFloat(e.target.value) })}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                            <span>Rotation Degrees</span>
-                            <span>{activeLayer.rotation ?? 0}°</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            value={activeLayer.rotation ?? 0}
-                            onChange={(e) => handleUpdateLayer(activeLayer.id, { rotation: parseInt(e.target.value) })}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                            <span>Position X offset (mm)</span>
-                            <span>{activeLayer.transformX ?? 0} mm</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="-300"
-                            max="300"
-                            value={activeLayer.transformX ?? 0}
-                            onChange={(e) => handleUpdateLayer(activeLayer.id, { transformX: parseInt(e.target.value) })}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                            <span>Position Y offset (mm)</span>
-                            <span>{activeLayer.transformY ?? 0} mm</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="-300"
-                            max="300"
-                            value={activeLayer.transformY ?? 0}
-                            onChange={(e) => handleUpdateLayer(activeLayer.id, { transformY: parseInt(e.target.value) })}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 4. GRID BUILDER EDITORS */}
-                {activeLayer.type === 'grid' && (
-                  <GridLayerEditor
-                    layer={activeLayer}
-                    onUpdateLayer={handleUpdateLayer}
-                  />
-                )}
-
-                {/* 5. DRAWING LAYER EDITORS (STANDARD DRAW TOOLKIT) */}
-                {activeLayer.type === 'drawing' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {/* Tool choice grid */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Choose Tool</label>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.35rem' }}>
-                        {[
-                          { id: 'brush', icon: <Paintbrush size={14} />, label: 'Brush' },
-                          { id: 'erase', icon: <Eraser size={14} />, label: 'Eraser' },
-                          { id: 'line', icon: <Minus size={14} style={{ transform: 'rotate(-45deg)' }} />, label: 'Line' },
-                          { id: 'rect', icon: <Square size={14} />, label: 'Rect' },
-                          { id: 'circle', icon: <CircleIcon size={14} />, label: 'Circle' },
-                          { id: 'text', icon: <Type size={14} />, label: 'Text' },
-                          { id: 'none', icon: <Move size={14} />, label: 'Pan/View' }
-                        ].map(t => (
-                          <button
-                            key={t.id}
-                            onClick={() => setTool(t.id)}
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              gap: '0.25rem',
-                              padding: '0.4rem 0.2rem',
-                              background: tool === t.id ? 'var(--color-primary)' : 'var(--bg-main)',
-                              border: tool === t.id ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
-                              borderRadius: 'var(--radius-sm)',
-                              color: tool === t.id ? 'white' : 'var(--text-secondary)',
-                              cursor: 'pointer',
-                              fontSize: '0.65rem',
-                              fontWeight: 700,
-                              transition: 'all 0.15s'
-                            }}
-                          >
-                            {t.icon}
-                            <span>{t.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Standard text overlays */}
-                    {tool === 'text' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
-                        <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Text String</label>
-                        <input
-                          type="text"
-                          value={textString}
-                          onChange={(e) => setTextString(e.target.value)}
-                          style={{
-                            padding: '0.35rem 0.5rem',
-                            background: 'var(--bg-main)',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: 'var(--radius-sm)',
-                            fontSize: '0.8rem',
-                            outline: 'none',
-                            color: 'white'
-                          }}
-                        />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                            <span>Font Size</span>
-                            <span>{fontSize}px</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="10"
-                            max="200"
-                            value={fontSize}
-                            onChange={(e) => setFontSize(parseInt(e.target.value))}
-                            style={{ width: '100%' }}
-                          />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
-                            <span>Font Weight (Thickness)</span>
-                            <span style={{ fontWeight: fontWeight }}>{fontWeight}</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="100"
-                            max="900"
-                            step="100"
-                            value={fontWeight}
-                            onChange={(e) => setFontWeight(parseInt(e.target.value))}
-                            style={{ width: '100%' }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {tool !== 'none' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                        {['rect', 'circle', 'text'].includes(tool) && (
-                          <div style={{ display: 'flex', gap: '1rem', padding: '0.25rem 0' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', cursor: 'pointer', color: 'white' }}>
-                              <input
-                                type="checkbox"
-                                checked={strokeEnabled}
-                                onChange={(e) => setStrokeEnabled(e.target.checked)}
-                              />
-                              <span>Outline Border</span>
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', cursor: 'pointer', color: 'white' }}>
-                              <input
-                                type="checkbox"
-                                checked={fillEnabled}
-                                onChange={(e) => setFillEnabled(e.target.checked)}
-                              />
-                              <span>Fill Shape</span>
-                            </label>
-                          </div>
-                        )}
-
-                        {strokeEnabled && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'white' }}>
-                              <span>{tool === 'text' ? 'Text Border Thickness' : 'Line Thickness'}</span>
-                              <span>{brushSize}px</span>
-                            </div>
-                            <input
-                              type="range"
-                              min="1"
-                              max={tool === 'text' ? 30 : 150}
-                              value={brushSize}
-                              onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                              style={{ width: '100%' }}
-                            />
-                          </div>
-                        )}
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'white' }}>
-                            <span>Brush Opacity</span>
-                            <span>{Math.round(brushOpacity * 100)}%</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="0.1"
-                            max="1"
-                            step="0.05"
-                            value={brushOpacity}
-                            onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
-                            style={{ width: '100%' }}
-                          />
-                        </div>
-
-                        {strokeEnabled && (
-                          <ColorPickerPanel
-                            label="Border / Stroke Color"
-                            color={strokeColor}
-                            onChange={setStrokeColor}
-                          />
-                        )}
-
-                        {fillEnabled && ['rect', 'circle', 'text'].includes(tool) && (
-                          <ColorPickerPanel
-                            label="Fill Color"
-                            color={fillColor}
-                            onChange={setFillColor}
-                          />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '2rem 0' }}>
-                Please select a layer to view configuration details.
-              </div>
-            )}
-          </div>
+          <PropertySidebar
+            activeComponent={activeComponent}
+            activeLayer={activeLayer}
+            activeLayerId={activeLayerId}
+            setActiveLayerId={setActiveLayerId}
+            handleUpdateLayer={handleUpdateLayer}
+            showLibraryPicker={showLibraryPicker}
+            setShowLibraryPicker={setShowLibraryPicker}
+            openLibraryPicker={openLibraryPicker}
+            onShowArtImporter={onShowArtImporter}
+            tool={tool}
+            setTool={setTool}
+            strokeColor={strokeColor}
+            setStrokeColor={setStrokeColor}
+            fillColor={fillColor}
+            setFillColor={setFillColor}
+            strokeEnabled={strokeEnabled}
+            setStrokeEnabled={setStrokeEnabled}
+            fillEnabled={fillEnabled}
+            setFillEnabled={setFillEnabled}
+            brushSize={brushSize}
+            setBrushSize={setBrushSize}
+            brushOpacity={brushOpacity}
+            setBrushOpacity={setBrushOpacity}
+            fontSize={fontSize}
+            setFontSize={setFontSize}
+            textString={textString}
+            setTextString={setTextString}
+            fontWeight={fontWeight}
+            setFontWeight={setFontWeight}
+            imageFileInputRef={imageFileInputRef}
+            handleImageFileUpload={handleImageFileUpload}
+            onPickLibraryItem={handlePickLibraryItem}
+            onRenderAndPickCard={handleRenderAndPickCard}
+            // Layer list operations
+            handleAddNewLayer={handleAddNewLayer}
+            handleDeleteLayer={handleDeleteLayer}
+            handleToggleLayerVisibility={handleToggleLayerVisibility}
+            handleDuplicateLayer={handleDuplicateLayer}
+            handleMoveLayer={handleMoveLayer}
+          />
         </div>
       ) : (
         <div className="glass-panel" style={{ padding: '3rem', minHeight: '550px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(5, 8, 20, 0.5)' }}>
@@ -2598,7 +1260,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
               />
             </div>
 
-            {/* Select Preset Preset */}
+            {/* Select Preset */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Size Preset</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -2742,6 +1404,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
           </div>
         </div>
       )}
+      
       {/* Hidden Card Preview for rendering cards to library image */}
       {renderingCard && (
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
