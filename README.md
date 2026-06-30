@@ -243,11 +243,11 @@ The installer will be created in `release/`. Two formats are produced:
 - [x] v1.3.0 — PDF duplex printing alignment, custom paper sizes (A4/Letter), and backside mirroring
 
 ### 🔜 v1.4.0 — Custom Families
-- [ ] Custom family creator — define new families with custom names, colors, sell values, and background art
+- [ ] Custom family creator — define new families with custom names, colors, and background art
 
 ### 📋 Planned
 - [ ] Rulebook page editor with export to matching print layout
-- [ ] Undo/redo history in the Art Integrator
+- [ ] Undo/redo history
 
 ### 💭 Backlog / Under Consideration
 - [ ] Customize existing family visuals (recolor, replace background templates)
