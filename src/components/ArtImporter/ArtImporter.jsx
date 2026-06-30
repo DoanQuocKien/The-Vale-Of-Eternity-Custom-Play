@@ -20,6 +20,8 @@ import {
   drawShape,
   applyLineEnhancement
 } from '../../utils/canvasUtils.js';
+import { removeBackground } from '../../services/bgRemoval.service.js';
+import { upscaleImage } from '../../services/upscale.service.js';
 
 // Family palette hue angles (HSL degrees) for color tinting
 const FAMILY_HUES = {
@@ -58,7 +60,8 @@ export default function ArtImporter({
   const [progressSteps, setProgressSteps] = useState([
     { label: 'Shadow Balance', done: false, active: false, pct: 0, skip: false },
     { label: 'Line Art Enhance', done: false, active: false, pct: 0, skip: false },
-    { label: 'BG Removal (Xenova/modnet)', done: false, active: false, pct: 0, skip: false },
+    { label: 'BG Removal (RMBG-1.4)', done: false, active: false, pct: 0, skip: false },
+    { label: 'AI Upscale (ESRGAN)', done: false, active: false, pct: 0, skip: true },
   ]);
 
   // Color tuning state
@@ -316,76 +319,26 @@ export default function ArtImporter({
         markStep(1, { active: false, done: true, pct: 100 });
       }
 
-      // Step 3: Flood Fill Extraction
+      // Step 3: AI Background Removal (RMBG-1.4)
       if (!steps[2].skip) {
         markStep(2, { active: true, done: false }, 0);
-        const enhancedImg = await loadImageFromDataUrl(currentDataUrl);
-        const width = enhancedImg.width;
-        const height = enhancedImg.height;
-        
-        const maskCanvas = document.createElement('canvas');
-        maskCanvas.width = width;
-        maskCanvas.height = height;
-        const maskCtx = maskCanvas.getContext('2d');
-        maskCtx.drawImage(enhancedImg, 0, 0);
-        const maskData = maskCtx.getImageData(0, 0, width, height).data;
-
-        const origImg = await loadImageFromDataUrl(deskewedDataUrl);
-        const origCanvas = document.createElement('canvas');
-        origCanvas.width = width;
-        origCanvas.height = height;
-        const origCtx = origCanvas.getContext('2d');
-        origCtx.drawImage(origImg, 0, 0, width, height);
-        const origImgData = origCtx.getImageData(0, 0, width, height);
-        const origData = origImgData.data;
-
-        // Flood Fill algorithm
-        const visited = new Uint8Array(width * height);
-        const queue = new Int32Array(width * height * 2);
-        let head = 0, tail = 0;
-
-        const push = (x, y) => {
-          if (x < 0 || x >= width || y < 0 || y >= height) return;
-          const idx = y * width + x;
-          if (visited[idx]) return;
-          visited[idx] = 1;
-          queue[tail++] = x;
-          queue[tail++] = y;
-        };
-
-        const inset = Math.floor(Math.min(width, height) * 0.015);
-        for (let x = inset; x < width - inset; x++) { push(x, inset); push(x, height - 1 - inset); }
-        for (let y = inset; y < height - inset; y++) { push(inset, y); push(width - 1 - inset, y); }
-
-        while (head < tail) {
-          const x = queue[head++];
-          const y = queue[head++];
-          const pIdx = (y * width + x) * 4;
-          const brightness = (maskData[pIdx] + maskData[pIdx+1] + maskData[pIdx+2]) / 3;
-          
-          if (brightness < 128) continue;
-          
-          origData[pIdx + 3] = 0;
-          push(x - 1, y);
-          push(x + 1, y);
-          push(x, y - 1);
-          push(x, y + 1);
-        }
-
-        for (let y = 0; y < height; y++) {
-          for (let x = 0; x < width; x++) {
-            if (x < inset || x >= width - inset || y < inset || y >= height - inset) {
-              const pIdx = (y * width + x) * 4;
-              origData[pIdx + 3] = 0; 
-            }
-          }
-        }
-        
-        origCtx.putImageData(origImgData, 0, 0);
-        currentDataUrl = origCanvas.toDataURL('image/png');
+        currentDataUrl = await removeBackground(currentDataUrl, (pct) => {
+          markStep(2, { active: true }, pct);
+        });
         markStep(2, { active: false, done: true }, 100);
       } else {
         markStep(2, { active: false, done: true, pct: 100 });
+      }
+
+      // Step 4: AI Upscale (ESRGAN)
+      if (!steps[3].skip) {
+        markStep(3, { active: true, done: false }, 0);
+        currentDataUrl = await upscaleImage(currentDataUrl, (pct) => {
+          markStep(3, { active: true }, pct);
+        });
+        markStep(3, { active: false, done: true }, 100);
+      } else {
+        markStep(3, { active: false, done: true, pct: 100 });
       }
 
       setProcessedDataUrl(currentDataUrl);

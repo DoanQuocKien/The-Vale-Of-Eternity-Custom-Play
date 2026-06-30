@@ -55,7 +55,7 @@ export async function upscaleImage(dataUrl, onProgress) {
     });
 
     onProgress?.(100);
-    return result;
+    return 'data:image/png;base64,' + result;
   } catch (err) {
     console.warn('Upscaling failed, returning original:', err.message);
     return dataUrl; // Graceful fallback — just use original

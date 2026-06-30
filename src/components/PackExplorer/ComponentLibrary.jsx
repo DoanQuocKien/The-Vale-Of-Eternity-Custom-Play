@@ -5,6 +5,10 @@ const ComponentLibrary = ({ onEditComponent }) => {
   const components = useAppStore(state => state.components);
   const activePackId = useAppStore(state => state.activePackId);
 
+  const saveComponent = useAppStore(state => state.saveComponent);
+  const deleteComponent = useAppStore(state => state.deleteComponent);
+  const loadComponents = useAppStore(state => state.loadComponents);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
 
@@ -17,14 +21,14 @@ const ComponentLibrary = ({ onEditComponent }) => {
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
-    await useAppStore.getState().saveComponent(newComp);
-    await useAppStore.getState().loadComponents(activePackId);
+    await saveComponent(newComp);
+    await loadComponents(activePackId);
   };
 
   const handleDeleteComponent = async (comp) => {
     if (window.confirm('Are you sure you want to delete this component?')) {
-      await useAppStore.getState().deleteComponent(comp.id);
-      await useAppStore.getState().loadComponents(activePackId);
+      await deleteComponent(comp.id);
+      await loadComponents(activePackId);
     }
   };
 

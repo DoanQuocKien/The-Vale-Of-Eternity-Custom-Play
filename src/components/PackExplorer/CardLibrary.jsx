@@ -18,6 +18,7 @@ const CardLibrary = ({ onEditCard }) => {
       ...card,
       id: 'card-' + Date.now(),
       name: card.name + ' (Copy)',
+      packId: card.packId || useAppStore.getState().activePackId,
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
