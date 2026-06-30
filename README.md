@@ -125,13 +125,17 @@ A dedicated multi-stage art processing pipeline, opened via the "Set Art" button
 - **Actions** — edit (load cards/tokens into designers), duplicate/clone, move to other packs, delete.
 - **Export Cards to PDF** — export all filtered cards in the pack as multi-page print-ready PDFs (with batch size control).
 - **Export Tokens to PDF** — open configure dialog to print custom tokens with adjustable base sizes, gaps, and quantities.
+- **Import/Export Pack (`.voe-pack`)** — export whole packs (cards, tokens, board components, and artwork) as a single file, and import them with automatic ID collision mapping and inline icon reference mapping.
 
 ### 🖨️ Print-Ready PDF Export
 All PDFs are exported as lossless **PNG images** for print-quality output.
 
 - **Cards Sheet**:
   - Standard card size: **63.5 × 88 mm** (standard card game size).
-  - **3 × 3 grid** per A4 page (9 cards/page) with centered margins and **2 mm gutters**.
+  - **3 × 3 grid** per page (9 cards/page) with centered margins and **2 mm gutters**.
+  - **Custom Paper Sizes** — choose between **A4** ($210 \times 297\text{ mm}$) and **US Letter** ($215.9 \times 279.4\text{ mm}$) with automatic grid centering to ensure perfect print margins on both sizes.
+  - **Duplex Alignment Options** — select **Flip Long Edge (Horizontal)**, **Flip Short Edge (Vertical)**, or **No Flip** to match your printer's double-sided settings.
+  - **Artwork Direction** — only card slot positions are mirrored on the backside sheet; the artwork itself remains upright and is not mirrored, keeping text/logos readable.
   - Thin light-gray **cutting guide lines** around each card slot.
   - **Fronts Only** and **Duplex** (mirrored backsides) print options.
   - **Configurable batch size** — set how many cards per output file (default 18 = 2 sheets). When the pack exceeds this limit, multiple numbered PDFs are automatically produced (`_part1.pdf`, `_part2.pdf`, …). This prevents memory crashes with large packs.
@@ -235,12 +239,13 @@ The installer will be created in `release/`. Two formats are produced:
 ### ✅ Released
 - [x] Custom token designer
 - [x] Custom board component designer
+- [x] v1.3.0 — Pack import/export as `.voe-pack` JSON (sharing cards, tokens, and components)
+- [x] v1.3.0 — PDF duplex printing alignment, custom paper sizes (A4/Letter), and backside mirroring
 
-### 🔜 v1.3.0 — Pack Sharing & Community
-- [ ] Pack import/export as `.voe-pack` JSON — share entire packs (cards, tokens, components) between users
+### 🔜 v1.4.0 — Custom Families
+- [ ] Custom family creator — define new families with custom names, colors, sell values, and background art
 
 ### 📋 Planned
-- [ ] Custom family creator — define new families with custom names, colors, sell values, and background art
 - [ ] Rulebook page editor with export to matching print layout
 - [ ] Undo/redo history in the Art Integrator
 
