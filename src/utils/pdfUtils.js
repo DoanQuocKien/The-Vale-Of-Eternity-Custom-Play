@@ -46,6 +46,8 @@ export async function generatePdfFromElements({
   backsideImgDataUrl,
   packName,
   cardsPerFile = 18,
+  pageSize = 'a4',
+  backsideFlip = 'horizontal',
   onProgress,
   onFileCount,
 }) {
@@ -67,12 +69,15 @@ export async function generatePdfFromElements({
     });
   }
 
+  const pageW = pageSize === 'letter' ? 215.9 : 210.0;
+  const pageH = pageSize === 'letter' ? 279.4 : 297.0;
+
   const cardWidth = 63.5;
   const cardHeight = 88.0;
   const gapX = 2.0;
   const gapY = 2.0;
-  const xStart = (210 - (cardWidth * 3 + gapX * 2)) / 2;
-  const yStart = (297 - (cardHeight * 3 + gapY * 2)) / 2;
+  const xStart = (pageW - (cardWidth * 3 + gapX * 2)) / 2;
+  const yStart = (pageH - (cardHeight * 3 + gapY * 2)) / 2;
   const cardsPerPage = 9;
 
   // Split card indices into chunks
@@ -95,7 +100,7 @@ export async function generatePdfFromElements({
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: 'a4'
+      format: pageSize
     });
 
     for (let pageNum = 0; pageNum < totalPages; pageNum++) {
@@ -154,10 +159,18 @@ export async function generatePdfFromElements({
         for (let slotIdx = 0; slotIdx < pageCardsCount; slotIdx++) {
           const row = Math.floor(slotIdx / 3);
           const col = slotIdx % 3;
-          const mirroredCol = 2 - col;
 
-          const x = xStart + mirroredCol * (cardWidth + gapX);
-          const y = yStart + row * (cardHeight + gapY);
+          let targetCol = col;
+          let targetRow = row;
+
+          if (backsideFlip === 'horizontal') {
+            targetCol = 2 - col;
+          } else if (backsideFlip === 'vertical') {
+            targetRow = 2 - row;
+          }
+
+          const x = xStart + targetCol * (cardWidth + gapX);
+          const y = yStart + targetRow * (cardHeight + gapY);
 
           pdf.addImage(backsideImg, 'PNG', x, y, cardWidth, cardHeight, undefined, 'FAST');
 

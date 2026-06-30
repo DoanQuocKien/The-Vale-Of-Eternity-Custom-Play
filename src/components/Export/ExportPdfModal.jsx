@@ -9,6 +9,8 @@ const IS_ELECTRON = typeof window !== 'undefined' && !!window.electronAPI?.conve
 const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => {
   const [includeBackside, setIncludeBackside] = useState(true);
   const [cardsPerFile, setCardsPerFile] = useState(18);
+  const [pageSize, setPageSize] = useState('a4'); // 'a4' | 'letter'
+  const [backsideFlip, setBacksideFlip] = useState('horizontal'); // 'horizontal' | 'vertical' | 'none'
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [progress, setProgress] = useState(0);
@@ -47,6 +49,8 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
         backsideImgDataUrl: './img/Layout/Backside.png',
         packName,
         cardsPerFile,
+        pageSize,
+        backsideFlip,
         onProgress: (prog, tot, text) => {
           setProgress(prog);
           if (tot) setTotal(tot);
@@ -298,7 +302,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
             <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-main)', border: '1px solid var(--border-color)', fontSize: '0.78rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Paper Size:</span>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>A4 (Portrait)</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)', textTransform: 'uppercase' }}>{pageSize} (Portrait)</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Cards Grid:</span>
@@ -368,6 +372,34 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
               </div>
             )}
 
+            {/* Paper Size Option */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Paper Size</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {[
+                  { id: 'a4', label: 'A4', sub: '210 × 297 mm' },
+                  { id: 'letter', label: 'US Letter', sub: '215.9 × 279.4 mm' }
+                ].map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setPageSize(p.id)}
+                    style={{
+                      flex: 1, padding: '0.55rem 0.4rem', borderRadius: 'var(--radius-sm)',
+                      border: pageSize === p.id ? '2px solid var(--color-primary)' : '1px solid var(--border-color)',
+                      background: pageSize === p.id ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                      color: pageSize === p.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.1rem',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: '0.8rem' }}>{p.label}</span>
+                    <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>{p.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Backside Option */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Backside Option</label>
@@ -402,6 +434,37 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
                 </button>
               </div>
             </div>
+
+            {/* Backside Flip Option (visible only if includeBackside is true) */}
+            {includeBackside && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Backside Duplex Alignment</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {[
+                    { id: 'horizontal', label: 'Flip Long Edge', sub: 'Horizontal Flip' },
+                    { id: 'vertical', label: 'Flip Short Edge', sub: 'Vertical Flip' },
+                    { id: 'none', label: 'No Flip', sub: 'Straight Copy' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setBacksideFlip(f.id)}
+                      style={{
+                        flex: 1, padding: '0.55rem 0.4rem', borderRadius: 'var(--radius-sm)',
+                        border: backsideFlip === f.id ? '2px solid var(--color-primary)' : '1px solid var(--border-color)',
+                        background: backsideFlip === f.id ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                        color: backsideFlip === f.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.1rem',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>{f.label}</span>
+                      <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>{f.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* CMYK hint (Electron only) */}
             {IS_ELECTRON && (
