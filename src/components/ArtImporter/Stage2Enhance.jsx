@@ -425,19 +425,7 @@ const Stage2Enhance = ({
               </div>
             </div>
 
-            {/* Synergies */}
-            {currentIdea.synergies && (
-              <div style={{
-                fontSize: '0.6rem',
-                color: '#a78bfa',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                marginBottom: '0.15rem'
-              }}>
-                ⚡ Synergy: {currentIdea.synergies.join(' | ')}
-              </div>
-            )}
+
 
             {/* Name */}
             <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'white', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.3rem' }}>

@@ -91,8 +91,8 @@ def upscale_image(input_path, output_path):
     # Download RealESRGAN model if not present (~16MB)
     app_data = os.environ.get("APPDATA", os.path.expanduser("~"))
     model_folder = os.path.join(app_data, "vale-of-eternity", "models")
-    model_file = "realesr-animevideov3.onnx"
-    model_url = "https://github.com/c43721/TRT-Real-ESRGAN/releases/download/models/realesr-animevideov3-x2.onnx"
+    model_file = "RealESR-AnimeVideo-v3_x4.onnx"
+    model_url = "https://huggingface.co/tidus2102/Real-ESRGAN/resolve/main/RealESR-AnimeVideo-v3_x4.onnx"
     
     model_path = ensure_model(model_file, model_url, model_folder)
     
@@ -319,145 +319,96 @@ SYNTHETIC_ABILITIES = [
 ]
 
 def recommend_cards(card_json_str):
+    import re
+    import random
+    
+    FAMILY_COST_LIMITS = {
+        "Fire": {"min": 0, "max": 4},
+        "Water": {"min": 0, "max": 7},
+        "Earth": {"min": 0, "max": 10},
+        "Wind": {"min": 3, "max": 10},
+        "Dragon": {"min": 3, "max": 12}
+    }
+    
     try:
         input_card = json.loads(card_json_str)
     except Exception as e:
         print(json.dumps({"error": f"Invalid JSON inputs: {str(e)}"}), flush=True)
         return
 
-    # Locate basecards.json
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    basecards_path = os.path.abspath(os.path.join(script_dir, "..", "public", "basecards.json"))
-    
-    if not os.path.exists(basecards_path):
-        basecards_path = os.path.abspath(os.path.join(script_dir, "..", "dist", "basecards.json"))
-        
-    if not os.path.exists(basecards_path):
-        print(json.dumps({"error": f"Base cards file not found at: {basecards_path} or in public/ directory."}), flush=True)
-        return
-        
-    with open(basecards_path, "r", encoding="utf-8") as f:
-        database = json.load(f)
-        
-    # Extract properties of designed card
     name = input_card.get("name", "").strip()
     cost = int(input_card.get("cost", 0))
     family = input_card.get("family", "Water").strip()
     effect = input_card.get("effect", "").strip()
     
-    # Initialize RAG model (all-MiniLM-L6-v2)
     print("Loading local semantic RAG embedding model...", file=sys.stderr, flush=True)
     model = SentenceTransformer("all-MiniLM-L6-v2")
     
-    # Format database items for embedding
-    db_texts = [f"{c['name']} ({c['family']}): cost {c['cost']}. {c['effect']}" for c in database]
-    db_embeddings = model.encode(db_texts, convert_to_numpy=True)
-    
-    # Format user designed card for embedding
     input_text = f"{name} ({family}): cost {cost}. {effect}"
     input_embedding = model.encode(input_text, convert_to_numpy=True)
-    
-    # Calculate cosine similarities using numpy
-    dot_products = np.dot(db_embeddings, input_embedding)
-    db_norms = np.linalg.norm(db_embeddings, axis=1)
     input_norm = np.linalg.norm(input_embedding)
-    similarities = dot_products / (db_norms * input_norm)
     
-    # ── RAG EVALUATION & SYNERGY RANKING ──
-    ranked_indices = np.argsort(similarities)[::-1]
-    recommendations = []
-    
-    for idx in ranked_indices:
-        card = database[idx]
-        if card["name"].lower() == name.lower():
-            continue
-            
-        score = float(similarities[idx])
-        synergies = []
-        
-        # Add Rules-Augmented Synergy Boosters (RAR checks)
-        c1_earns = "earn" in effect.lower() or "gain" in effect.lower()
-        c2_pays = "pay" in card["effect"].lower() or "discard" in card["effect"].lower()
-        c1_pays = "pay" in effect.lower() or "discard" in effect.lower()
-        c2_earns = "earn" in card["effect"].lower() or "gain" in card["effect"].lower()
-        
-        if (c1_earns and c2_pays) or (c1_pays and c2_earns):
-            score += 0.2
-            synergies.append("Resource Generator & Spender synergy")
-            
-        if f"\\icon({family})" in card["effect"]:
-            score += 0.3
-            synergies.append(f"Requires {family} cards in play")
-        if f"\\icon({card['family']})" in effect:
-            score += 0.3
-            synergies.append(f"Supports {card['family']} card alignments")
-            
-        if ("draw" in effect.lower() and "hand" in card["effect"].lower()) or \
-           ("hand" in effect.lower() and "draw" in card["effect"].lower()):
-            score += 0.15
-            synergies.append("Card draw utility synergy")
-            
-        c1_recovers = "recover" in effect.lower()
-        c2_instant = "instant" in card["effect"].lower()
-        if c1_recovers and c2_instant:
-            score += 0.25
-            synergies.append("Recover & Instant summon loop")
-            
-        # Check cost conventions and bounds
-        if card["family"] == family and abs(card["cost"] - cost) >= 3:
-            score += 0.1
-            synergies.append("Thematic Cost Curve complement")
-            
-        recommendations.append({
-            "name": card["name"],
-            "cost": card["cost"],
-            "family": card["family"],
-            "effect": card["effect"],
-            "score": round(score, 3),
-            "synergies": synergies if synergies else ["Semantic relationship"]
-        })
-        if len(recommendations) >= 5:
-            break
-            
-    # Take top 2 RAG recommendations
-    top_db_cards = recommendations[:2]
-    
-    # ── RETRIEVAL-AUGMENTED CONCEPT SYNTHESIS ──
-    # Embed the custom name and ability pools to pick the most semantically synergistic combination!
-    print("Synthesizing new unique card concepts via RAG retrieval...", file=sys.stderr, flush=True)
+    print("Synthesizing 3 unique cross-family card concepts via RAG retrieval...", file=sys.stderr, flush=True)
     name_embeddings = model.encode(SYNTHETIC_NAMES, convert_to_numpy=True)
     ability_embeddings = model.encode(SYNTHETIC_ABILITIES, convert_to_numpy=True)
     
-    # Semantic match for names (related to family and theme)
     name_scores = np.dot(name_embeddings, input_embedding) / (np.linalg.norm(name_embeddings, axis=1) * input_norm)
-    best_name_idx = np.argmax(name_scores)
-    generated_name = SYNTHETIC_NAMES[best_name_idx]
+    top_name_indices = np.argsort(name_scores)[::-1][:6].tolist()
     
-    # Semantic match for abilities (related to card effect mechanics)
     ability_scores = np.dot(ability_embeddings, input_embedding) / (np.linalg.norm(ability_embeddings, axis=1) * input_norm)
-    # Pick the top ability that matches the mechanics semantic intent
-    best_ability_idx = np.argmax(ability_scores)
-    generated_ability = SYNTHETIC_ABILITIES[best_ability_idx]
+    top_ability_indices = np.argsort(ability_scores)[::-1][:6].tolist()
     
-    # Balance rules cost pricing matching family trends in database
-    family_costs = [c["cost"] for c in database if c["family"] == family]
-    if family_costs:
-        generated_cost = int(np.round(np.mean(family_costs)))
-    else:
-        generated_cost = random.choice([2, 3, 4])
-        
-    custom_concept = {
-        "name": f"Ancient {generated_name.split()[-1]}" if len(generated_name.split()) > 1 else f"Spectral {generated_name}",
-        "cost": generated_cost,
-        "family": family,
-        "effect": generated_ability,
-        "score": 1.0,
-        "synergies": [f"Procedurally synthesized RAG concept for {family} balance matching"]
+    all_families = ["Fire", "Water", "Earth", "Wind", "Dragon"]
+    other_families = [f for f in all_families if f != family]
+    random.shuffle(other_families)
+    concept_families = [family, other_families[0], other_families[1]]
+    
+    final_output = []
+    
+    family_themes = {
+        "Fire": ["Blaze", "Cinder", "Ember", "Flame", "Lava", "Magma", "Pyro", "Volcanic", "Ash", "Scorch"],
+        "Water": ["Aquatic", "Coral", "Deepsea", "Glacier", "Mist", "River", "Sea", "Tidal", "Vapor", "Abyssal"],
+        "Earth": ["Agate", "Ancient", "Basalt", "Bramble", "Canyon", "Earthquake", "Emerald", "Monolith", "Moss", "Obsidian", "Onyx", "Tectonic"],
+        "Wind": ["Aether", "Astral", "Cloud", "Lightning", "Storm", "Typhoon", "Vortex", "Wind", "Zephyr", "Sky", "Gryphon"],
+        "Dragon": ["Apex", "Archon", "Bone", "Dragon", "Drake", "Hydra", "Peak", "Wyrm", "Wyvern", "Zenith"]
     }
     
-    # Combine outputs: 1 RAG synthesized card concept + 2 RAG database matches
-    final_output = [custom_concept] + top_db_cards
-    
+    for idx in range(3):
+        concept_family = concept_families[idx]
+        
+        base_name = SYNTHETIC_NAMES[top_name_indices[idx]]
+        theme_word = random.choice(family_themes.get(concept_family, ["Spectral"]))
+        noun = base_name.split()[-1]
+        name_str = f"{theme_word} {noun}"
+        
+        ability_str = SYNTHETIC_ABILITIES[top_ability_indices[idx]]
+        
+        def replace_family_icon(match):
+            return f"\\icon({random.choice([concept_family, family])})"
+        ability_str = re.sub(r"\\icon\((Water|Fire|Earth|Wind|Dragon)\)", replace_family_icon, ability_str)
+        
+        def randomize_score(match):
+            return f"\\icon(Score, {random.randint(1, 4)})"
+        ability_str = re.sub(r"\\icon\(Score,\s*\d+\)", randomize_score, ability_str)
+        
+        def randomize_stones(match):
+            return f"\\icon({random.choice(['Stone1', 'Stone3', 'Stone6'])})"
+        ability_str = re.sub(r"\\icon\(Stone\d+\)", randomize_stones, ability_str)
+        
+        limits = FAMILY_COST_LIMITS.get(concept_family, {"min": 1, "max": 6})
+        cost_val = random.randint(limits["min"], limits["max"])
+        
+        final_score = float(ability_scores[top_ability_indices[idx]] * 0.7 + name_scores[top_name_indices[idx]] * 0.3)
+        
+        concept_card = {
+            "name": name_str,
+            "cost": cost_val,
+            "family": concept_family,
+            "effect": ability_str,
+            "score": round(final_score, 3)
+        }
+        final_output.append(concept_card)
+        
     print(json.dumps(final_output, indent=2, ensure_ascii=False), flush=True)
 
 # ── MAIN ROUTING CLI ──
