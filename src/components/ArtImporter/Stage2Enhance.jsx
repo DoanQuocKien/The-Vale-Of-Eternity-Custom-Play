@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader, ChevronRight } from 'lucide-react';
 import { parseEffectText } from '../../utils/constants.jsx';
+import { runPythonRecommendation } from '../../utils/pythonRunner.js';
 
 const CARD_NAMES = [
   "Abyssal Maw", "Aether Serpent", "Agate Guardian", "Amber Wasp", "Ancient Colossus",
@@ -162,7 +163,11 @@ const Stage2Enhance = ({
   setDeskewedDataUrl,
   setProcessedDataUrl,
   setFinalDataUrl,
-  setIsCreateMode
+  setIsCreateMode,
+  cardName,
+  cardCost,
+  cardEffect,
+  cardFamily
 }) => {
   const [currentIdea, setCurrentIdea] = useState(null);
 
@@ -172,22 +177,60 @@ const Stage2Enhance = ({
       return;
     }
 
-    const generateRandomIdea = () => {
-      const name = CARD_NAMES[Math.floor(Math.random() * CARD_NAMES.length)];
-      const ability = CARD_ABILITIES[Math.floor(Math.random() * CARD_ABILITIES.length)];
-      const cost = Math.floor(Math.random() * 6) + 1;
-      const family = FAMILIES[Math.floor(Math.random() * FAMILIES.length)];
-      return { name, ability, cost, family };
+    let ideasQueue = [];
+    let queueIndex = 0;
+
+    const fetchRecommendations = async () => {
+      if (cardEffect || cardName) {
+        try {
+          const results = await runPythonRecommendation({
+            name: cardName,
+            cost: cardCost,
+            effect: cardEffect,
+            family: cardFamily
+          });
+          if (results && results.length > 0) {
+            ideasQueue = results.map(r => ({
+              name: r.name,
+              ability: r.effect,
+              cost: r.cost,
+              family: r.family,
+              synergies: r.synergies
+            }));
+          }
+        } catch (e) {
+          console.error('Failed to get RAG recommendations:', e);
+        }
+      }
+      
+      const generateRandomIdea = () => {
+        const name = CARD_NAMES[Math.floor(Math.random() * CARD_NAMES.length)];
+        const ability = CARD_ABILITIES[Math.floor(Math.random() * CARD_ABILITIES.length)];
+        const cost = Math.floor(Math.random() * 6) + 1;
+        const family = FAMILIES[Math.floor(Math.random() * FAMILIES.length)];
+        return { name, ability, cost, family, synergies: ["Creative Concept Generation"] };
+      };
+
+      if (ideasQueue.length === 0) {
+        for (let i = 0; i < 3; i++) {
+          ideasQueue.push(generateRandomIdea());
+        }
+      }
+
+      setCurrentIdea(ideasQueue[0]);
     };
 
-    setCurrentIdea(generateRandomIdea());
+    fetchRecommendations();
 
     const interval = setInterval(() => {
-      setCurrentIdea(generateRandomIdea());
+      if (ideasQueue.length > 0) {
+        queueIndex = (queueIndex + 1) % ideasQueue.length;
+        setCurrentIdea(ideasQueue[queueIndex]);
+      }
     }, 4500);
 
     return () => clearInterval(interval);
-  }, [processing]);
+  }, [processing, cardName, cardCost, cardEffect, cardFamily]);
 
   const handleStartOver = () => {
     if (window.confirm('Discard this artwork and start over?')) {
@@ -381,6 +424,20 @@ const Stage2Enhance = ({
                 {currentIdea.cost}
               </div>
             </div>
+
+            {/* Synergies */}
+            {currentIdea.synergies && (
+              <div style={{
+                fontSize: '0.6rem',
+                color: '#a78bfa',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: '0.15rem'
+              }}>
+                ⚡ Synergy: {currentIdea.synergies.join(' | ')}
+              </div>
+            )}
 
             {/* Name */}
             <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'white', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.3rem' }}>

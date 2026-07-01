@@ -4,7 +4,9 @@ import { generatePdfFromElements } from '../../utils/pdfUtils.js';
 import CardPreview from '../CardEditor/CardPreview.jsx';
 
 const WARN_THRESHOLD = 27; // 3 pages — above this can cause memory issues
-const IS_ELECTRON = typeof window !== 'undefined' && !!window.electronAPI?.convertToCmyk;
+import { convertToCmyk, openPath } from '../../utils/desktopUtils.js';
+
+const IS_DESKTOP = typeof window !== 'undefined' && !!window.Neutralino;
 
 const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => {
   const [includeBackside, setIncludeBackside] = useState(true);
@@ -59,8 +61,8 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
         onFileCount: (n) => setFileCount(n),
       });
       setIsGenerating(false);
-      // In Electron, stay open and show post-export actions
-      if (IS_ELECTRON && paths && paths.length > 0) {
+      // In Desktop, stay open and show post-export actions
+      if (IS_DESKTOP && paths && paths.length > 0) {
         setSavedPaths(paths);
         setStatusText('');
       } else {
@@ -81,7 +83,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
 
     const outputs = [];
     for (const inputPath of savedPaths) {
-      const result = await window.electronAPI.convertToCmyk(inputPath);
+      const result = await convertToCmyk(inputPath);
       if (!result.ok) {
         setCmykStatus('error');
         setCmykError(result.error);
@@ -95,9 +97,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
   };
 
   const handleOpenFolder = (filePath) => {
-    if (window.electronAPI?.openPath) {
-      window.electronAPI.openPath(filePath);
-    }
+    openPath(filePath);
   };
 
   return (
@@ -466,8 +466,8 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
               </div>
             )}
 
-            {/* CMYK hint (Electron only) */}
-            {IS_ELECTRON && (
+            {/* CMYK hint (Desktop only) */}
+            {IS_DESKTOP && (
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0, borderTop: '1px solid var(--border-color)', paddingTop: '0.6rem' }}>
                 🎨 After exporting, you can convert the PDF to a print-ready <strong style={{ color: 'var(--text-secondary)' }}>CMYK</strong> color space.
               </p>

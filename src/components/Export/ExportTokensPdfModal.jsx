@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { X, Download, Plus, Minus, Printer, CheckCircle, Loader } from 'lucide-react';
 import { generatePdfForTokens } from '../../utils/pdfUtils.js';
 
-const IS_ELECTRON = typeof window !== 'undefined' && !!window.electronAPI?.convertToCmyk;
+import { convertToCmyk, openPath } from '../../utils/desktopUtils.js';
+
+const IS_DESKTOP = typeof window !== 'undefined' && !!window.Neutralino;
 
 const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
   const [baseSize, setBaseSize] = useState(30); // in mm
@@ -41,7 +43,7 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
         onProgress: (text) => setStatusText(text)
       });
       setIsGenerating(false);
-      if (IS_ELECTRON && path) {
+      if (IS_DESKTOP && path) {
         setSavedPath(path);
         setStatusText('');
       } else {
@@ -58,7 +60,7 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
     if (!savedPath) return;
     setCmykStatus('converting');
     setCmykError('');
-    const result = await window.electronAPI.convertToCmyk(savedPath);
+    const result = await convertToCmyk(savedPath);
     if (!result.ok) {
       setCmykStatus('error');
       setCmykError(result.error);
@@ -69,7 +71,7 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
   };
 
   const handleOpenFolder = (filePath) => {
-    if (window.electronAPI?.openPath) window.electronAPI.openPath(filePath);
+    openPath(filePath);
   };
 
   const setAllQuantities = (qty) => {
@@ -378,8 +380,8 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
               )}
             </div>
 
-            {/* CMYK hint (Electron only) */}
-            {IS_ELECTRON && (
+            {/* CMYK hint (Desktop only) */}
+            {IS_DESKTOP && (
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0, borderTop: '1px solid var(--border-color)', paddingTop: '0.6rem' }}>
                 🎨 After exporting, you can convert the PDF to a print-ready <strong style={{ color: 'var(--text-secondary)' }}>CMYK</strong> color space.
               </p>

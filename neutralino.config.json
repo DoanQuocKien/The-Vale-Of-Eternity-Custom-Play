@@ -1,0 +1,38 @@
+{
+  "applicationId": "js.neutralino.valeofeternity",
+  "version": "1.3.2",
+  "defaultMode": "window",
+  "documentRoot": "/dist/",
+  "url": "/",
+  "enableServer": true,
+  "enableNativeAPI": true,
+  "tokenSecurity": "one-time",
+  "logging": {
+    "enabled": true,
+    "writeToLogFile": true
+  },
+  "modes": {
+    "window": {
+      "title": "The Vale of Eternity - Card Creator",
+      "width": 1280,
+      "height": 800,
+      "minWidth": 1024,
+      "minHeight": 720,
+      "icon": "/dist/img/icon.png",
+      "enableInspector": true,
+      "borderless": false,
+      "maximize": false,
+      "hidden": false,
+      "resizable": true,
+      "alwaysOnTop": false
+    }
+  },
+  "cli": {
+    "binaryName": "vale-of-eternity",
+    "resourcesPath": "/resources",
+    "extensionsPath": "/extensions",
+    "clientLibrary": "/dist/neutralino.js",
+    "binaryVersion": "4.15.0",
+    "clientVersion": "3.12.0"
+  }
+}

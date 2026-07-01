@@ -12,12 +12,17 @@ import html2canvas from 'html2canvas';
  * @returns {Promise<string|null>} Absolute path (Electron only) or null (browser)
  */
 async function savePdf(pdf, fileName) {
-  if (typeof window !== 'undefined' && window.electronAPI?.savePdf) {
-    const buffer = pdf.output('arraybuffer');
-    const uint8 = new Uint8Array(buffer);
-    const result = await window.electronAPI.savePdf(fileName, uint8);
-    if (!result.ok) throw new Error(result.error);
-    return result.savedPath;
+  if (typeof window !== 'undefined' && window.Neutralino) {
+    try {
+      const downloadsDir = await window.Neutralino.os.getPath('downloads');
+      const savedPath = `${downloadsDir}/${fileName}`;
+      const buffer = pdf.output('arraybuffer');
+      await window.Neutralino.filesystem.writeBinaryFile(savedPath, buffer);
+      return savedPath;
+    } catch (err) {
+      console.error('[Neutralino savePdf] Failed:', err);
+      throw err;
+    }
   }
   // Browser fallback
   pdf.save(fileName);

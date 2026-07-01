@@ -313,6 +313,9 @@ export default function App() {
         existingTransform={artImporterContext.existingTransform}
         isTokenMode={artImporterContext.isTokenMode}
         isComponentMode={artImporterContext.isComponentMode}
+        cardName={artImporterContext.cardName || ''}
+        cardCost={artImporterContext.cardCost || 0}
+        cardEffect={artImporterContext.cardEffect || ''}
       />
 
       <ExportPdfModal

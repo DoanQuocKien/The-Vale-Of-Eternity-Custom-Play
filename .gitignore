@@ -6,3 +6,6 @@ build/
 resources/bin/*.exe
 .DS_Store
 *.local
+neutralino.log
+resources.neu
+vale-of-eternity-*

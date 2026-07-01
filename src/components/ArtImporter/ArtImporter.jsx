@@ -22,6 +22,7 @@ import {
 } from '../../utils/canvasUtils.js';
 import { removeBackground } from '../../services/bgRemoval.service.js';
 import { upscaleImage } from '../../services/upscale.service.js';
+import { runPythonImageProcess } from '../../utils/pythonRunner.js';
 
 // Family palette hue angles (HSL degrees) for color tinting
 const FAMILY_HUES = {
@@ -45,7 +46,10 @@ export default function ArtImporter({
   existingArt = null,
   existingTransform = null,
   isTokenMode = false,
-  isComponentMode = false
+  isComponentMode = false,
+  cardName = '',
+  cardCost = 0,
+  cardEffect = ''
 }) {
   const isCustomMode = isTokenMode || isComponentMode;
   const [stage, setStage] = useState(0); // 0..4
@@ -297,10 +301,9 @@ export default function ArtImporter({
       // Step 1: Shadow Balance
       if (!steps[0].skip) {
         markStep(0, { active: true, done: false }, 0);
-        const img = await loadImageFromDataUrl(currentDataUrl);
-        const canvas = imageToCanvas(img, 1600);
-        const balanced = applyShadowBalance(canvas, 0.8);
-        currentDataUrl = canvasToDataUrl(balanced);
+        currentDataUrl = await runPythonImageProcess('balance-lighting', currentDataUrl, (pct) => {
+          markStep(0, { active: true }, pct);
+        });
         markStep(0, { active: false, done: true }, 100);
       } else {
         markStep(0, { active: false, done: true, pct: 100 });
@@ -309,11 +312,9 @@ export default function ArtImporter({
       // Step 2: Line Art Enhancement
       if (!steps[1].skip) {
         markStep(1, { active: true, done: false }, 0);
-        await new Promise(r => setTimeout(r, 50));
-        const img = await loadImageFromDataUrl(currentDataUrl);
-        const canvas = imageToCanvas(img, 1600);
-        const enhanced = applyLineEnhancement(canvas);
-        currentDataUrl = canvasToDataUrl(enhanced);
+        currentDataUrl = await runPythonImageProcess('enhance-lines', currentDataUrl, (pct) => {
+          markStep(1, { active: true }, pct);
+        });
         markStep(1, { active: false, done: true }, 100);
       } else {
         markStep(1, { active: false, done: true, pct: 100 });
@@ -896,6 +897,10 @@ export default function ArtImporter({
               setProcessedDataUrl={setProcessedDataUrl}
               setFinalDataUrl={setFinalDataUrl}
               setIsCreateMode={setIsCreateMode}
+              cardName={cardName}
+              cardCost={cardCost}
+              cardEffect={cardEffect}
+              cardFamily={cardFamily}
             />
           )}
 

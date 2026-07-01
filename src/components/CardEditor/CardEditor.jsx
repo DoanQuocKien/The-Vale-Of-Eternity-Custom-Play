@@ -1152,7 +1152,13 @@ const CardEditor = ({ onShowArtImporter }) => {
                   </div>
                   <div style={{ flexGrow: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
                     <button
-                      onClick={() => onShowArtImporter({ family: backgroundFamily, existingArt: artImageData.dataUrl }, setArtImageData)}
+                      onClick={() => onShowArtImporter({
+                        family: backgroundFamily,
+                        existingArt: artImageData.dataUrl,
+                        cardName,
+                        cardCost,
+                        cardEffect: cardEffectText
+                      }, setArtImageData)}
                       style={{
                         padding: '0.35rem',
                         background: 'rgba(236,72,153,0.12)',
@@ -1198,7 +1204,13 @@ const CardEditor = ({ onShowArtImporter }) => {
                       onClick={() => {
                         if (window.confirm('Discard active artwork and import/sketch a new one?')) {
                           setArtImageData(null);
-                          onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData);
+                          onShowArtImporter({
+                            family: backgroundFamily,
+                            existingArt: null,
+                            cardName,
+                            cardCost,
+                            cardEffect: cardEffectText
+                          }, setArtImageData);
                         }
                       }}
                       style={{
@@ -1247,7 +1259,13 @@ const CardEditor = ({ onShowArtImporter }) => {
                 </div>
               ) : (
                 <button
-                  onClick={() => onShowArtImporter({ family: backgroundFamily, existingArt: null }, setArtImageData)}
+                  onClick={() => onShowArtImporter({
+                    family: backgroundFamily,
+                    existingArt: null,
+                    cardName,
+                    cardCost,
+                    cardEffect: cardEffectText
+                  }, setArtImageData)}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
