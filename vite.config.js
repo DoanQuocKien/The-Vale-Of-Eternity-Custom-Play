@@ -23,6 +23,40 @@ export default defineConfig({
       // Required for SharedArrayBuffer used by Transformers.js WASM inference
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
+    proxy: {
+      '/__neutralino_globals.js': {
+        target: 'http://localhost:8008',
+        changeOrigin: true,
+        configure: (proxy, options) => {
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            proxyRes.headers['cache-control'] = 'no-store, no-cache, must-revalidate, private';
+          });
+          proxy.on('error', (err, req, res) => {
+            res.writeHead(200, { 
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate, private'
+            });
+            res.end('// Neutralino server starting up...');
+          });
+        }
+      },
+      '/neutralino.js': {
+        target: 'http://localhost:8008',
+        changeOrigin: true,
+        configure: (proxy, options) => {
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            proxyRes.headers['cache-control'] = 'no-store, no-cache, must-revalidate, private';
+          });
+          proxy.on('error', (err, req, res) => {
+            res.writeHead(200, { 
+              'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-store, no-cache, must-revalidate, private'
+            });
+            res.end('// Neutralino server starting up...');
+          });
+        }
+      }
     }
   },
   optimizeDeps: {

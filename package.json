@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "neu:dev": "vite & npx neu run",
+    "neu:dev": "concurrently \"vite\" \"npx neu run -- --url=http://localhost:3000\"",
     "neu:build": "vite build && npx neu build"
   },
   "dependencies": {
@@ -28,6 +28,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^10.0.3",
     "vite": "^5.3.1",
     "vite-plugin-node-polyfills": "^0.28.0"
   }

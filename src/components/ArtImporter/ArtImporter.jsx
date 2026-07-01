@@ -262,13 +262,53 @@ export default function ArtImporter({
   const runDeskew = useCallback(async () => {
     if (!rawDataUrl) return;
     try {
-      const { default: jscanify } = await import('jscanify');
+      const { default: jscanify } = await import('jscanify/client');
       const img = await loadImageFromDataUrl(rawDataUrl);
       const scanner = new jscanify();
       const srcCanvas = imageToCanvas(img, 1600);
-      const result = scanner.extractPaper(srcCanvas, srcCanvas.width, srcCanvas.height);
-      const url = canvasToDataUrl(result);
-      setDeskewedDataUrl(url);
+      
+      let resultWidth = srcCanvas.width;
+      let resultHeight = srcCanvas.height;
+      let maxContour = null;
+      let isPaperContourValid = false;
+      
+      if (window.cv) {
+        const cvImg = window.cv.imread(srcCanvas);
+        maxContour = scanner.findPaperContour(cvImg);
+        if (maxContour) {
+          const contourArea = window.cv.contourArea(maxContour);
+          const totalArea = srcCanvas.width * srcCanvas.height;
+          const areaPct = contourArea / totalArea;
+          
+          if (areaPct >= 0.10 && areaPct <= 0.85) {
+            const corners = scanner.getCornerPoints(maxContour, cvImg);
+            if (corners.topLeftCorner && corners.topRightCorner && corners.bottomLeftCorner && corners.bottomRightCorner) {
+              isPaperContourValid = true;
+              const topWidth = Math.hypot(corners.topRightCorner.x - corners.topLeftCorner.x, corners.topRightCorner.y - corners.topLeftCorner.y);
+              const bottomWidth = Math.hypot(corners.bottomRightCorner.x - corners.bottomLeftCorner.x, corners.bottomRightCorner.y - corners.bottomLeftCorner.y);
+              const leftHeight = Math.hypot(corners.bottomLeftCorner.x - corners.topLeftCorner.x, corners.bottomLeftCorner.y - corners.topLeftCorner.y);
+              const rightHeight = Math.hypot(corners.bottomRightCorner.x - corners.topRightCorner.x, corners.bottomRightCorner.y - corners.topRightCorner.y);
+              
+              resultWidth = Math.round(Math.max(topWidth, bottomWidth));
+              resultHeight = Math.round(Math.max(leftHeight, rightHeight));
+            }
+          }
+        }
+        cvImg.delete();
+      }
+      
+      if (resultWidth < 50 || resultHeight < 50) {
+        resultWidth = srcCanvas.width;
+        resultHeight = srcCanvas.height;
+      }
+      
+      const result = isPaperContourValid ? scanner.extractPaper(srcCanvas, resultWidth, resultHeight) : null;
+      if (!result) {
+        setDeskewedDataUrl(rawDataUrl);
+      } else {
+        const url = canvasToDataUrl(result);
+        setDeskewedDataUrl(url);
+      }
     } catch (err) {
       console.warn('Deskew failed (jscanify), using original:', err.message);
       setDeskewedDataUrl(rawDataUrl);
