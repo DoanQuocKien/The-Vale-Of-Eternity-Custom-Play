@@ -187,71 +187,136 @@ def enhance_lines(input_path, output_path):
 
 # ── 5. LOCAL RAG RECOMMENDATION ENGINE (Rules-Augmented Retrieval - RAR) ──
 
-# Thematic vocabularies and mechanical builders matching the official rulebook conventions
-THEME_VOCABS = {
-    "Fire": {
-        "prefixes": ["Ashen", "Blazing", "Cinder", "Ember", "Infernal", "Lava", "Magma", "Pyre", "Volcanic", "Scorch"],
-        "suffixes": ["Djinn", "Phoenix", "Wolf", "Drake", "Giant", "Salamander", "Stag", "Specter", "Acolyte", "Warden"],
-        "abilities": [
-            "Instant \\icon(Instant): Earn two \\icon(Stone1). Recover one card from your discard pile to your hand.",
-            "Active \\icon(Active): Pay one \\icon(Stone1) to recover another card in your Area to your hand.",
-            "Instant \\icon(Instant): If you control another \\icon(Fire) card, earn three \\icon(Stone1).",
-            "Permanent \\icon(Permanent): Your \\icon(Fire) cards cost \\icon(Stone1) less to summon.",
-            "Active \\icon(Active): Discard one \\icon(Stone1), then gain \\icon(Score, 3)."
-        ],
-        "costs": [0, 1, 2, 3]
-    },
-    "Water": {
-        "prefixes": ["Aquatic", "Coral", "Deepsea", "Glacial", "River", "Tidal", "Vapor", "Oceanic", "Tsunami", "Abyssal"],
-        "suffixes": ["Hermit", "Leviathan", "Nymph", "Sprite", "Serpent", "Crab", "Maw", "Sentinel", "Kelpie", "Kraken"],
-        "abilities": [
-            "Active \\icon(Active): Exchange three \\icon(Stone1) for one \\icon(Stone6).",
-            "Instant \\icon(Instant): Gain two \\icon(Stone3) from the supply.",
-            "Permanent \\icon(Permanent): Your active \\icon(Water) cards gain \\icon(Score, 1) during the Resolution Phase.",
-            "Active \\icon(Active): Swap all of your \\icon(Stone1) for \\icon(Stone3) from the supply.",
-            "Instant \\icon(Instant): Gain \\icon(Stone3) and resolve this card's Active effect immediately."
-        ],
-        "costs": [1, 2, 3, 4]
-    },
-    "Earth": {
-        "prefixes": ["Agate", "Amber", "Ancient", "Basalt", "Bramble", "Canyon", "Cavern", "Mossy", "Stone", "Tectonic"],
-        "suffixes": ["Golem", "Guardian", "Warden", "Tortoise", "Colossus", "Behemoth", "Lurker", "Slab", "Gargoyle", "Dryad"],
-        "abilities": [
-            "Active \\icon(Active): Discard one card from your hand to gain \\icon(Score, 5).",
-            "Active \\icon(Active): Pay one \\icon(Stone6) to gain \\icon(Score, 6).",
-            "Instant \\icon(Instant): Lose \\icon(Score, 2) to draw two cards immediately.",
-            "Active \\icon(Active): If you have exactly four cards in your Area, gain \\icon(Score, 10).",
-            "Instant \\icon(Instant): Pay one \\icon(Stone6) to draft a card directly from the pool."
-        ],
-        "costs": [2, 3, 4, 5]
-    },
-    "Wind": {
-        "prefixes": ["Astral", "Cloud", "Zephyr", "Lightning", "Mist", "Stormy", "Typhoon", "Gryphon", "Apex", "Vortex"],
-        "suffixes": ["Monarch", "Falcon", "Hawk", "Runner", "Sprite", "Drake", "Sovereign", "Muse", "Zephyr", "Weaver"],
-        "abilities": [
-            "Permanent \\icon(Permanent): Gain \\icon(Score, 1) for each card in your hand during resolution.",
-            "Instant \\icon(Instant): Draw two cards, then discard one card.",
-            "Permanent \\icon(Permanent): Whenever you summon a card, draw one card.",
-            "Active \\icon(Active): Draw one card, then gain \\icon(Score, 2).",
-            "Permanent \\icon(Permanent): Your \\icon(Wind) cards cost \\icon(Stone1) less to summon."
-        ],
-        "costs": [3, 4, 5]
-    },
-    "Dragon": {
-        "prefixes": ["Apex", "Bone", "Gilded", "Zenith", "Eternal", "Cursed", "Radiant", "Ironclad", "Spectral", "Cosmic"],
-        "suffixes": ["Wyrm", "Dragon", "Sovereign", "Paragon", "Wyvern", "Monarch", "Behemoth", "Horror", "Wrath", "Emperor"],
-        "abilities": [
-            "Instant \\icon(Instant): Earn \\icon(Score, 6) immediately.",
-            "Instant \\icon(Instant): Force all opponents to discard one card from their hand.",
-            "Instant \\icon(Instant): Discard one card from your Area to gain \\icon(Score, 8).",
-            "Instant \\icon(Instant): Search the deck for any card and add it to your hand.",
-            "Instant \\icon(Instant): Swap the family of all cards in your Area to \\icon(Dragon)."
-        ],
-        "costs": [5, 6]
-    }
-}
+# Ensure sentence-transformers is installed for true local semantic RAG
+install_and_import('sentence_transformers')
+from sentence_transformers import SentenceTransformer, util
 
-import random
+# List of 100 custom names and abilities for semantic synthesis
+SYNTHETIC_NAMES = [
+    "Abyssal Maw", "Aether Serpent", "Agate Guardian", "Amber Wasp", "Ancient Colossus",
+    "Apex Wyrm", "Aquatic Sentinel", "Archon of Light", "Ashen Drake", "Astral Phoenix",
+    "Basalt Golem", "Blaze Stag", "Blighted Stalker", "Bone Wyrm", "Bramble Warden",
+    "Canyon Behemoth", "Cavern Lurker", "Celestial Archon", "Chimeran Wraith", "Cinder Wolf",
+    "Cloud Sovereign", "Coral Hermit", "Cosmic Leviathan", "Crimson Reaver", "Cursed Revenant",
+    "Dawn Herald", "Deepsea Lurker", "Desert Prowler", "Dune Stalker", "Dust Shaman",
+    "Earthquake Turtle", "Eclipse Owl", "Emerald Viper", "Ember Lynx", "Ethereal Wraith",
+    "Feral Panther", "Flame Djinn", "Forest Patriarch", "Frost Wyrm", "Gilded Sentinel",
+    "Glacier Behemoth", "Grave Warden", "Gryphon Paragon", "Ironclad Tortoise", "Jade Crab",
+    "Lava Archon", "Lightning Falcon", "Magma Turtle", "Meadow Muse", "Mirage Panther",
+    "Mist Weaver", "Monolith Guardian", "Moss Colossus", "Nebula Whale", "Nightmare Steed",
+    "Obsidian Golem", "Onyx Basilisk", "Peak Sovereign", "Petal Dancer", "Phantom Stag",
+    "Plague Wasp", "Primordial Slime", "Pyroclastic Beast", "Quicksand Worm", "Radiant Archon",
+    "Rift Walker", "River Nymph", "Rust Golem", "Sandstone Sphinx", "Scarlet Phoenix",
+    "Scorch Scorpion", "Sea Serpent", "Shadow Stalker", "Silt Lurker", "Sky Monarch",
+    "Slithering Naga", "Solar Lion", "Spectral Hound", "Spire Gargoyle", "Spore Druid",
+    "Storm Archon", "Sunclaw Hawk", "Swamp Horror", "Tectonic Warden", "Tidal Leviathan",
+    "Tomb Revenant", "Tundra Wolf", "Typhoon Drake", "Vapor Sprite", "Venomous Spider",
+    "Volcanic Hydra", "Vortex Elemental", "Wasp Queen", "Whispering Willow", "Wild Dryad",
+    "Wind Runner", "Wyvern Scout", "Zephyr Sprite", "Zenith Dragon", "Abyss Weaver"
+]
+
+SYNTHETIC_ABILITIES = [
+    "Instant \\icon(Instant): Force an opponent to discard a card from their hand.",
+    "Resolution \\icon(Active): Gain \\icon(Score, 2) if you control at least one \\icon(Water) card in your Area.",
+    "Resolution \\icon(Active): Pay \\icon(Stone1) to recover a card from your discard pile to your hand.",
+    "Permanent \\icon(Permanent): Your \\icon(Fire) cards cost \\icon(Stone1) less to summon.",
+    "Instant \\icon(Instant): When this card is discarded from your Area, gain \\icon(Stone3).",
+    "Instant \\icon(Instant): Double the resolution effect of an adjacent \\icon(Earth) card this round.",
+    "Resolution \\icon(Active): Earn \\icon(Stone1) for each summoned card in your Area.",
+    "Permanent \\icon(Permanent): Your active \\icon(Dragon) cards cannot be targeted by opponents' effects.",
+    "Instant \\icon(Instant): Swap the positions of two cards in the draft zone.",
+    "Resolution \\icon(Active): Discard a card from your hand to search the deck for a \\icon(Wind) card.",
+    "Permanent \\icon(Permanent): Gain \\icon(Score, 1) for each card in your hand.",
+    "Instant \\icon(Instant): All players return their cheapest summoned card to their hand.",
+    "Permanent \\icon(Permanent): Whenever you sell a card, draw 1 card.",
+    "Permanent \\icon(Permanent): At the start of the Resolution Phase, gain \\icon(Stone1) for each active \\icon(Dragon) card.",
+    "Resolution \\icon(Active): Pay \\icon(Stone3) to prevent an opponent's card from activating this round.",
+    "Instant \\icon(Instant): Add a card of cost 3 or less from the draft zone directly to your hand.",
+    "Permanent \\icon(Permanent): Earth cards in your Area gain protection from removal effects.",
+    "Permanent \\icon(Permanent): When this card is removed, return it to your hand instead of the discard pile.",
+    "Resolution \\icon(Active): Discard a card from your hand to gain \\icon(Score, 3).",
+    "Instant \\icon(Instant): Take a card from your discard pile and add it to your hand.",
+    "Permanent \\icon(Permanent): Your \\icon(Wind) cards cost \\icon(Stone1) less to summon.",
+    "Instant \\icon(Instant): Copy the passive effect of another active card in your Area.",
+    "Resolution \\icon(Active): Exchange one \\icon(Stone1) for \\icon(Score, 3).",
+    "Resolution \\icon(Active): Pay \\icon(Stone3) to recover this card to your hand.",
+    "Instant \\icon(Instant): Each opponent must discard one card from their hand.",
+    "Permanent \\icon(Permanent): Fire cards adjacent to this card cost \\icon(Stone1) less to summon.",
+    "Instant \\icon(Instant): Look at the top three cards of the deck, then put them back in any order.",
+    "Resolution \\icon(Active): Pay \\icon(Stone1) to exchange it for a \\icon(Stone3) from the supply.",
+    "Permanent \\icon(Permanent): Your \\icon(Water) cards require \\icon(Stone1) less to summon.",
+    "Instant \\icon(Instant): Choose a card in the draft zone; it cannot be tamed this round.",
+    "Resolution \\icon(Active): Discard an \\icon(Earth) card from your hand to gain \\icon(Stone6).",
+    "Permanent \\icon(Permanent): Dragon cards cost \\icon(Stone3) less to summon.",
+    "Permanent \\icon(Permanent): Whenever you gain a \\icon(Stone6), gain \\icon(Score, 2).",
+    "Resolution \\icon(Active): Draw a card, then discard a card from your hand.",
+    "Resolution \\icon(Active): Pay \\icon(Stone3) to recover a card from your Area to your hand.",
+    "Instant \\icon(Instant): Exchange hands with an opponent until the end of the round.",
+    "Permanent \\icon(Permanent): Opponents cannot gain \\icon(Stone6) during the Resolution Phase.",
+    "Instant \\icon(Instant): Gain control of an opponent's token or card of cost 2 or less.",
+    "Resolution \\icon(Active): Discard this card to gain \\icon(Stone6) and \\icon(Stone3).",
+    "Permanent \\icon(Permanent): Your summoned cards cannot be removed by opponent card effects.",
+    "Permanent \\icon(Permanent): When this card is targeted by an opponent's card, pay \\icon(Stone1) to cancel it.",
+    "Resolution \\icon(Active): Gain \\icon(Score, 1) for each unique family type present in your Area.",
+    "Resolution \\icon(Active): Pay \\icon(Stone3) to gain \\icon(Score, 1) for each of your active \\icon(Fire) cards.",
+    "Instant \\icon(Instant): Gain \\icon(Stone6) and discard a card from your hand.",
+    "Permanent \\icon(Permanent): Dragon cards adjacent to this card gain \\icon(Score, 2) during resolution.",
+    "Permanent \\icon(Permanent): When this card is discarded from your hand, draw 2 cards.",
+    "Resolution \\icon(Active): Pay \\icon(Stone1) to change this card's family to \\icon(Water) or \\icon(Fire).",
+    "Permanent \\icon(Permanent): Your cards of cost 5 or higher cost \\icon(Stone3) less to summon.",
+    "Instant \\icon(Instant): Gain Magic Stones from the supply until you have 4 stones.",
+    "Resolution \\icon(Active): Pay \\icon(Stone3) to look at an opponent's hand and discard one card.",
+    "Resolution \\icon(Active): Discard a \\icon(Fire) card to search your discard pile for a \\icon(Fire) card.",
+    "Permanent \\icon(Permanent): All players have a hard limit of 3 Magic Stones instead of 4.",
+    "Instant \\icon(Instant): Draw a card for each active \\icon(Earth) card in your Area.",
+    "Resolution \\icon(Active): Pay \\icon(Stone1) to gain \\icon(Score, 2).",
+    "Permanent \\icon(Permanent): Your active cards are protected from automatic discard effects.",
+    "Instant \\icon(Instant): Earn \\icon(Score, 1) for each card in your discard pile.",
+    "Resolution \\icon(Active): Gain \\icon(Stone1) if your hand is completely empty.",
+    "Resolution \\icon(Active): Pay \\icon(Stone6) to force all players to discard one summoned card.",
+    "Permanent \\icon(Permanent): Your \\icon(Wind) cards can be resolved twice during the Resolution Phase.",
+    "Instant \\icon(Instant): Search your deck for a card with the same summoning cost and reveal it.",
+    "Resolution \\icon(Active): Discard this card from your Area to gain \\icon(Score, 6).",
+    "Permanent \\icon(Permanent): Earth cards in your Area cannot be discarded by card effects.",
+    "Permanent \\icon(Permanent): When this card is removed, choose an opponent; they must discard a card from their hand.",
+    "Resolution \\icon(Active): Pay \\icon(Stone3) to swap this card with a card in your hand.",
+    "Permanent \\icon(Permanent): Your \\icon(Water) cards gain \\icon(Score, 1) for each other \\icon(Water) card in your Area.",
+    "Instant \\icon(Instant): Look at the top card of an opponent's deck and discard it if you choose.",
+    "Resolution \\icon(Active): Discard a card from your hand to draw a card.",
+    "Permanent \\icon(Permanent): If you control an active \\icon(Fire) card, this card gains \\icon(Score, 2) during resolution.",
+    "Permanent \\icon(Permanent): Whenever you summon a card of cost 5 or more, gain \\icon(Score, 3).",
+    "Resolution \\icon(Active): Gain \\icon(Stone1) for each card in your discard pile (max 3).",
+    "Resolution \\icon(Active): Pay \\icon(Stone1) to swap the family of this card with another active card.",
+    "Permanent \\icon(Permanent): Your active cards gain \\icon(Score, 1) for each active \\icon(Wind) card you control.",
+    "Instant \\icon(Instant): Earn \\icon(Score, 3) immediately.",
+    "Resolution \\icon(Active): Pay \\icon(Stone3) to reveal the opponent's hand.",
+    "Permanent \\icon(Permanent): Fire cards cost \\icon(Stone1) more for all players to summon.",
+    "Permanent \\icon(Permanent): When this card is targeted by an opponent's card, gain \\icon(Stone3).",
+    "Resolution \\icon(Active): You may return this card to your hand to draw a card.",
+    "Resolution \\icon(Active): Discard a \\icon(Water) card from hand to gain \\icon(Score, 4).",
+    "Permanent \\icon(Permanent): Your active \\icon(Dragon) cards earn \\icon(Score, 2) more during resolution.",
+    "Instant \\icon(Instant): Gain \\icon(Score, 2) if you have the most summoned cards in play.",
+    "Resolution \\icon(Active): Pay \\icon(Stone1) to draw a card, then choose and discard a card.",
+    "Permanent \\icon(Permanent): Your active cards of cost 2 or less gain \\icon(Score, 1) during resolution.",
+    "Instant \\icon(Instant): An opponent's active card loses its permanent passive effect until end of round.",
+    "Resolution \\icon(Active): Sacrifice this card to add a \\icon(Dragon) card from your deck to your hand.",
+    "Permanent \\icon(Permanent): While you control this card, you do not draw cards during the draw phase.",
+    "Permanent \\icon(Permanent): When this card is discarded from your hand, summon it to your Area for 0 cost.",
+    "Resolution \\icon(Active): Gain \\icon(Stone1) if you control a summoned \\icon(Water) card.",
+    "Resolution \\icon(Active): Pay \\icon(Stone3) to redirect an opponent's target effect to another card.",
+    "Permanent \\icon(Permanent): Your active cards are immune to other players' Resolution Phase effects.",
+    "Instant \\icon(Instant): Shuffle your discard pile back into your draw pile.",
+    "Resolution \\icon(Active): Discard a summoned card from your Area to draw 3 cards.",
+    "Permanent \\icon(Permanent): Your active \\icon(Earth) cards gain \\icon(Score, 2) during the Resolution Phase.",
+    "Instant \\icon(Instant): Search your discard pile for a card and return it to your hand.",
+    "Resolution \\icon(Active): Pay \\icon(Stone1) to gain \\icon(Score, 2).",
+    "Permanent \\icon(Permanent): While you control another active \\icon(Dragon) card, this card cannot be removed.",
+    "Permanent \\icon(Permanent): Whenever you draw a card, gain \\icon(Score, 1).",
+    "Resolution \\icon(Active): Gain \\icon(Stone1) for each active \\icon(Water) card in your Area.",
+    "Resolution \\icon(Active): Pay \\icon(Stone3) to copy the resolution effect of another active card.",
+    "Permanent \\icon(Permanent): Your active \\icon(Fire) cards gain \\icon(Score, 1) during resolution.",
+    "Instant \\icon(Instant): Search your deck for a card of cost 6 and add it to your hand."
+]
 
 def recommend_cards(card_json_str):
     try:
@@ -260,7 +325,7 @@ def recommend_cards(card_json_str):
         print(json.dumps({"error": f"Invalid JSON inputs: {str(e)}"}), flush=True)
         return
 
-    # Locate basecards.json (prefer public/ source directory, fallback to dist/ build directory)
+    # Locate basecards.json
     script_dir = os.path.dirname(os.path.abspath(__file__))
     basecards_path = os.path.abspath(os.path.join(script_dir, "..", "public", "basecards.json"))
     
@@ -280,115 +345,117 @@ def recommend_cards(card_json_str):
     family = input_card.get("family", "Water").strip()
     effect = input_card.get("effect", "").strip()
     
-    # Synthesize 1 completely new, theme-accurate and synergistic creature card
-    # Synergy mapping: matches input element with complementary mechanical archetypes
-    if family == "Fire":
-        # Fire (cheap, Stone1, recover) -> Pair with Wind (card draws) or more Fire (recursion loops)
-        target_family = random.choice(["Wind", "Fire"])
-        synergy_note = "Draw helper for Fire area / cheap recursion summon loop"
-    elif family == "Water":
-        # Water (Stone3, stone economy) -> Pair with Earth (Stone6 scorers) or more Water (converters)
-        target_family = random.choice(["Earth", "Water"])
-        synergy_note = "Stones converter / Spends Water resource to score points"
-    elif family == "Earth":
-        # Earth (high risk, high scorer) -> Pair with Water (economy backup) or Dragon (heavy instant score)
-        target_family = random.choice(["Water", "Dragon"])
-        synergy_note = "High efficiency converter / Complementary high-end force"
-    elif family == "Wind":
-        # Wind (draw, utility) -> Pair with Fire (cheap summons) or Earth (discard scorers)
-        target_family = random.choice(["Fire", "Earth"])
-        synergy_note = "Card size synergy / Converts card draws into score rewards"
-    else: # Dragon
-        # Dragon (one-time high-end) -> Pair with Water (converters) or Fire (cheap recovery)
-        target_family = random.choice(["Water", "Fire"])
-        synergy_note = "Stone generator to fund high Dragon summon costs"
-        
-    theme = THEME_VOCABS[target_family]
-    prefix = random.choice(theme["prefixes"])
-    suffix = random.choice(theme["suffixes"])
-    generated_name = f"{prefix} {suffix}"
-    generated_ability = random.choice(theme["abilities"])
-    generated_cost = random.choice(theme["costs"])
+    # Initialize RAG model (all-MiniLM-L6-v2)
+    print("Loading local semantic RAG embedding model...", file=sys.stderr, flush=True)
+    model = SentenceTransformer("all-MiniLM-L6-v2")
     
-    custom_concept = {
-        "name": generated_name,
-        "cost": generated_cost,
-        "family": target_family,
-        "effect": generated_ability,
-        "score": 9.9, # Prioritized first
-        "synergies": [synergy_note]
-    }
+    # Format database items for embedding
+    db_texts = [f"{c['name']} ({c['family']}): cost {c['cost']}. {c['effect']}" for c in database]
+    db_embeddings = model.encode(db_texts, convert_to_numpy=True)
     
-    # Tokenize input card text for simple keyword semantic matching
-    def clean_tokens(text):
-        cleaned = text.lower().replace("\\icon", "").replace("(", "").replace(")", "").replace(":", "")
-        return set(cleaned.split())
-
-    input_tokens = clean_tokens(effect)
+    # Format user designed card for embedding
+    input_text = f"{name} ({family}): cost {cost}. {effect}"
+    input_embedding = model.encode(input_text, convert_to_numpy=True)
     
-    # Evaluate candidates
+    # Calculate cosine similarities using numpy
+    dot_products = np.dot(db_embeddings, input_embedding)
+    db_norms = np.linalg.norm(db_embeddings, axis=1)
+    input_norm = np.linalg.norm(input_embedding)
+    similarities = dot_products / (db_norms * input_norm)
+    
+    # ── RAG EVALUATION & SYNERGY RANKING ──
+    ranked_indices = np.argsort(similarities)[::-1]
     recommendations = []
     
-    for card in database:
-        # Avoid recommending itself
+    for idx in ranked_indices:
+        card = database[idx]
         if card["name"].lower() == name.lower():
             continue
             
-        score = 0.0
+        score = float(similarities[idx])
         synergies = []
         
-        # 1. Semantic keyword match (TF-IDF equivalent)
-        card_tokens = clean_tokens(card["effect"])
-        overlap = input_tokens.intersection(card_tokens)
-        score += len(overlap) * 0.4
-        
-        # 2. Strict Game Mechanics Synergy rules
+        # Add Rules-Augmented Synergy Boosters (RAR checks)
         c1_earns = "earn" in effect.lower() or "gain" in effect.lower()
         c2_pays = "pay" in card["effect"].lower() or "discard" in card["effect"].lower()
         c1_pays = "pay" in effect.lower() or "discard" in effect.lower()
         c2_earns = "earn" in card["effect"].lower() or "gain" in card["effect"].lower()
         
         if (c1_earns and c2_pays) or (c1_pays and c2_earns):
-            score += 2.0
-            synergies.append("Resource Generator & Consumer Loop")
+            score += 0.2
+            synergies.append("Resource Generator & Spender synergy")
             
         if f"\\icon({family})" in card["effect"]:
-            score += 3.0
-            synergies.append(f"Direct Family synergy with {family} alignment")
+            score += 0.3
+            synergies.append(f"Requires {family} cards in play")
         if f"\\icon({card['family']})" in effect:
-            score += 3.0
+            score += 0.3
             synergies.append(f"Supports {card['family']} card alignments")
             
         if ("draw" in effect.lower() and "hand" in card["effect"].lower()) or \
            ("hand" in effect.lower() and "draw" in card["effect"].lower()):
-            score += 1.5
-            synergies.append("Hand size scaling synergy")
+            score += 0.15
+            synergies.append("Card draw utility synergy")
             
         c1_recovers = "recover" in effect.lower()
         c2_instant = "instant" in card["effect"].lower()
         if c1_recovers and c2_instant:
-            score += 2.5
-            synergies.append("Recover & Instant summon loop synergy")
+            score += 0.25
+            synergies.append("Recover & Instant summon loop")
             
+        # Check cost conventions and bounds
         if card["family"] == family and abs(card["cost"] - cost) >= 3:
-            score += 1.0
-            synergies.append("Optimizes cost diversity in family area")
+            score += 0.1
+            synergies.append("Thematic Cost Curve complement")
             
-        if score > 0:
-            recommendations.append({
-                "name": card["name"],
-                "cost": card["cost"],
-                "family": card["family"],
-                "effect": card["effect"],
-                "score": round(score, 2),
-                "synergies": synergies if synergies else ["General keyword match"]
-            })
+        recommendations.append({
+            "name": card["name"],
+            "cost": card["cost"],
+            "family": card["family"],
+            "effect": card["effect"],
+            "score": round(score, 3),
+            "synergies": synergies if synergies else ["Semantic relationship"]
+        })
+        if len(recommendations) >= 5:
+            break
             
-    # Sort descending by score and pick top 2 real database cards
-    recommendations.sort(key=lambda x: x["score"], reverse=True)
+    # Take top 2 RAG recommendations
     top_db_cards = recommendations[:2]
     
-    # Merge custom concept card at the top, followed by base database recommendations
+    # ── RETRIEVAL-AUGMENTED CONCEPT SYNTHESIS ──
+    # Embed the custom name and ability pools to pick the most semantically synergistic combination!
+    print("Synthesizing new unique card concepts via RAG retrieval...", file=sys.stderr, flush=True)
+    name_embeddings = model.encode(SYNTHETIC_NAMES, convert_to_numpy=True)
+    ability_embeddings = model.encode(SYNTHETIC_ABILITIES, convert_to_numpy=True)
+    
+    # Semantic match for names (related to family and theme)
+    name_scores = np.dot(name_embeddings, input_embedding) / (np.linalg.norm(name_embeddings, axis=1) * input_norm)
+    best_name_idx = np.argmax(name_scores)
+    generated_name = SYNTHETIC_NAMES[best_name_idx]
+    
+    # Semantic match for abilities (related to card effect mechanics)
+    ability_scores = np.dot(ability_embeddings, input_embedding) / (np.linalg.norm(ability_embeddings, axis=1) * input_norm)
+    # Pick the top ability that matches the mechanics semantic intent
+    best_ability_idx = np.argmax(ability_scores)
+    generated_ability = SYNTHETIC_ABILITIES[best_ability_idx]
+    
+    # Balance rules cost pricing matching family trends in database
+    family_costs = [c["cost"] for c in database if c["family"] == family]
+    if family_costs:
+        generated_cost = int(np.round(np.mean(family_costs)))
+    else:
+        generated_cost = random.choice([2, 3, 4])
+        
+    custom_concept = {
+        "name": f"Ancient {generated_name.split()[-1]}" if len(generated_name.split()) > 1 else f"Spectral {generated_name}",
+        "cost": generated_cost,
+        "family": family,
+        "effect": generated_ability,
+        "score": 1.0,
+        "synergies": [f"Procedurally synthesized RAG concept for {family} balance matching"]
+    }
+    
+    # Combine outputs: 1 RAG synthesized card concept + 2 RAG database matches
     final_output = [custom_concept] + top_db_cards
     
     print(json.dumps(final_output, indent=2, ensure_ascii=False), flush=True)
