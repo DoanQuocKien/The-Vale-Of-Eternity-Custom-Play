@@ -20,7 +20,7 @@
       "minWidth": 1024,
       "minHeight": 720,
       "icon": "/img/icon.png",
-      "enableInspector": true,
+      "enableInspector": false,
       "borderless": false,
       "maximize": false,
       "hidden": false,

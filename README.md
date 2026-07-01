@@ -190,6 +190,8 @@ npm run neu:dev
 
 > **Note:** Native AI features (upscaling, background removal, RAG concepts) require running via `npm run neu:dev` or the built `.exe`. They will gracefully degrade to browser fallbacks in `npm run dev`.
 
+> **Devtools behavior:** Inspector/devtools are enabled for `npm run neu:dev` (development only) and disabled in packaged/release app builds for a cleaner single-window user experience.
+
 ---
 
 ## 📦 Building the Desktop App
