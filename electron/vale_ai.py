@@ -348,20 +348,23 @@ def recommend_cards(card_json_str):
     input_embedding = model.encode(input_text, convert_to_numpy=True)
     input_norm = np.linalg.norm(input_embedding)
     
-    print("Synthesizing 3 unique cross-family card concepts via RAG retrieval...", file=sys.stderr, flush=True)
+    print("Synthesizing 5 unique cross-family card concepts via RAG retrieval...", file=sys.stderr, flush=True)
     name_embeddings = model.encode(SYNTHETIC_NAMES, convert_to_numpy=True)
     ability_embeddings = model.encode(SYNTHETIC_ABILITIES, convert_to_numpy=True)
     
     name_scores = np.dot(name_embeddings, input_embedding) / (np.linalg.norm(name_embeddings, axis=1) * input_norm)
-    top_name_indices = np.argsort(name_scores)[::-1][:6].tolist()
+    top_name_indices = np.argsort(name_scores)[::-1][:25].tolist()
     
     ability_scores = np.dot(ability_embeddings, input_embedding) / (np.linalg.norm(ability_embeddings, axis=1) * input_norm)
-    top_ability_indices = np.argsort(ability_scores)[::-1][:6].tolist()
+    top_ability_indices = np.argsort(ability_scores)[::-1][:25].tolist()
+    
+    chosen_name_indices = random.sample(top_name_indices, 5)
+    chosen_ability_indices = random.sample(top_ability_indices, 5)
     
     all_families = ["Fire", "Water", "Earth", "Wind", "Dragon"]
     other_families = [f for f in all_families if f != family]
     random.shuffle(other_families)
-    concept_families = [family, other_families[0], other_families[1]]
+    concept_families = [family] + other_families
     
     final_output = []
     
@@ -373,15 +376,17 @@ def recommend_cards(card_json_str):
         "Dragon": ["Apex", "Archon", "Bone", "Dragon", "Drake", "Hydra", "Peak", "Wyrm", "Wyvern", "Zenith"]
     }
     
-    for idx in range(3):
+    for idx in range(5):
         concept_family = concept_families[idx]
+        name_idx = chosen_name_indices[idx]
+        ability_idx = chosen_ability_indices[idx]
         
-        base_name = SYNTHETIC_NAMES[top_name_indices[idx]]
+        base_name = SYNTHETIC_NAMES[name_idx]
         theme_word = random.choice(family_themes.get(concept_family, ["Spectral"]))
         noun = base_name.split()[-1]
         name_str = f"{theme_word} {noun}"
         
-        ability_str = SYNTHETIC_ABILITIES[top_ability_indices[idx]]
+        ability_str = SYNTHETIC_ABILITIES[ability_idx]
         
         def replace_family_icon(match):
             return f"\\icon({random.choice([concept_family, family])})"
@@ -398,7 +403,7 @@ def recommend_cards(card_json_str):
         limits = FAMILY_COST_LIMITS.get(concept_family, {"min": 1, "max": 6})
         cost_val = random.randint(limits["min"], limits["max"])
         
-        final_score = float(ability_scores[top_ability_indices[idx]] * 0.7 + name_scores[top_name_indices[idx]] * 0.3)
+        final_score = float(ability_scores[ability_idx] * 0.7 + name_scores[name_idx] * 0.3)
         
         concept_card = {
             "name": name_str,

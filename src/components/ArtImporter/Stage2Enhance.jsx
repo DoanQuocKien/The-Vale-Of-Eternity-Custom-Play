@@ -179,8 +179,10 @@ const Stage2Enhance = ({
 
     let ideasQueue = [];
     let queueIndex = 0;
+    let cycleCount = 0;
+    let isPrefetching = false;
 
-    const fetchRecommendations = async () => {
+    const fetchRecommendations = async (isBackground = false) => {
       if (cardEffect || cardName) {
         try {
           const results = await runPythonRecommendation({
@@ -190,13 +192,23 @@ const Stage2Enhance = ({
             family: cardFamily
           });
           if (results && results.length > 0) {
-            ideasQueue = results.map(r => ({
+            const mappedResults = results.map(r => ({
               name: r.name,
               ability: r.effect,
               cost: r.cost,
-              family: r.family,
-              synergies: r.synergies
+              family: r.family
             }));
+            
+            if (isBackground) {
+              ideasQueue = mappedResults;
+              queueIndex = 0;
+              cycleCount = 0;
+              setCurrentIdea(ideasQueue[0]);
+              isPrefetching = false;
+            } else {
+              ideasQueue = mappedResults;
+              setCurrentIdea(ideasQueue[0]);
+            }
           }
         } catch (e) {
           console.error('Failed to get RAG recommendations:', e);
@@ -208,23 +220,32 @@ const Stage2Enhance = ({
         const ability = CARD_ABILITIES[Math.floor(Math.random() * CARD_ABILITIES.length)];
         const cost = Math.floor(Math.random() * 6) + 1;
         const family = FAMILIES[Math.floor(Math.random() * FAMILIES.length)];
-        return { name, ability, cost, family, synergies: ["Creative Concept Generation"] };
+        return { name, ability, cost, family };
       };
 
       if (ideasQueue.length === 0) {
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
           ideasQueue.push(generateRandomIdea());
         }
+        setCurrentIdea(ideasQueue[0]);
       }
-
-      setCurrentIdea(ideasQueue[0]);
     };
 
     fetchRecommendations();
 
     const interval = setInterval(() => {
       if (ideasQueue.length > 0) {
+        const prevIndex = queueIndex;
         queueIndex = (queueIndex + 1) % ideasQueue.length;
+        
+        if (queueIndex === 0 && prevIndex === ideasQueue.length - 1) {
+          cycleCount += 1;
+          if (cycleCount >= 3 && !isPrefetching) {
+            isPrefetching = true;
+            fetchRecommendations(true);
+          }
+        }
+        
         setCurrentIdea(ideasQueue[queueIndex]);
       }
     }, 4500);
