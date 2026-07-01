@@ -182,7 +182,7 @@ npm install
 
 # Start Vite dev server in browser only (no native APIs)
 npm run dev
-# → http://localhost:3000
+# → http://127.0.0.1:3000
 
 # Start full Neutralino desktop app + Vite hot-reload simultaneously
 npm run neu:dev
@@ -197,9 +197,15 @@ npm run neu:dev
 ```bash
 # Build Vite + package into Neutralino .exe
 npm run neu:build
+
+# Build a portable ZIP release
+npm run neu:release
 ```
 
-The distributable executable is placed in `dist/vale-of-eternity.exe`. It is fully portable — no installation required.
+The normal package output is written under `dist/vale-of-eternity/`, including `vale-of-eternity-win_x64.exe` and `resources.neu`.
+
+The ZIP release is also written under `dist/` when you run `npm run neu:release`.
+If you prefer calling Neutralino directly, use `npx neu build --release`.
 
 ---
 

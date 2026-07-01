@@ -2,9 +2,9 @@
   "applicationId": "js.neutralino.valeofeternity",
   "version": "1.3.2",
   "defaultMode": "window",
-  "documentRoot": "/dist/",
+  "documentRoot": "/web-dist/",
   "port": 8008,
-  "url": "/index.html",
+  "url": "/",
   "enableServer": true,
   "enableNativeAPI": true,
   "tokenSecurity": "none",
@@ -30,10 +30,17 @@
   },
   "cli": {
     "binaryName": "vale-of-eternity",
-    "resourcesPath": "/resources",
+    "resourcesPath": "/web-dist",
     "extensionsPath": "/extensions",
     "clientLibrary": "/neutralino.js",
     "binaryVersion": "4.15.0",
-    "clientVersion": "3.12.0"
+    "clientVersion": "3.12.0",
+    "frontendLibrary": {
+      "patchFile": "/index.html",
+      "devUrl": "http://127.0.0.1:3000",
+      "projectPath": "/",
+      "buildCommand": "npm run build"
+    },
+    "distributionPath": "/dist"
   }
 }

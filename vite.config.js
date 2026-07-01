@@ -16,6 +16,9 @@ export default defineConfig({
     }),
   ],
   base: './', // Ensures relative paths in builds for desktop/offline usage
+  build: {
+    outDir: 'web-dist',
+  },
   server: {
     port: 3000,
     host: true,
@@ -26,7 +29,7 @@ export default defineConfig({
     },
     proxy: {
       '/__neutralino_globals.js': {
-        target: 'http://localhost:8008',
+          target: 'http://127.0.0.1:8008',
         changeOrigin: true,
         configure: (proxy, options) => {
           proxy.on('proxyRes', (proxyRes, req, res) => {
@@ -42,7 +45,7 @@ export default defineConfig({
         }
       },
       '/neutralino.js': {
-        target: 'http://localhost:8008',
+          target: 'http://127.0.0.1:8008',
         changeOrigin: true,
         configure: (proxy, options) => {
           proxy.on('proxyRes', (proxyRes, req, res) => {

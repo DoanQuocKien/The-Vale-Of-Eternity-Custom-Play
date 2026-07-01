@@ -10,8 +10,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "neu:dev": "concurrently \"vite\" \"npx neu run -- --url=http://localhost:3000\"",
-    "neu:build": "vite build && npx neu build"
+    "neu:dev": "concurrently \"vite\" \"npx neu run -- --url=http://127.0.0.1:3000\"",
+    "neu:build": "vite build && npx neu build",
+    "neu:release": "vite build && npx neu build --release"
   },
   "dependencies": {
     "@neutralinojs/lib": "^3.12.0",
