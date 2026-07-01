@@ -416,47 +416,6 @@ def recommend_cards(card_json_str):
         
     print(json.dumps(final_output, indent=2, ensure_ascii=False), flush=True)
 
-# ── MAIN ROUTING CLI ──
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python vale_ai.py <subcommand> [args...]", flush=True)
-        sys.exit(1)
-        
-    subcommand = sys.argv[1]
-    
-    if subcommand == "remove-bg":
-        if len(sys.argv) < 4:
-            print("Usage: python vale_ai.py remove-bg <input> <output>", flush=True)
-            sys.exit(1)
-        remove_background(sys.argv[2], sys.argv[3])
-        
-    elif subcommand == "upscale":
-        if len(sys.argv) < 4:
-            print("Usage: python vale_ai.py upscale <input> <output>", flush=True)
-            sys.exit(1)
-        upscale_image(sys.argv[2], sys.argv[3])
-        
-    elif subcommand == "balance-lighting":
-        if len(sys.argv) < 4:
-            print("Usage: python vale_ai.py balance-lighting <input> <output>", flush=True)
-            sys.exit(1)
-        balance_lighting(sys.argv[2], sys.argv[3])
-        
-    elif subcommand == "enhance-lines":
-        if len(sys.argv) < 4:
-            print("Usage: python vale_ai.py enhance-lines <input> <output>", flush=True)
-            sys.exit(1)
-        enhance_lines(sys.argv[2], sys.argv[3])
-        
-    elif subcommand == "recommend":
-        if len(sys.argv) < 3:
-            print("Usage: python vale_ai.py recommend <card_json>", flush=True)
-            sys.exit(1)
-        recommend_cards(sys.argv[2])
-        
-    elif subcommand == "random-card":
-        generate_random_card()
-
 def generate_random_card():
     import re
     import random
@@ -510,7 +469,49 @@ def generate_random_card():
     }
     
     print(json.dumps(output_card, indent=2, ensure_ascii=False), flush=True)
-        
+
+
+# ── MAIN ROUTING CLI ──
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python vale_ai.py <subcommand> [args...]", flush=True)
+        sys.exit(1)
+
+    subcommand = sys.argv[1]
+
+    if subcommand == "remove-bg":
+        if len(sys.argv) < 4:
+            print("Usage: python vale_ai.py remove-bg <input> <output>", flush=True)
+            sys.exit(1)
+        remove_background(sys.argv[2], sys.argv[3])
+
+    elif subcommand == "upscale":
+        if len(sys.argv) < 4:
+            print("Usage: python vale_ai.py upscale <input> <output>", flush=True)
+            sys.exit(1)
+        upscale_image(sys.argv[2], sys.argv[3])
+
+    elif subcommand == "balance-lighting":
+        if len(sys.argv) < 4:
+            print("Usage: python vale_ai.py balance-lighting <input> <output>", flush=True)
+            sys.exit(1)
+        balance_lighting(sys.argv[2], sys.argv[3])
+
+    elif subcommand == "enhance-lines":
+        if len(sys.argv) < 4:
+            print("Usage: python vale_ai.py enhance-lines <input> <output>", flush=True)
+            sys.exit(1)
+        enhance_lines(sys.argv[2], sys.argv[3])
+
+    elif subcommand == "recommend":
+        if len(sys.argv) < 3:
+            print("Usage: python vale_ai.py recommend <card_json>", flush=True)
+            sys.exit(1)
+        recommend_cards(sys.argv[2])
+
+    elif subcommand == "random-card":
+        generate_random_card()
+
     else:
         print(f"Unknown subcommand: {subcommand}", flush=True)
         sys.exit(1)
