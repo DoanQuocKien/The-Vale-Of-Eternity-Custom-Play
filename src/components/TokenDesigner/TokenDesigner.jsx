@@ -301,10 +301,34 @@ export default function TokenDesigner({ onShowArtImporter }) {
   const tokens = useAppStore(state => state.tokens);
   const activeToken = useAppStore(state => state.activeToken);
   const setActiveToken = useAppStore(state => state.setActiveToken);
-  const saveToken = useAppStore(state => state.saveToken);
+  const saveTokenStore = useAppStore(state => state.saveToken);
   const deleteToken = useAppStore(state => state.deleteToken);
   const exportToken = useAppStore(state => state.exportToken);
   const loadTokens = useAppStore(state => state.loadTokens);
+  const hasUnsavedChanges = useAppStore(state => state.hasUnsavedChanges);
+  const setHasUnsavedChanges = useAppStore(state => state.setHasUnsavedChanges);
+
+  const saveToken = async (updatedToken) => {
+    const result = await saveTokenStore(updatedToken);
+    setHasUnsavedChanges(false);
+    return result;
+  };
+
+  const isInitialTokenLoad = useRef(true);
+
+  // Reset the initial load flag when switching tokens
+  useEffect(() => {
+    isInitialTokenLoad.current = true;
+  }, [activeToken?.id]);
+
+  // Set unsaved changes on user interaction
+  useEffect(() => {
+    if (isInitialTokenLoad.current) {
+      isInitialTokenLoad.current = false;
+      return;
+    }
+    setHasUnsavedChanges(true);
+  }, [tokenName, transformX, transformY, scale, rotation, brightness, contrast, saturation, undoList]);
 
   // General state
   const [tokenName, setTokenName] = useState('');

@@ -29,4 +29,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * @returns {{ ok: boolean, outputPath?: string, error?: string }}
    */
   convertToCmyk: (inputPath) => ipcRenderer.invoke('convert-to-cmyk', { inputPath }),
+  removeBackgroundPython: (dataUrl) => ipcRenderer.invoke('remove-background-python', { dataUrl }),
+  onBgRemovalProgress: (callback) => {
+    const subscription = (_event, value) => callback(value);
+    ipcRenderer.on('bg-removal-python-progress', subscription);
+    return () => {
+      ipcRenderer.removeListener('bg-removal-python-progress', subscription);
+    };
+  }
 });

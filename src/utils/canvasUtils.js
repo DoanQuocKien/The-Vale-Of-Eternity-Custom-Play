@@ -51,18 +51,35 @@ export function applyShadowBalance(srcCanvas, strength = 0.85) {
   blurCtx.drawImage(srcCanvas, 0, 0);
   const blurData = blurCtx.getImageData(0, 0, width, height).data;
 
-  // Step 2: Divide original by blur, normalize
-  console.log('[ShadowBalance] Dividing original by blurred background and normalising channels');
+  // Step 2: Divide original by blur, normalize in the Luminance channel only
+  // This preserves the color ratios (hue & saturation) and prevents color shifts
+  console.log('[ShadowBalance] Dividing original by blurred background in luminance channel');
   const output = new Uint8ClampedArray(data.length);
   for (let i = 0; i < data.length; i += 4) {
-    for (let c = 0; c < 3; c++) {
-      const orig = data[i + c];
-      const blr = blurData[i + c] || 1;
-      // Divide, scale up to target white, blend with strength parameter
-      const normalized = (orig / blr) * 255;
-      output[i + c] = Math.min(255, Math.max(0, Math.round(orig * (1 - strength) + normalized * strength)));
-    }
-    output[i + 3] = data[i + 3]; // preserve alpha
+    const r = data[i];
+    const g = data[i+1];
+    const b = data[i+2];
+
+    // Calculate luminance (Y) using Rec. 601 coefficients
+    const yOrig = 0.299 * r + 0.587 * g + 0.114 * b;
+    
+    const br = blurData[i];
+    const bg = blurData[i+1];
+    const bb = blurData[i+2];
+    const yBlur = 0.299 * br + 0.587 * bg + 0.114 * bb;
+
+    // Soft division on luminance channel
+    const yBlurSafe = Math.max(1, yBlur);
+    const yNormalized = ((yOrig + 30) / (yBlurSafe + 30)) * 255;
+    const yTarget = yOrig * (1 - strength) + yNormalized * strength;
+
+    // Scale RGB channels by the luminance ratio to preserve hue/saturation
+    const ratio = yOrig > 0 ? yTarget / yOrig : 0;
+
+    output[i] = Math.min(255, Math.max(0, Math.round(r * ratio)));
+    output[i+1] = Math.min(255, Math.max(0, Math.round(g * ratio)));
+    output[i+2] = Math.min(255, Math.max(0, Math.round(b * ratio)));
+    output[i+3] = data[i+3]; // preserve alpha
   }
 
   const outImageData = new ImageData(output, width, height);
@@ -93,10 +110,10 @@ export function applyColorEnhancement(srcCanvas, { vibrance = 0, familyTint = 0,
   // Convert normalized parameters to CSS filter percentages
   // Vibrance (0 to 1) -> 100% to 250%
   const sat = 100 + (vibrance * 150);
-  // Brightness (-1 to 1) -> 50% to 150%
-  const bri = 100 + (brightness * 50);
-  // Contrast (-1 to 1) -> 50% to 150%
-  const con = 100 + (contrast * 50);
+  // Brightness (-100 to 100) -> 0% to 200%
+  const bri = 100 + brightness;
+  // Contrast (-100 to 100) -> 0% to 200%
+  const con = 100 + contrast;
   
   ctx.filter = `saturate(${sat}%) brightness(${bri}%) contrast(${con}%) hue-rotate(${hueRotate}deg)`;
   ctx.drawImage(srcCanvas, 0, 0);
@@ -220,15 +237,15 @@ export function applyLineEnhancement(srcCanvas) {
     const b = data[i+2];
     const brightness = (r + g + b) / 3;
     
-    // If it's darker than pure white, darken it heavily to boost lines
-    if (brightness < 240) {
+    // Only enhance actual dark lines (e.g. brightness < 140) to prevent corrupting colorful midtones
+    if (brightness < 140) {
       darkenedPixels++;
-      const factor = Math.min(1, (240 - brightness) / 100); // scales intensity, more aggressive
-      data[i] = Math.max(0, r - (255 * factor));
-      data[i+1] = Math.max(0, g - (255 * factor));
-      data[i+2] = Math.max(0, b - (255 * factor));
-    } else {
-      // Force paper background to pure white to ensure flood fill doesn't snag
+      const factor = (140 - brightness) / 140; // 0..1 scale of darkness
+      data[i] = Math.max(0, r - Math.round(r * factor * 0.5));
+      data[i+1] = Math.max(0, g - Math.round(g * factor * 0.5));
+      data[i+2] = Math.max(0, b - Math.round(b * factor * 0.5));
+    } else if (brightness > 220) {
+      // Clean very light background noise to pure white, assisting background extraction
       data[i] = 255;
       data[i+1] = 255;
       data[i+2] = 255;

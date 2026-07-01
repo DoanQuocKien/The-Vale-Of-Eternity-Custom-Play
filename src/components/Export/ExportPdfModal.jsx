@@ -222,7 +222,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
                     Convert to Print-Safe CMYK
                   </p>
                   <p style={{ margin: '0.2rem 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                    Uses Ghostscript to convert the exported RGB PDF to CMYK color space — ideal for professional printing. Requires <strong style={{ color: 'var(--text-secondary)' }}>Ghostscript</strong> to be installed on your system.
+                    Converts the exported PDF to a print-ready CMYK color space (ideal for professional printing). Requires <strong style={{ color: 'var(--text-secondary)' }}>Ghostscript</strong> to be installed on your system.
                   </p>
                 </div>
               </div>
@@ -246,7 +246,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
               {cmykStatus === 'converting' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#a78bfa' }}>
                   <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                  Converting via Ghostscript…
+                  Converting colors to CMYK…
                 </div>
               )}
 
@@ -469,7 +469,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
             {/* CMYK hint (Electron only) */}
             {IS_ELECTRON && (
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0, borderTop: '1px solid var(--border-color)', paddingTop: '0.6rem' }}>
-                🎨 After exporting, you'll be offered to convert the PDF to print-friendly <strong style={{ color: 'var(--text-secondary)' }}>CMYK</strong> color space via Ghostscript.
+                🎨 After exporting, you can convert the PDF to a print-ready <strong style={{ color: 'var(--text-secondary)' }}>CMYK</strong> color space.
               </p>
             )}
 

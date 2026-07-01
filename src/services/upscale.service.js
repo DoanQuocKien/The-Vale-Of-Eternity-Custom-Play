@@ -16,8 +16,22 @@ async function getUpscaler() {
   loadPromise = (async () => {
     const { default: Upscaler } = await import('upscaler');
     const { default: ESRGANMedium } = await import('@upscalerjs/esrgan-medium');
+    const tf = await import('@tensorflow/tfjs');
 
-    const instance = new Upscaler({ model: ESRGANMedium });
+    try {
+      console.log('[Upscaler] Forcing TensorFlow.js backend to CPU to prevent GPU/WebGL crashes...');
+      await tf.setBackend('cpu');
+      console.log('[Upscaler] TensorFlow.js backend successfully set to CPU.');
+    } catch (e) {
+      console.warn('[Upscaler] Failed to set CPU backend:', e);
+    }
+
+    const localModel = {
+      ...ESRGANMedium,
+      path: './models/esrgan-medium/model.json'
+    };
+
+    const instance = new Upscaler({ model: localModel });
     upscalerInstance = instance;
     return instance;
   })();
@@ -55,9 +69,13 @@ export async function upscaleImage(dataUrl, onProgress) {
     });
 
     onProgress?.(100);
-    return 'data:image/png;base64,' + result;
+    if (!result || typeof result !== 'string' || result.length < 100) {
+      console.warn('Upscaler returned an invalid result, falling back to original.');
+      return dataUrl;
+    }
+    return result.startsWith('data:') ? result : 'data:image/png;base64,' + result;
   } catch (err) {
-    console.warn('Upscaling failed, returning original:', err.message);
+    console.error('Upscaling failed, falling back to original. Error:', err);
     return dataUrl; // Graceful fallback — just use original
   }
 }

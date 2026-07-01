@@ -25,7 +25,8 @@ const CardEditor = ({ onShowArtImporter }) => {
   const tokens = useAppStore(state => state.tokens);
 
   const [loadedCardId, setLoadedCardId] = useState(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const hasUnsavedChanges = useAppStore(state => state.hasUnsavedChanges);
+  const setHasUnsavedChanges = useAppStore(state => state.setHasUnsavedChanges);
 
   // Instead of using global store for draft, we use local state
   // to avoid lag when dragging or typing rapidly.
@@ -293,6 +294,7 @@ const CardEditor = ({ onShowArtImporter }) => {
       const newCy = parseFloat(Math.max(-20, Math.min(120, startCy + percentDeltaY)).toFixed(1));
 
       setTokenOverlays(prev => prev.map(o => o.instanceId === instanceId ? { ...o, cx: newCx, cy: newCy } : o));
+      setHasUnsavedChanges(true);
     };
 
     const handleDragEnd = () => {
@@ -305,6 +307,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   };
 
   const updateSetting = (key, value, elementKey = selectedElement) => {
+    setHasUnsavedChanges(true);
     setLayout(prev => {
       const selected = prev[elementKey];
       const familySpecificKeys = ['priceTL', 'priceBR', 'credit'];
@@ -1490,7 +1493,10 @@ const CardEditor = ({ onShowArtImporter }) => {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#a78bfa' }}>{ov.instanceName || ov.tokenName}</span>
                             <button
-                              onClick={() => setTokenOverlays(prev => prev.filter(o => o.instanceId !== ov.instanceId))}
+                              onClick={() => {
+                                setTokenOverlays(prev => prev.filter(o => o.instanceId !== ov.instanceId));
+                                setHasUnsavedChanges(true);
+                              }}
                               style={{ padding: '0.2rem 0.4rem', background: 'rgba(239,68,68,0.1)', border: '1px solid var(--color-danger)', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', cursor: 'pointer', color: 'var(--color-danger)' }}
                             >✕ Remove</button>
                           </div>
@@ -1517,6 +1523,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                                   onChange={e => {
                                     const v = parseFloat(e.target.value);
                                     setTokenOverlays(prev => prev.map(o => o.instanceId === ov.instanceId ? { ...o, [ctrl.key]: v } : o));
+                                    setHasUnsavedChanges(true);
                                   }}
                                   style={{
                                     width: '100%',
@@ -1561,6 +1568,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                                 size: 15
                               };
                               setTokenOverlays(prev => [...prev, newOverlay]);
+                              setHasUnsavedChanges(true);
                             }}
                             style={{
                               display: 'flex',

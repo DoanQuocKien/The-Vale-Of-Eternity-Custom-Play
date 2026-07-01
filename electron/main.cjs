@@ -176,6 +176,132 @@ ipcMain.handle('convert-to-cmyk', async (_event, { inputPath }) => {
   });
 });
 
+// ── IPC: Remove background using local Python + rembg ──
+ipcMain.handle('remove-background-python', async (_event, { dataUrl }) => {
+  return new Promise((resolve) => {
+    try {
+      const tempDir = app.getPath('temp');
+      const timestamp = Date.now();
+      const inputPath = path.join(tempDir, `bg_input_${timestamp}.png`);
+      const outputPath = path.join(tempDir, `bg_output_${timestamp}.png`);
+      
+      const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
+      fs.writeFileSync(inputPath, base64Data, { encoding: 'base64' });
+      
+      const isPackaged = app.isPackaged;
+      const binaryPath = isPackaged
+        ? path.join(process.resourcesPath, 'bin', 'bg_remove.exe')
+        : null;
+        
+      const runProcess = () => {
+        return new Promise((res) => {
+          let proc;
+          if (isPackaged) {
+            console.log(`[remove-background-python] Running bundled binary: "${binaryPath}"`);
+            proc = spawn(binaryPath, [inputPath, outputPath]);
+          } else {
+            const scriptPath = path.join(__dirname, 'bg_remove.py');
+            console.log(`[remove-background-python] Running python script: "python ${scriptPath}"`);
+            proc = spawn('python', [scriptPath, inputPath, outputPath]);
+          }
+          
+          let stdout = '';
+          let stderr = '';
+          
+          const handleProgress = (chunk) => {
+            const match = chunk.match(/(\d+)\s*%/);
+            if (match && mainWindow) {
+              const percent = parseInt(match[1], 10);
+              mainWindow.webContents.send('bg-removal-python-progress', { percent });
+            }
+          };
+
+          proc.stdout.on('data', (d) => { 
+            const chunk = d.toString();
+            stdout += chunk; 
+            handleProgress(chunk);
+          });
+          
+          proc.stderr.on('data', (d) => { 
+            const chunk = d.toString();
+            stderr += chunk; 
+            handleProgress(chunk);
+          });
+          
+          proc.on('close', (code) => {
+            res({ code, stdout, stderr });
+          });
+          
+          proc.on('error', (err) => {
+            res({ code: -1, error: err });
+          });
+        });
+      };
+      
+      (async () => {
+        let result = await runProcess();
+        
+        // In development, if 'python' fails, try 'python3'
+        if (!isPackaged && result.code !== 0) {
+          console.warn('[remove-background-python] python failed in dev, trying python3...');
+          const scriptPath = path.join(__dirname, 'bg_remove.py');
+          const runPython3 = () => {
+            return new Promise((res) => {
+              const proc = spawn('python3', [scriptPath, inputPath, outputPath]);
+              let stdout = '';
+              let stderr = '';
+              
+              const handleProgress = (chunk) => {
+                const match = chunk.match(/(\d+)\s*%/);
+                if (match && mainWindow) {
+                  const percent = parseInt(match[1], 10);
+                  mainWindow.webContents.send('bg-removal-python-progress', { percent });
+                }
+              };
+
+              proc.stdout.on('data', (d) => { 
+                const chunk = d.toString();
+                stdout += chunk; 
+                handleProgress(chunk);
+              });
+              
+              proc.stderr.on('data', (d) => { 
+                const chunk = d.toString();
+                stderr += chunk; 
+                handleProgress(chunk);
+              });
+              
+              proc.on('close', (code) => { res({ code, stdout, stderr }); });
+              proc.on('error', (err) => { res({ code: -1, error: err }); });
+            });
+          };
+          result = await runPython3();
+        }
+        
+        if (result.code === 0 && fs.existsSync(outputPath)) {
+          const outputBase64 = fs.readFileSync(outputPath, { encoding: 'base64' });
+          const outputDataUrl = `data:image/png;base64,${outputBase64}`;
+          
+          // Clean up temp files
+          try {
+            if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+            if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+          } catch (e) {
+            console.error('Temp cleanup failed:', e);
+          }
+          
+          resolve({ ok: true, dataUrl: outputDataUrl });
+        } else {
+          const errMsg = result.stderr || (result.error ? result.error.message : 'Unknown error');
+          resolve({ ok: false, error: errMsg });
+        }
+      })();
+    } catch (err) {
+      resolve({ ok: false, error: err.message });
+    }
+  });
+});
+
 // ── App lifecycle ──
 app.whenReady().then(() => {
   createWindow();

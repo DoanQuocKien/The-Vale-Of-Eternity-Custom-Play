@@ -58,10 +58,10 @@ export default function ArtImporter({
   // Processing state
   const [processing, setProcessing] = useState(false);
   const [progressSteps, setProgressSteps] = useState([
-    { label: 'Shadow Balance', done: false, active: false, pct: 0, skip: false },
-    { label: 'Line Art Enhance', done: false, active: false, pct: 0, skip: false },
-    { label: 'BG Removal (RMBG-1.4)', done: false, active: false, pct: 0, skip: false },
-    { label: 'AI Upscale (ESRGAN)', done: false, active: false, pct: 0, skip: true },
+    { label: 'Balance Lighting', done: false, active: false, pct: 0, skip: true },
+    { label: 'Enhance Outlines', done: false, active: false, pct: 0, skip: true },
+    { label: 'Smart Upscale', done: false, active: false, pct: 0, skip: true },
+    { label: 'Remove Background', done: false, active: false, pct: 0, skip: false },
   ]);
 
   // Color tuning state
@@ -319,10 +319,10 @@ export default function ArtImporter({
         markStep(1, { active: false, done: true, pct: 100 });
       }
 
-      // Step 3: AI Background Removal (RMBG-1.4)
+      // Step 3: AI Upscale (ESRGAN)
       if (!steps[2].skip) {
         markStep(2, { active: true, done: false }, 0);
-        currentDataUrl = await removeBackground(currentDataUrl, (pct) => {
+        currentDataUrl = await upscaleImage(currentDataUrl, (pct) => {
           markStep(2, { active: true }, pct);
         });
         markStep(2, { active: false, done: true }, 100);
@@ -330,10 +330,10 @@ export default function ArtImporter({
         markStep(2, { active: false, done: true, pct: 100 });
       }
 
-      // Step 4: AI Upscale (ESRGAN)
+      // Step 4: AI Background Removal (RMBG-1.4)
       if (!steps[3].skip) {
         markStep(3, { active: true, done: false }, 0);
-        currentDataUrl = await upscaleImage(currentDataUrl, (pct) => {
+        currentDataUrl = await removeBackground(currentDataUrl, (pct) => {
           markStep(3, { active: true }, pct);
         });
         markStep(3, { active: false, done: true }, 100);

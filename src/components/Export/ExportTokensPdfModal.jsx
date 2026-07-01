@@ -186,7 +186,7 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
                 <Printer size={16} color="#a78bfa" style={{ flexShrink: 0, marginTop: '1px' }} />
                 <div>
                   <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, color: '#a78bfa' }}>Convert to Print-Safe CMYK</p>
-                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>Uses Ghostscript to convert the exported RGB PDF to CMYK — ideal for professional printing. Requires <strong style={{ color: 'var(--text-secondary)' }}>Ghostscript</strong> to be installed on your system.</p>
+                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>Converts the exported PDF to a print-ready CMYK color space (ideal for professional printing). Requires <strong style={{ color: 'var(--text-secondary)' }}>Ghostscript</strong> to be installed on your system.</p>
                 </div>
               </div>
               {(cmykStatus === null || cmykStatus === 'error') && (
@@ -194,7 +194,7 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
                   {cmykStatus === 'error' ? '🔄 Retry CMYK Conversion' : '🎨 Convert to CMYK'}
                 </button>
               )}
-              {cmykStatus === 'converting' && (<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#a78bfa' }}><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />Converting via Ghostscript…</div>)}
+              {cmykStatus === 'converting' && (<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#a78bfa' }}><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />Converting colors to CMYK…</div>)}
               {cmykStatus === 'done' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#10b981', fontWeight: 700 }}><CheckCircle size={14} />CMYK conversion complete!</div>
@@ -381,7 +381,7 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
             {/* CMYK hint (Electron only) */}
             {IS_ELECTRON && (
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0, borderTop: '1px solid var(--border-color)', paddingTop: '0.6rem' }}>
-                🎨 After exporting, you'll be offered to convert the PDF to print-friendly <strong style={{ color: 'var(--text-secondary)' }}>CMYK</strong> color space via Ghostscript.
+                🎨 After exporting, you can convert the PDF to a print-ready <strong style={{ color: 'var(--text-secondary)' }}>CMYK</strong> color space.
               </p>
             )}
 

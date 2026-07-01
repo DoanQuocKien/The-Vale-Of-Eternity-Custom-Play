@@ -16,16 +16,7 @@ async function getSegmentator(onProgress) {
     };
 
     try {
-      console.log('Initializing RMBG-1.4 with WebGPU...');
-      const instance = await pipeline("image-segmentation", "onnx-community/RMBG-1.4", {
-        device: "webgpu",
-        progress_callback,
-      });
-      segmentatorInstance = instance;
-      console.log('RMBG-1.4 initialized with WebGPU successfully.');
-      return instance;
-    } catch (err) {
-      console.warn("WebGPU failed, falling back to WASM:", err);
+      console.log('Initializing RMBG-1.4 with WASM...');
       const instance = await pipeline("image-segmentation", "onnx-community/RMBG-1.4", {
         device: "wasm",
         progress_callback,
@@ -33,6 +24,9 @@ async function getSegmentator(onProgress) {
       segmentatorInstance = instance;
       console.log('RMBG-1.4 initialized with WASM successfully.');
       return instance;
+    } catch (err) {
+      console.error("RMBG-1.4 WASM initialization failed:", err);
+      throw err;
     }
   })();
 
@@ -40,19 +34,50 @@ async function getSegmentator(onProgress) {
 }
 
 /**
- * Removes the background of an image using the RMBG-1.4 model.
+ * Removes the background of an image using the local Python rembg or RMBG-1.4 model.
  * @param {string} dataUrl - Input image as a data URL
  * @param {function} onProgress - (percent: number) => void
  * @returns {Promise<string>} - Image with transparent background as a data URL
  */
 export async function removeBackground(dataUrl, onProgress) {
+  // 1. Try local Python background removal if in Electron
+  if (typeof window !== 'undefined' && window.electronAPI?.removeBackgroundPython) {
+    let unsubscribe;
+    try {
+      console.log('Attempting local Python background removal...');
+      onProgress?.(5);
+      
+      if (window.electronAPI.onBgRemovalProgress) {
+        unsubscribe = window.electronAPI.onBgRemovalProgress(({ percent }) => {
+          // Map Python download progress (0..100) to 10..95 range in UI
+          const mappedProgress = 10 + Math.round(percent * 0.85);
+          onProgress?.(mappedProgress);
+        });
+      }
+      
+      const result = await window.electronAPI.removeBackgroundPython(dataUrl);
+      if (unsubscribe) unsubscribe();
+
+      if (result && result.ok && result.dataUrl) {
+        console.log('Local Python background removal successful.');
+        onProgress?.(100);
+        return result.dataUrl;
+      }
+      console.warn('Local Python background removal failed, falling back to Web WASM:', result?.error);
+    } catch (err) {
+      if (unsubscribe) unsubscribe();
+      console.warn('Local Python background removal error, falling back to Web WASM:', err);
+    }
+  }
+
+  // 2. Fallback to Web WASM / WebGPU RMBG-1.4
   try {
-    onProgress?.(5);
+    onProgress?.(15);
     const segmentator = await getSegmentator(onProgress);
-    onProgress?.(20);
+    onProgress?.(30);
 
     const image = await RawImage.fromURL(dataUrl);
-    onProgress?.(40);
+    onProgress?.(50);
 
     const output = await segmentator(image);
     onProgress?.(80);

@@ -21,6 +21,8 @@ export const useAppStore = create((set, get) => ({
   // Navigation State
   activeTab: 'editor', // 'editor' | 'explorer'
   setActiveTab: (tab) => set({ activeTab: tab }),
+  hasUnsavedChanges: false,
+  setHasUnsavedChanges: (val) => set({ hasUnsavedChanges: val }),
 
   // Data State
   packs: [],

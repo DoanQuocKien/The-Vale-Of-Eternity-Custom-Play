@@ -34,6 +34,20 @@ export default function App() {
   const setActiveCard = useAppStore(state => state.setActiveCard);
   const setActiveToken = useAppStore(state => state.setActiveToken);
   const tokens = useAppStore(state => state.tokens);
+  const hasUnsavedChanges = useAppStore(state => state.hasUnsavedChanges);
+  const setHasUnsavedChanges = useAppStore(state => state.setHasUnsavedChanges);
+
+  const handleTabChange = (targetTab) => {
+    if (activeTab === targetTab) return;
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm(
+        "You have unsaved changes in the Card Editor. Are you sure you want to leave? Your changes will be lost."
+      );
+      if (!confirmLeave) return;
+      setHasUnsavedChanges(false);
+    }
+    setActiveTab(targetTab);
+  };
 
   useEffect(() => {
     initializeApp();
@@ -65,6 +79,7 @@ export default function App() {
     if (artCallback) {
       artCallback(artData);
     }
+    setHasUnsavedChanges(true);
   };
 
   const exportPack = async (pack) => {
@@ -188,7 +203,7 @@ export default function App() {
 
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem', gap: '1.5rem', paddingTop: '1rem' }}>
           <button
-            onClick={() => setActiveTab('explorer')}
+            onClick={() => handleTabChange('explorer')}
             style={{
               padding: '0.75rem 1.5rem',
               background: activeTab === 'explorer' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
@@ -204,7 +219,7 @@ export default function App() {
             Pack Explorer
           </button>
           <button
-            onClick={() => setActiveTab('editor')}
+            onClick={() => handleTabChange('editor')}
             style={{
               padding: '0.75rem 1.5rem',
               background: activeTab === 'editor' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
@@ -220,7 +235,7 @@ export default function App() {
             Interactive Designer
           </button>
           <button
-            onClick={() => setActiveTab('tokens')}
+            onClick={() => handleTabChange('tokens')}
             style={{
               padding: '0.75rem 1.5rem',
               background: activeTab === 'tokens' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
@@ -236,7 +251,7 @@ export default function App() {
             Token Designer
           </button>
           <button
-            onClick={() => setActiveTab('components')}
+            onClick={() => handleTabChange('components')}
             style={{
               padding: '0.75rem 1.5rem',
               background: activeTab === 'components' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',

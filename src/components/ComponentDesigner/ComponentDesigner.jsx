@@ -22,9 +22,33 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   const components = useAppStore(state => state.components);
   const activeComponent = useAppStore(state => state.activeComponent);
   const setActiveComponent = useAppStore(state => state.setActiveComponent);
-  const saveComponent = useAppStore(state => state.saveComponent);
+  const saveComponentStore = useAppStore(state => state.saveComponent);
   const deleteComponent = useAppStore(state => state.deleteComponent);
   const loadComponents = useAppStore(state => state.loadComponents);
+  const hasUnsavedChanges = useAppStore(state => state.hasUnsavedChanges);
+  const setHasUnsavedChanges = useAppStore(state => state.setHasUnsavedChanges);
+
+  const saveComponent = async (updatedComp) => {
+    const result = await saveComponentStore(updatedComp);
+    setHasUnsavedChanges(false);
+    return result;
+  };
+
+  const isInitialCompLoad = useRef(true);
+
+  // Reset the initial load flag when switching components
+  useEffect(() => {
+    isInitialCompLoad.current = true;
+  }, [activeComponent?.id]);
+
+  // Set unsaved changes on user interaction
+  useEffect(() => {
+    if (isInitialCompLoad.current) {
+      isInitialCompLoad.current = false;
+      return;
+    }
+    setHasUnsavedChanges(true);
+  }, [compName, compBleed, foldLines]);
 
   // Component metadata states
   const [compName, setCompName] = useState('');

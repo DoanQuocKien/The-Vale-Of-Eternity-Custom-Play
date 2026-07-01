@@ -395,7 +395,7 @@ const Stage3Paint = ({
             {!isCreateMode ? (
               /* Before/After slider mode for uploads */
               <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img src={processedDataUrl} alt="Before" style={{ maxWidth: '100%', maxHeight: '100%', display: 'block', opacity: compareSlider < 100 ? 1 : 0, objectFit: 'contain' }} />
+                <img src={processedDataUrl} alt="Before" style={{ maxWidth: '100%', maxHeight: '100%', display: 'block', opacity: 1, objectFit: 'contain' }} />
                 <div style={{
                   position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
                   clipPath: `inset(0 0 0 ${compareSlider}%)`,
