@@ -136,3 +136,30 @@ export async function runPythonRecommendation(cardData) {
     return [];
   }
 }
+
+/**
+ * Generate a dynamically synthesized random card concept from the RAG pools.
+ * 
+ * @returns {Promise<object|null>} The generated card concept
+ */
+export async function runPythonRandomCard() {
+  if (typeof window === 'undefined' || !window.Neutralino) {
+    return null;
+  }
+
+  try {
+    const runCmd = await getPythonCommand();
+    const cmd = `${runCmd} random-card`;
+    
+    const result = await window.Neutralino.os.execCommand(cmd);
+    if (result.exitCode === 0) {
+      return JSON.parse(result.stdOut.trim());
+    } else {
+      console.error('[PythonRunner random-card] Failed:', result.stdErr);
+      return null;
+    }
+  } catch (err) {
+    console.error('[PythonRunner random-card] Error:', err);
+    return null;
+  }
+}

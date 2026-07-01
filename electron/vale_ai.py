@@ -454,6 +454,63 @@ if __name__ == "__main__":
             sys.exit(1)
         recommend_cards(sys.argv[2])
         
+    elif subcommand == "random-card":
+        generate_random_card()
+
+def generate_random_card():
+    import re
+    import random
+    
+    FAMILY_COST_LIMITS = {
+        "Fire": {"min": 0, "max": 4},
+        "Water": {"min": 0, "max": 7},
+        "Earth": {"min": 0, "max": 10},
+        "Wind": {"min": 3, "max": 10},
+        "Dragon": {"min": 3, "max": 12}
+    }
+    
+    family = random.choice(list(FAMILY_COST_LIMITS.keys()))
+    base_name = random.choice(SYNTHETIC_NAMES)
+    base_ability = random.choice(SYNTHETIC_ABILITIES)
+    
+    family_themes = {
+        "Fire": ["Blaze", "Cinder", "Ember", "Flame", "Lava", "Magma", "Pyro", "Volcanic", "Ash", "Scorch"],
+        "Water": ["Aquatic", "Coral", "Deepsea", "Glacier", "Mist", "River", "Sea", "Tidal", "Vapor", "Abyssal"],
+        "Earth": ["Agate", "Ancient", "Basalt", "Bramble", "Canyon", "Earthquake", "Emerald", "Monolith", "Moss", "Obsidian", "Onyx", "Tectonic"],
+        "Wind": ["Aether", "Astral", "Cloud", "Lightning", "Storm", "Typhoon", "Vortex", "Wind", "Zephyr", "Sky", "Gryphon"],
+        "Dragon": ["Apex", "Archon", "Bone", "Dragon", "Drake", "Hydra", "Peak", "Wyrm", "Wyvern", "Zenith"]
+    }
+    
+    theme_word = random.choice(family_themes.get(family, ["Spectral"]))
+    noun = base_name.split()[-1]
+    name_str = f"{theme_word} {noun}"
+    
+    ability_str = base_ability
+    
+    def replace_family_icon(match):
+        return f"\\icon({family})"
+    ability_str = re.sub(r"\\icon\((Water|Fire|Earth|Wind|Dragon)\)", replace_family_icon, ability_str)
+    
+    def randomize_score(match):
+        return f"\\icon(Score, {random.randint(1, 4)})"
+    ability_str = re.sub(r"\\icon\(Score,\s*\d+\)", randomize_score, ability_str)
+    
+    def randomize_stones(match):
+        return f"\\icon({random.choice(['Stone1', 'Stone3', 'Stone6'])})"
+    ability_str = re.sub(r"\\icon\(Stone\d+\)", randomize_stones, ability_str)
+    
+    limits = FAMILY_COST_LIMITS.get(family, {"min": 1, "max": 6})
+    cost_val = random.randint(limits["min"], limits["max"])
+    
+    output_card = {
+        "name": name_str,
+        "cost": cost_val,
+        "family": family,
+        "effect": ability_str
+    }
+    
+    print(json.dumps(output_card, indent=2, ensure_ascii=False), flush=True)
+        
     else:
         print(f"Unknown subcommand: {subcommand}", flush=True)
         sys.exit(1)

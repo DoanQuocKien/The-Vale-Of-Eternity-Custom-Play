@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Sliders, ImagePlus, Trash2, Copy, Download, Upload, Minimize2, Maximize2, HelpCircle, RefreshCw, Settings } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore.js';
+import { runPythonRandomCard } from '../../utils/pythonRunner.js';
 import {
   MOCK_PRESETS,
   DEFAULT_LAYOUT,
@@ -101,11 +102,33 @@ const CardEditor = ({ onShowArtImporter }) => {
     setHasUnsavedChanges(false);
   };
 
-  const generateRandomCard = () => {
+  const generateRandomCard = async () => {
     if (hasUnsavedChanges) {
       if (!window.confirm('You have unsaved changes. Discard and generate a random card?')) return;
     }
     setActiveCard(null); // Clear editing card context on random generation
+    
+    if (window.Neutralino) {
+      try {
+        const randCard = await runPythonRandomCard();
+        if (randCard) {
+          setCardName(randCard.name);
+          setCardCost(randCard.cost.toString());
+          const credit = RANDOM_CREDITS[Math.floor(Math.random() * RANDOM_CREDITS.length)];
+          setCardCredit(credit);
+          setCardEffectText(randCard.effect);
+          setBackgroundFamily(randCard.family);
+          setArtImageData(null);
+          setLayout(DEFAULT_LAYOUT);
+          setTokenOverlays([]);
+          setHasUnsavedChanges(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to generate RAG random card:', err);
+      }
+    }
+    
     const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
     const cost = Math.floor(Math.random() * 10).toString();
     const credit = RANDOM_CREDITS[Math.floor(Math.random() * RANDOM_CREDITS.length)];

@@ -170,6 +170,12 @@ const Stage2Enhance = ({
   cardFamily
 }) => {
   const [currentIdea, setCurrentIdea] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const intervalRef = useRef(null);
+  const ideasQueueRef = useRef([]);
+  const queueIndexRef = useRef(0);
+  const cycleCountRef = useRef(0);
+  const isPrefetchingRef = useRef(false);
 
   useEffect(() => {
     if (!processing) {
@@ -181,6 +187,10 @@ const Stage2Enhance = ({
     let queueIndex = 0;
     let cycleCount = 0;
     let isPrefetching = false;
+    ideasQueueRef.current = [];
+    queueIndexRef.current = 0;
+    cycleCountRef.current = 0;
+    isPrefetchingRef.current = false;
 
     const fetchRecommendations = async (isBackground = false) => {
       if (cardEffect || cardName) {
@@ -201,12 +211,17 @@ const Stage2Enhance = ({
             
             if (isBackground) {
               ideasQueue = mappedResults;
+              ideasQueueRef.current = mappedResults;
               queueIndex = 0;
+              queueIndexRef.current = 0;
               cycleCount = 0;
+              cycleCountRef.current = 0;
               setCurrentIdea(ideasQueue[0]);
               isPrefetching = false;
+              isPrefetchingRef.current = false;
             } else {
               ideasQueue = mappedResults;
+              ideasQueueRef.current = mappedResults;
               setCurrentIdea(ideasQueue[0]);
             }
           }
@@ -227,31 +242,89 @@ const Stage2Enhance = ({
         for (let i = 0; i < 5; i++) {
           ideasQueue.push(generateRandomIdea());
         }
+        ideasQueueRef.current = ideasQueue;
         setCurrentIdea(ideasQueue[0]);
       }
     };
 
-    fetchRecommendations();
+    const tick = (intervalMs) => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(() => {
+        if (ideasQueueRef.current.length > 0) {
+          const prevIndex = queueIndexRef.current;
+          queueIndexRef.current = (queueIndexRef.current + 1) % ideasQueueRef.current.length;
+          
+          if (queueIndexRef.current === 0 && prevIndex === ideasQueueRef.current.length - 1) {
+            cycleCountRef.current += 1;
+            if (cycleCountRef.current >= 2 && !isPrefetchingRef.current) {
+              isPrefetchingRef.current = true;
+              fetchRecommendations(true);
+            }
+          }
+          
+          setCurrentIdea(ideasQueueRef.current[queueIndexRef.current]);
+          if (intervalMs !== 3500) {
+            tick(3500);
+          }
+        }
+      }, intervalMs);
+    };
 
-    const interval = setInterval(() => {
-      if (ideasQueue.length > 0) {
-        const prevIndex = queueIndex;
-        queueIndex = (queueIndex + 1) % ideasQueue.length;
+    fetchRecommendations().then(() => tick(3500));
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [processing, cardName, cardCost, cardEffect, cardFamily]);
+
+  const handleIdeaMouseEnter = () => {
+    setIsHovered(true);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+
+  const handleIdeaMouseLeave = () => {
+    setIsHovered(false);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      if (ideasQueueRef.current.length > 0) {
+        const prevIndex = queueIndexRef.current;
+        queueIndexRef.current = (queueIndexRef.current + 1) % ideasQueueRef.current.length;
         
-        if (queueIndex === 0 && prevIndex === ideasQueue.length - 1) {
-          cycleCount += 1;
-          if (cycleCount >= 3 && !isPrefetching) {
-            isPrefetching = true;
-            fetchRecommendations(true);
+        if (queueIndexRef.current === 0 && prevIndex === ideasQueueRef.current.length - 1) {
+          cycleCountRef.current += 1;
+          if (cycleCountRef.current >= 2 && !isPrefetchingRef.current) {
+            isPrefetchingRef.current = true;
+            runPythonRecommendation({
+              name: ideasQueueRef.current[0]?.name || '',
+              cost: 0,
+              effect: '',
+              family: ideasQueueRef.current[0]?.family || 'Water'
+            }).then(results => {
+              if (results && results.length > 0) {
+                const mapped = results.map(r => ({ name: r.name, ability: r.effect, cost: r.cost, family: r.family }));
+                ideasQueueRef.current = mapped;
+                queueIndexRef.current = 0;
+                cycleCountRef.current = 0;
+                setCurrentIdea(mapped[0]);
+                isPrefetchingRef.current = false;
+              }
+            }).catch(() => { isPrefetchingRef.current = false; });
           }
         }
         
-        setCurrentIdea(ideasQueue[queueIndex]);
+        setCurrentIdea(ideasQueueRef.current[queueIndexRef.current]);
       }
-    }, 4500);
-
-    return () => clearInterval(interval);
-  }, [processing, cardName, cardCost, cardEffect, cardFamily]);
+    }, 2000);
+    setTimeout(() => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(() => {
+        if (ideasQueueRef.current.length > 0) {
+          queueIndexRef.current = (queueIndexRef.current + 1) % ideasQueueRef.current.length;
+          setCurrentIdea(ideasQueueRef.current[queueIndexRef.current]);
+        }
+      }, 3500);
+    }, 4000);
+  };
 
   const handleStartOver = () => {
     if (window.confirm('Discard this artwork and start over?')) {
@@ -400,21 +473,30 @@ const Stage2Enhance = ({
           </div>
 
           {/* Animated card idea preview */}
-          <div style={{
-            zIndex: 1,
-            width: '100%',
-            maxWidth: '280px',
-            background: 'var(--bg-surface)',
-            border: `2px solid ${getFamilyColor(currentIdea.family)}`,
-            borderRadius: '12px',
-            padding: '1rem',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.65rem',
-            position: 'relative',
-            animation: 'fadeInSlide 0.5s ease-out'
-          }}>
+          <div
+            style={{
+              zIndex: 1,
+              width: '100%',
+              maxWidth: '280px',
+              background: 'var(--bg-surface)',
+              border: `2px solid ${getFamilyColor(currentIdea.family)}`,
+              borderRadius: '12px',
+              padding: '1rem',
+              boxShadow: isHovered
+                ? `0 12px 40px rgba(0,0,0,0.6), 0 0 0 2px ${getFamilyColor(currentIdea.family)}`
+                : '0 6px 20px rgba(0,0,0,0.4)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.65rem',
+              position: 'relative',
+              animation: 'fadeInSlide 0.5s ease-out',
+              transform: isHovered ? 'scale(1.04)' : 'scale(1)',
+              transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={handleIdeaMouseEnter}
+            onMouseLeave={handleIdeaMouseLeave}
+          >
             {/* Header info */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{
