@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader, ChevronRight } from 'lucide-react';
 import { parseEffectText } from '../../utils/constants.jsx';
-import { runPythonRecommendation } from '../../utils/pythonRunner.js';
+import { runPythonRecommendation, runPythonRandomCard } from '../../utils/pythonRunner.js';
 import { useAppStore } from '../../store/useAppStore.js';
 
 const CARD_NAMES = [
@@ -219,6 +219,29 @@ const Stage2Enhance = ({
       };
 
       if (ideasQueue.length === 0) {
+        try {
+          const ragCards = [];
+          for (let i = 0; i < 5; i++) {
+            const card = await runPythonRandomCard();
+            if (card) {
+              ragCards.push({
+                name: card.name,
+                ability: card.effect,
+                cost: card.cost,
+                family: card.family
+              });
+            }
+          }
+          if (ragCards.length > 0) {
+            ideasQueue = ragCards;
+            ideasQueueRef.current = ideasQueue;
+            setCurrentIdea(ideasQueue[0]);
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to prefetch random RAG cards for Stage 2:", err);
+        }
+
         for (let i = 0; i < 5; i++) {
           ideasQueue.push(generateRandomIdea());
         }

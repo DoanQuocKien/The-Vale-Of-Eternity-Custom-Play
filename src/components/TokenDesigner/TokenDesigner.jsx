@@ -314,33 +314,15 @@ export default function TokenDesigner({ onShowArtImporter }) {
     return result;
   };
 
-  const isInitialTokenLoad = useRef(true);
-
-  // Reset the initial load flag when switching tokens
-  useEffect(() => {
-    isInitialTokenLoad.current = true;
-  }, [activeToken?.id]);
-
-  // Set unsaved changes on user interaction
-  useEffect(() => {
-    if (isInitialTokenLoad.current) {
-      isInitialTokenLoad.current = false;
-      return;
-    }
-    setHasUnsavedChanges(true);
-  }, [tokenName, transformX, transformY, scale, rotation, brightness, contrast, saturation, undoList]);
-
-  // General state
-  const [tokenName, setTokenName] = useState('');
-  const [exportTargetPackId, setExportTargetPackId] = useState('');
-  const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'draw' | 'tune'
-
   // Canvas Refs
   const canvasRef = useRef(null);
   const drawingCanvasRef = useRef(null); // Backing canvas for user drawing
   const uploadedCanvasRef = useRef(null); // Backing canvas for processed uploaded image
 
-
+  // General state
+  const [tokenName, setTokenName] = useState('');
+  const [exportTargetPackId, setExportTargetPackId] = useState('');
+  const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'draw' | 'tune'
 
   // Zoom & Pan state
   const [zoom, setZoom] = useState(1);
@@ -372,16 +354,26 @@ export default function TokenDesigner({ onShowArtImporter }) {
   const [fontSize, setFontSize] = useState(60);
   const [textString, setTextString] = useState('Token');
   const [polygonPoints, setPolygonPoints] = useState([]);
-  const [fontWeight, setFontWeight] = useState(700);
-
-  // Drawing state tracking
-  const isDrawing = useRef(false);
-  const lastDrawingPos = useRef({ x: 0, y: 0 });
-  const isDrawingShape = useRef(false);
-  const startPosRef = useRef({ x: 0, y: 0 });
+  const [fontWeight, setFontWeight] = useState(70);
 
   // Undo list
   const [undoList, setUndoList] = useState([]);
+
+  const isInitialTokenLoad = useRef(true);
+
+  // Reset the initial load flag when switching tokens
+  useEffect(() => {
+    isInitialTokenLoad.current = true;
+  }, [activeToken?.id]);
+
+  // Set unsaved changes on user interaction
+  useEffect(() => {
+    if (isInitialTokenLoad.current) {
+      isInitialTokenLoad.current = false;
+      return;
+    }
+    setHasUnsavedChanges(true);
+  }, [tokenName, transformX, transformY, scale, rotation, brightness, contrast, saturation, undoList]);
 
   // Keyboard shortcut for spacebar panning
   useEffect(() => {
@@ -1656,13 +1648,13 @@ export default function TokenDesigner({ onShowArtImporter }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
                         <span>Font Weight (Thickness)</span>
-                        <span style={{ fontWeight: fontWeight }}>{fontWeight}</span>
+                        <span style={{ fontWeight: fontWeight * 10 }}>{fontWeight}</span>
                       </div>
                       <input
                         type="range"
-                        min="100"
-                        max="900"
-                        step="100"
+                        min="1"
+                        max="100"
+                        step="1"
                         value={fontWeight}
                         onChange={(e) => setFontWeight(parseInt(e.target.value))}
                         style={{ width: '100%' }}

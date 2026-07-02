@@ -11,8 +11,6 @@ export default function DrawingModal({
   height = 512,
   initialDataUrl = null
 }) {
-  if (!isOpen) return null;
-
   const canvasRef = useRef(null);
   const drawingCanvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -21,7 +19,7 @@ export default function DrawingModal({
   const [activeTab, setActiveTab] = useState('draw');
 
   // Drawing States
-  const [tool, setTool] = useState('brush'); // 'brush', 'erase', 'line', 'rect', 'circle', 'text', 'none'
+  const [tool, setTool] = useState('brush'); // 'brush', 'erase', 'line', 'rect', 'circle', 'text', 'polygon', 'none'
   const [strokeColor, setStrokeColor] = useState('#6366f1');
   const [fillColor, setFillColor] = useState('#a78bfa');
   const [strokeEnabled, setStrokeEnabled] = useState(true);
@@ -29,8 +27,9 @@ export default function DrawingModal({
   const [brushSize, setBrushSize] = useState(15);
   const [brushOpacity, setBrushOpacity] = useState(1);
   const [fontSize, setFontSize] = useState(36);
-  const [fontWeight, setFontWeight] = useState(700); // text thickness
+  const [fontWeight, setFontWeight] = useState(70); // text thickness
   const [textString, setTextString] = useState('Emblem');
+  const [polygonPoints, setPolygonPoints] = useState([]);
 
   // Image Layer States
   const [bgImage, setBgImage] = useState(null); // Loaded image object
@@ -96,7 +95,8 @@ export default function DrawingModal({
     brushOpacity,
     fontSize,
     fontWeight,
-    textString
+    textString,
+    polygonPoints
   ]);
 
   const redrawComposite = (currentCoords = null) => {
@@ -150,6 +150,41 @@ export default function DrawingModal({
         textString,
         fontWeight
       });
+      ctx.restore();
+    }
+
+    // 5. Render polygon guide lines & active mouse guide line
+    if (tool === 'polygon' && polygonPoints.length > 0) {
+      ctx.save();
+      ctx.globalAlpha = brushOpacity;
+      ctx.strokeStyle = strokeColor;
+      ctx.fillStyle = fillColor;
+      ctx.lineWidth = brushSize;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      ctx.beginPath();
+      ctx.moveTo(polygonPoints[0].x, polygonPoints[0].y);
+      for (let i = 1; i < polygonPoints.length; i++) {
+        ctx.lineTo(polygonPoints[i].x, polygonPoints[i].y);
+      }
+
+      // If active coords are moving, draw line to cursor
+      if (currentCoords) {
+        ctx.lineTo(currentCoords.x, currentCoords.y);
+      }
+
+      if (strokeEnabled) ctx.stroke();
+      ctx.restore();
+
+      // Draw anchor circles
+      ctx.save();
+      ctx.fillStyle = strokeColor;
+      for (let pt of polygonPoints) {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, Math.max(4, brushSize / 2), 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
   };
@@ -226,6 +261,33 @@ export default function DrawingModal({
     reader.readAsDataURL(file);
   };
 
+  const commitPolygon = () => {
+    if (polygonPoints.length < 2 || !drawingCanvasRef.current) return;
+    saveUndoState();
+    const ctx = drawingCanvasRef.current.getContext('2d');
+    ctx.save();
+    ctx.globalAlpha = brushOpacity;
+    ctx.strokeStyle = strokeColor;
+    ctx.fillStyle = fillColor;
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(polygonPoints[0].x, polygonPoints[0].y);
+    for (let i = 1; i < polygonPoints.length; i++) {
+      ctx.lineTo(polygonPoints[i].x, polygonPoints[i].y);
+    }
+    ctx.closePath();
+
+    if (fillEnabled && polygonPoints.length >= 3) ctx.fill();
+    if (strokeEnabled) ctx.stroke();
+    ctx.restore();
+
+    setPolygonPoints([]);
+    redrawComposite();
+  };
+
   const handlePointerDown = (e) => {
     if (e.target.closest('button, input, select')) return;
     try {
@@ -236,6 +298,19 @@ export default function DrawingModal({
 
     const coords = getCanvasCoords(e);
     if (!coords) return;
+
+    if (tool === 'polygon') {
+      if (polygonPoints.length >= 3) {
+        const firstPt = polygonPoints[0];
+        const dist = Math.sqrt((coords.x - firstPt.x) ** 2 + (coords.y - firstPt.y) ** 2);
+        if (dist < 20) {
+          commitPolygon();
+          return;
+        }
+      }
+      setPolygonPoints(prev => [...prev, coords]);
+      return;
+    }
 
     if (tool === 'text') {
       saveUndoState();
@@ -296,6 +371,11 @@ export default function DrawingModal({
   const handlePointerMove = (e) => {
     const coords = getCanvasCoords(e);
     if (!coords) return;
+
+    if (tool === 'polygon' && polygonPoints.length > 0) {
+      redrawComposite(coords);
+      return;
+    }
 
     if (isDrawingShape.current && startPosRef.current) {
       redrawComposite(coords);
@@ -399,6 +479,8 @@ export default function DrawingModal({
     onSave(finalUrl);
     onClose();
   };
+
+  if (!isOpen) return null;
 
   return (
     <div style={{
@@ -538,13 +620,14 @@ export default function DrawingModal({
                   {/* Tool picker */}
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 700 }}>SELECT DRAWING TOOL</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
                       {[
                         { id: 'brush', label: 'Brush', icon: Paintbrush },
                         { id: 'erase', label: 'Eraser', icon: Eraser },
                         { id: 'line', label: 'Line', icon: Minus },
                         { id: 'rect', label: 'Rect', icon: Square },
                         { id: 'circle', label: 'Circle', icon: CircleIcon },
+                        { id: 'polygon', label: 'Polygon', icon: Check },
                         { id: 'text', label: 'Text', icon: Type }
                       ].map(t => {
                         const IconComp = t.icon;
@@ -552,7 +635,7 @@ export default function DrawingModal({
                         return (
                           <button
                             key={t.id}
-                            onClick={() => setTool(t.id)}
+                            onClick={() => { setTool(t.id); setPolygonPoints([]); }}
                             style={{
                               padding: '0.5rem 0.25rem',
                               background: isActive ? 'var(--color-primary)' : 'var(--bg-surface-elevated)',
@@ -574,6 +657,43 @@ export default function DrawingModal({
                       })}
                     </div>
                   </div>
+
+                  {tool === 'polygon' && polygonPoints.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button
+                        onClick={commitPolygon}
+                        style={{
+                          flex: 2,
+                          padding: '0.4rem',
+                          background: 'var(--color-primary)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Commit Polygon ({polygonPoints.length} pts)
+                      </button>
+                      <button
+                        onClick={() => setPolygonPoints([])}
+                        style={{
+                          flex: 1,
+                          padding: '0.4rem',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: 'var(--color-danger)',
+                          border: '1px solid var(--color-danger)',
+                          borderRadius: '4px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
 
                   {/* Size & Opacity */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -680,13 +800,13 @@ export default function DrawingModal({
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
                           <span>Font Weight (Thickness)</span>
-                          <span style={{ fontWeight: fontWeight }}>{fontWeight}</span>
+                          <span style={{ fontWeight: fontWeight * 10 }}>{fontWeight}</span>
                         </div>
                         <input
                           type="range"
-                          min="100"
-                          max="900"
-                          step="100"
+                          min="1"
+                          max="100"
+                          step="1"
                           value={fontWeight}
                           onChange={(e) => setFontWeight(parseInt(e.target.value))}
                           style={{ width: '100%' }}

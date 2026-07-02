@@ -109,25 +109,23 @@ const CardEditor = ({ onShowArtImporter }) => {
     }
     setActiveCard(null); // Clear editing card context on random generation
     
-    if (window.Neutralino) {
-      try {
-        const randCard = await runPythonRandomCard();
-        if (randCard) {
-          setCardName(randCard.name);
-          setCardCost(randCard.cost.toString());
-          const credit = RANDOM_CREDITS[Math.floor(Math.random() * RANDOM_CREDITS.length)];
-          setCardCredit(credit);
-          setCardEffectText(randCard.effect);
-          setBackgroundFamily(randCard.family);
-          setArtImageData(null);
-          setLayout(DEFAULT_LAYOUT);
-          setTokenOverlays([]);
-          setHasUnsavedChanges(false);
-          return;
-        }
-      } catch (err) {
-        console.error('Failed to generate RAG random card:', err);
+    try {
+      const randCard = await runPythonRandomCard();
+      if (randCard) {
+        setCardName(randCard.name);
+        setCardCost(randCard.cost.toString());
+        const credit = RANDOM_CREDITS[Math.floor(Math.random() * RANDOM_CREDITS.length)];
+        setCardCredit(credit);
+        setCardEffectText(randCard.effect);
+        setBackgroundFamily(randCard.family);
+        setArtImageData(null);
+        setLayout(DEFAULT_LAYOUT);
+        setTokenOverlays([]);
+        setHasUnsavedChanges(false);
+        return;
       }
+    } catch (err) {
+      console.error('Failed to generate RAG random card:', err);
     }
     
     const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];

@@ -34,6 +34,13 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     return result;
   };
 
+  // Component metadata states
+  const [compName, setCompName] = useState('');
+  const [compBleed, setCompBleed] = useState(3);
+  const [foldLines, setFoldLines] = useState([]);
+  const [newFoldType, setNewFoldType] = useState('horizontal');
+  const [newFoldPos, setNewFoldPos] = useState('');
+
   const isInitialCompLoad = useRef(true);
 
   // Reset the initial load flag when switching components
@@ -49,13 +56,6 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     }
     setHasUnsavedChanges(true);
   }, [compName, compBleed, foldLines]);
-
-  // Component metadata states
-  const [compName, setCompName] = useState('');
-  const [compBleed, setCompBleed] = useState(3);
-  const [foldLines, setFoldLines] = useState([]);
-  const [newFoldType, setNewFoldType] = useState('horizontal');
-  const [newFoldPos, setNewFoldPos] = useState('');
 
   // Layer stack states
   const [activeLayerId, setActiveLayerId] = useState(null);
