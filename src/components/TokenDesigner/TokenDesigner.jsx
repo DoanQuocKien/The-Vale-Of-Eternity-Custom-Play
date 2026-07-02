@@ -532,7 +532,8 @@ export default function TokenDesigner({ onShowArtImporter }) {
         brushSize,
         opacity: brushOpacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
     }
 
@@ -978,7 +979,8 @@ export default function TokenDesigner({ onShowArtImporter }) {
         brushSize,
         opacity: brushOpacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
       isDrawingShape.current = false;
       startPosRef.current = null;

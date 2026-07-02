@@ -580,7 +580,8 @@ export default function ArtImporter({
         brushSize,
         opacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
     } else if (tool === 'polygon' && polygonPoints.length > 0) {
       ctx.save();

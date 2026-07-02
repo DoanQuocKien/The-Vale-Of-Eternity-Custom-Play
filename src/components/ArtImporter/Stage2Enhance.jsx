@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Loader, ChevronRight } from 'lucide-react';
 import { parseEffectText } from '../../utils/constants.jsx';
 import { runPythonRecommendation } from '../../utils/pythonRunner.js';
+import { useAppStore } from '../../store/useAppStore.js';
 
 const CARD_NAMES = [
   "Abyssal Maw", "Aether Serpent", "Agate Guardian", "Amber Wasp", "Ancient Colossus",
@@ -27,131 +28,80 @@ const CARD_NAMES = [
 ];
 
 const CARD_ABILITIES = [
-  "Instant \\icon(Instant): Force an opponent to discard a card from their hand.",
-  "Resolution \\icon(Active): Gain \\icon(Score, 2) if you control at least one \\icon(Water) card in your Area.",
-  "Resolution \\icon(Active): Pay \\icon(Stone1) to recover a card from your discard pile to your hand.",
-  "Permanent \\icon(Permanent): Your \\icon(Fire) cards cost \\icon(Stone1) less to summon.",
-  "Instant \\icon(Instant): When this card is discarded from your Area, gain \\icon(Stone3).",
-  "Instant \\icon(Instant): Double the resolution effect of an adjacent \\icon(Earth) card this round.",
-  "Resolution \\icon(Active): Earn \\icon(Stone1) for each summoned card in your Area.",
-  "Permanent \\icon(Permanent): Your active \\icon(Dragon) cards cannot be targeted by opponents' effects.",
-  "Instant \\icon(Instant): Swap the positions of two cards in the draft zone.",
-  "Resolution \\icon(Active): Discard a card from your hand to search the deck for a \\icon(Wind) card.",
-  "Permanent \\icon(Permanent): Gain \\icon(Score, 1) for each card in your hand.",
-  "Instant \\icon(Instant): All players return their cheapest summoned card to their hand.",
-  "Permanent \\icon(Permanent): Whenever you sell a card, draw 1 card.",
-  "Permanent \\icon(Permanent): At the start of the Resolution Phase, gain \\icon(Stone1) for each active \\icon(Dragon) card.",
-  "Resolution \\icon(Active): Pay \\icon(Stone3) to prevent an opponent's card from activating this round.",
-  "Instant \\icon(Instant): Add a card of cost 3 or less from the draft zone directly to your hand.",
-  "Permanent \\icon(Permanent): Earth cards in your Area gain protection from removal effects.",
-  "Permanent \\icon(Permanent): When this card is removed, return it to your hand instead of the discard pile.",
-  "Resolution \\icon(Active): Discard a card from your hand to gain \\icon(Score, 3).",
-  "Instant \\icon(Instant): Take a card from your discard pile and add it to your hand.",
-  "Permanent \\icon(Permanent): Your \\icon(Wind) cards cost \\icon(Stone1) less to summon.",
-  "Instant \\icon(Instant): Copy the passive effect of another active card in your Area.",
-  "Resolution \\icon(Active): Exchange one \\icon(Stone1) for \\icon(Score, 3).",
-  "Resolution \\icon(Active): Pay \\icon(Stone3) to recover this card to your hand.",
-  "Instant \\icon(Instant): Each opponent must discard one card from their hand.",
-  "Permanent \\icon(Permanent): Fire cards adjacent to this card cost \\icon(Stone1) less to summon.",
-  "Instant \\icon(Instant): Look at the top three cards of the deck, then put them back in any order.",
-  "Resolution \\icon(Active): Pay \\icon(Stone1) to exchange it for a \\icon(Stone3) from the supply.",
-  "Permanent \\icon(Permanent): Your \\icon(Water) cards require \\icon(Stone1) less to summon.",
-  "Instant \\icon(Instant): Choose a card in the draft zone; it cannot be tamed this round.",
-  "Resolution \\icon(Active): Discard an \\icon(Earth) card from your hand to gain \\icon(Stone6).",
-  "Permanent \\icon(Permanent): Dragon cards cost \\icon(Stone3) less to summon.",
-  "Permanent \\icon(Permanent): Whenever you gain a \\icon(Stone6), gain \\icon(Score, 2).",
-  "Resolution \\icon(Active): Draw a card, then discard a card from your hand.",
-  "Resolution \\icon(Active): Pay \\icon(Stone3) to recover a card from your Area to your hand.",
-  "Instant \\icon(Instant): Exchange hands with an opponent until the end of the round.",
-  "Permanent \\icon(Permanent): Opponents cannot gain \\icon(Stone6) during the Resolution Phase.",
-  "Instant \\icon(Instant): Gain control of an opponent's token or card of cost 2 or less.",
-  "Resolution \\icon(Active): Discard this card to gain \\icon(Stone6) and \\icon(Stone3).",
-  "Permanent \\icon(Permanent): Your summoned cards cannot be removed by opponent card effects.",
-  "Permanent \\icon(Permanent): When this card is targeted by an opponent's card, pay \\icon(Stone1) to cancel it.",
-  "Resolution \\icon(Active): Gain \\icon(Score, 1) for each unique family type present in your Area.",
-  "Resolution \\icon(Active): Pay \\icon(Stone3) to gain \\icon(Score, 1) for each of your active \\icon(Fire) cards.",
-  "Instant \\icon(Instant): Gain \\icon(Stone6) and discard a card from your hand.",
-  "Permanent \\icon(Permanent): Dragon cards adjacent to this card gain \\icon(Score, 2) during resolution.",
-  "Permanent \\icon(Permanent): When this card is discarded from your hand, draw 2 cards.",
-  "Resolution \\icon(Active): Pay \\icon(Stone1) to change this card's family to \\icon(Water) or \\icon(Fire).",
-  "Permanent \\icon(Permanent): Your cards of cost 5 or higher cost \\icon(Stone3) less to summon.",
-  "Instant \\icon(Instant): Gain Magic Stones from the supply until you have 4 stones.",
-  "Resolution \\icon(Active): Pay \\icon(Stone3) to look at an opponent's hand and discard one card.",
-  "Resolution \\icon(Active): Discard a \\icon(Fire) card to search your discard pile for a \\icon(Fire) card.",
-  "Permanent \\icon(Permanent): All players have a hard limit of 3 Magic Stones instead of 4.",
-  "Instant \\icon(Instant): Draw a card for each active \\icon(Earth) card in your Area.",
-  "Resolution \\icon(Active): Pay \\icon(Stone1) to gain \\icon(Score, 2).",
-  "Permanent \\icon(Permanent): Your active cards are protected from automatic discard effects.",
-  "Instant \\icon(Instant): Earn \\icon(Score, 1) for each card in your discard pile.",
-  "Resolution \\icon(Active): Gain \\icon(Stone1) if your hand is completely empty.",
-  "Resolution \\icon(Active): Pay \\icon(Stone6) to force all players to discard one summoned card.",
-  "Permanent \\icon(Permanent): Your \\icon(Wind) cards can be resolved twice during the Resolution Phase.",
-  "Instant \\icon(Instant): Search your deck for a card with the same summoning cost and reveal it.",
-  "Resolution \\icon(Active): Discard this card from your Area to gain \\icon(Score, 6).",
-  "Permanent \\icon(Permanent): Earth cards in your Area cannot be discarded by card effects.",
-  "Permanent \\icon(Permanent): When this card is removed, choose an opponent; they must discard a card from their hand.",
-  "Resolution \\icon(Active): Pay \\icon(Stone3) to swap this card with a card in your hand.",
-  "Permanent \\icon(Permanent): Your \\icon(Water) cards gain \\icon(Score, 1) for each other \\icon(Water) card in your Area.",
-  "Instant \\icon(Instant): Look at the top card of an opponent's deck and discard it if you choose.",
-  "Resolution \\icon(Active): Discard a card from your hand to draw a card.",
-  "Permanent \\icon(Permanent): If you control an active \\icon(Fire) card, this card gains \\icon(Score, 2) during resolution.",
-  "Permanent \\icon(Permanent): Whenever you summon a card of cost 5 or more, gain \\icon(Score, 3).",
-  "Resolution \\icon(Active): Gain \\icon(Stone1) for each card in your discard pile (max 3).",
-  "Resolution \\icon(Active): Pay \\icon(Stone1) to swap the family of this card with another active card.",
-  "Permanent \\icon(Permanent): Your active cards gain \\icon(Score, 1) for each active \\icon(Wind) card you control.",
-  "Instant \\icon(Instant): Earn \\icon(Score, 3) immediately.",
-  "Resolution \\icon(Active): Pay \\icon(Stone3) to reveal the opponent's hand.",
-  "Permanent \\icon(Permanent): Fire cards cost \\icon(Stone1) more for all players to summon.",
-  "Permanent \\icon(Permanent): When this card is targeted by an opponent's card, gain \\icon(Stone3).",
-  "Resolution \\icon(Active): You may return this card to your hand to draw a card.",
-  "Resolution \\icon(Active): Discard a \\icon(Water) card from hand to gain \\icon(Score, 4).",
-  "Permanent \\icon(Permanent): Your active \\icon(Dragon) cards earn \\icon(Score, 2) more during resolution.",
-  "Instant \\icon(Instant): Gain \\icon(Score, 2) if you have the most summoned cards in play.",
-  "Resolution \\icon(Active): Pay \\icon(Stone1) to draw a card, then choose and discard a card.",
-  "Permanent \\icon(Permanent): Your active cards of cost 2 or less gain \\icon(Score, 1) during resolution.",
-  "Instant \\icon(Instant): An opponent's active card loses its permanent passive effect until end of round.",
-  "Resolution \\icon(Active): Sacrifice this card to add a \\icon(Dragon) card from your deck to your hand.",
-  "Permanent \\icon(Permanent): While you control this card, you do not draw cards during the draw phase.",
-  "Permanent \\icon(Permanent): When this card is discarded from your hand, summon it to your Area for 0 cost.",
-  "Resolution \\icon(Active): Gain \\icon(Stone1) if you control a summoned \\icon(Water) card.",
-  "Resolution \\icon(Active): Pay \\icon(Stone3) to redirect an opponent's target effect to another card.",
-  "Permanent \\icon(Permanent): Your active cards are immune to other players' Resolution Phase effects.",
-  "Instant \\icon(Instant): Shuffle your discard pile back into your draw pile.",
-  "Resolution \\icon(Active): Discard a summoned card from your Area to draw 3 cards.",
-  "Permanent \\icon(Permanent): Your active \\icon(Earth) cards gain \\icon(Score, 2) during the Resolution Phase.",
-  "Instant \\icon(Instant): Search your discard pile for a card and return it to your hand.",
-  "Resolution \\icon(Active): Pay \\icon(Stone1) to gain \\icon(Score, 2).",
-  "Permanent \\icon(Permanent): While you control another active \\icon(Dragon) card, this card cannot be removed.",
-  "Permanent \\icon(Permanent): Whenever you draw a card, gain \\icon(Score, 1).",
-  "Resolution \\icon(Active): Gain \\icon(Stone1) for each active \\icon(Water) card in your Area.",
-  "Resolution \\icon(Active): Pay \\icon(Stone3) to copy the resolution effect of another active card.",
-  "Permanent \\icon(Permanent): Your active \\icon(Fire) cards gain \\icon(Score, 1) during resolution.",
-  "Instant \\icon(Instant): Search your deck for a card of cost 6 and add it to your hand."
+  "⚡ Earn 2 \\icon(Stone1).\n⏳ Recover.",
+  "⏳ Gain \\icon(Score, 2) if you control at least one \\icon(Water) card in your Area.",
+  "⏳ Pay \\icon(Stone1) to recover a card from the discard pile to your hand.",
+  "♾️ Your \\icon(Fire) cards cost \\icon(Stone1) less to summon.",
+  "⚡ When this card is discarded from your Area, gain \\icon(Stone3).",
+  "⚡ Double the resolution effect of an adjacent \\icon(Earth) card this round.",
+  "⏳ Earn \\icon(Stone1) for each summoned card in your Area.",
+  "♾️ Your active \\icon(Dragon) cards cannot be targeted by opponents' effects.",
+  "⚡ Swap the positions of two cards in the draft zone.",
+  "⏳ Discard a card from your hand to search the deck for a \\icon(Wind) card.",
+  "♾️ Gain \\icon(Score, 1) for each card in your hand.",
+  "⚡ All players return their cheapest summoned card to their hand.",
+  "♾️ Whenever you sell a card, draw 1 card.",
+  "♾️ At the start of the Resolution Phase, gain \\icon(Stone1) for each active \\icon(Dragon) card.",
+  "⏳ Pay \\icon(Stone3) to prevent an opponent's card from activating this round.",
+  "⚡ Add a card of cost 3 or less from the draft zone directly to your hand.",
+  "♾️ Earth cards in your Area gain protection from removal effects.",
+  "♾️ When this card is removed, return it to your hand instead of the discard pile.",
+  "⏳ Discard a card from your hand to gain \\icon(Score, 3).",
+  "⚡ Take a card from the discard pile and add it to your hand.",
+  "♾️ Your \\icon(Wind) cards cost \\icon(Stone1) less to summon.",
+  "⚡ Copy the passive effect of another active card in your Area.",
+  "⏳ Exchange one \\icon(Stone1) for \\icon(Score, 3).",
+  "⏳ Pay \\icon(Stone3) to recover this card to your hand.",
+  "⚡ Each opponent must discard one card from their Area.",
+  "♾️ Fire cards adjacent to this card cost \\icon(Stone1) less to summon.",
+  "⚡ Look at the top three cards of the deck, then put them back in any order.",
+  "⏳ Pay \\icon(Stone1) to exchange it for a \\icon(Stone3) from the supply.",
+  "♾️ Your \\icon(Water) cards require \\icon(Stone1) less to summon.",
+  "⚡ Choose a card in the draft zone; it cannot be tamed this round.",
+  "⏳ Discard an \\icon(Earth) card from your hand to gain \\icon(Stone6).",
+  "♾️ Dragon cards cost \\icon(Stone3) less to summon.",
+  "♾️ Whenever you gain a \\icon(Stone6), gain \\icon(Score, 2).",
+  "⏳ Draw a card, then discard a card from your hand.",
+  "⏳ Pay \\icon(Stone3) to recover a card from your Area to your hand.",
+  "⚡ Choose a player. They must choose and discard a card from their Area.",
+  "♾️ Opponents cannot gain \\icon(Stone6) during the Resolution Phase.",
+  "⚡ Gain control of an opponent's token or card of cost 2 or less.",
+  "⏳ Discard this card to gain \\icon(Stone6) and \\icon(Stone3).",
+  "♾️ Your summoned cards cannot be removed by opponent card effects.",
+  "♾️ When this card is targeted by an opponent's card, pay \\icon(Stone1) to cancel it.",
+  "⏳ Gain \\icon(Score, 1) for each unique family type present in your Area.",
+  "⏳ Pay \\icon(Stone3) to gain \\icon(Score, 1) for each of your active \\icon(Fire) cards.",
+  "⚡ Gain \\icon(Stone6) and discard a card from your hand.",
+  "♾️ Dragon cards adjacent to this card gain \\icon(Score, 2) during resolution.",
+  "♾️ When this card is discarded from your hand, draw 2 cards.",
+  "⏳ Pay \\icon(Stone1) to change this card's family to \\icon(Water) or \\icon(Fire).",
+  "♾️ Your cards of cost 5 or higher cost \\icon(Stone3) less to summon.",
+  "⚡ Gain Magic Stones from the supply until you have 4 stones.",
+  "⏳ Pay \\icon(Stone3) to choose a player; they must choose and discard a card from their Area.",
+  "⏳ Discard a \\icon(Fire) card to search the discard pile for a \\icon(Fire) card.",
+  "♾️ All players have a hard limit of 3 Magic Stones instead of 4.",
+  "⚡ Draw a card for each active \\icon(Earth) card in your Area.",
+  "⏳ Pay \\icon(Stone1) to gain \\icon(Score, 2).",
+  "♾️ Your active cards are protected from automatic discard effects.",
+  "⚡ Earn \\icon(Score, 1) for each card in the discard pile.",
+  "⏳ Gain \\icon(Stone1) if your hand is completely empty.",
+  "⏳ Pay \\icon(Stone6) to force all players to discard one summoned card.",
+  "♾️ Your \\icon(Wind) cards can be resolved twice during the Resolution Phase.",
+  "⚡ Search the deck for a card with the same summoning cost and reveal it.",
+  "⏳ Discard this card from your Area to gain \\icon(Score, 6).",
+  "♾️ Earth cards in your Area cannot be discarded by card effects.",
+  "♾️ When this card is removed, choose an opponent; they must discard a card from their Area.",
+  "⏳ Pay \\icon(Stone3) to swap this card with a card in your hand.",
+  "♾️ Your \\icon(Water) cards gain \\icon(Score, 1) for each other \\icon(Water) card in your Area.",
+  "⚡ Look at the top card of the deck and discard it if you choose.",
+  "⏳ Discard a card from your hand to draw a card.",
+  "♾️ If you control an active \\icon(Fire) card, this card gains \\icon(Score, 2) during resolution.",
+  "♾️ Whenever you summon a card of cost 5 or more, gain \\icon(Score, 3).",
+  "⏳ Gain \\icon(Stone1) for each card in the discard pile (max 3).",
+  "⏳ Pay \\icon(Stone1) to swap the family of this card with another active card."
 ];
 
 const FAMILIES = ["Fire", "Water", "Earth", "Wind", "Dragon"];
-
-const getFamilyColor = (family) => {
-  switch (family) {
-    case 'Fire': return '#ef4444';
-    case 'Water': return '#3b82f6';
-    case 'Earth': return '#10b981';
-    case 'Wind': return '#06b6d4';
-    case 'Dragon': return '#a855f7';
-    default: return 'var(--color-primary)';
-  }
-};
-
-const getFamilyBg = (family) => {
-  switch (family) {
-    case 'Fire': return 'rgba(239, 68, 68, 0.15)';
-    case 'Water': return 'rgba(59, 130, 246, 0.15)';
-    case 'Earth': return 'rgba(16, 185, 129, 0.15)';
-    case 'Wind': return 'rgba(6, 182, 212, 0.15)';
-    case 'Dragon': return 'rgba(168, 85, 247, 0.15)';
-    default: return 'rgba(99, 102, 241, 0.15)';
-  }
-};
 
 const Stage2Enhance = ({
   processing,
@@ -169,6 +119,36 @@ const Stage2Enhance = ({
   cardEffect,
   cardFamily
 }) => {
+  const customFamilies = useAppStore(state => state.families);
+
+  const getFamilyColor = (family) => {
+    const customFam = customFamilies.find(f => f.id === family || f.name === family);
+    if (customFam) return customFam.primaryColor;
+    
+    switch (family) {
+      case 'Fire': return '#ef4444';
+      case 'Water': return '#3b82f6';
+      case 'Earth': return '#10b981';
+      case 'Wind': return '#06b6d4';
+      case 'Dragon': return '#a855f7';
+      default: return 'var(--color-primary)';
+    }
+  };
+
+  const getFamilyBg = (family) => {
+    const customFam = customFamilies.find(f => f.id === family || f.name === family);
+    if (customFam) return customFam.primaryColor + '26'; // translucent (~15%)
+    
+    switch (family) {
+      case 'Fire': return 'rgba(239, 68, 68, 0.15)';
+      case 'Water': return 'rgba(59, 130, 246, 0.15)';
+      case 'Earth': return 'rgba(16, 185, 129, 0.15)';
+      case 'Wind': return 'rgba(6, 182, 212, 0.15)';
+      case 'Dragon': return 'rgba(168, 85, 247, 0.15)';
+      default: return 'rgba(99, 102, 241, 0.15)';
+    }
+  };
+
   const [currentIdea, setCurrentIdea] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
   const intervalRef = useRef(null);

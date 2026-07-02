@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Undo, RotateCcw, Paintbrush, Eraser, Check, X, Square, Circle as CircleIcon, Type, Minus } from 'lucide-react';
+import { Undo, RotateCcw, Paintbrush, Eraser, Check, X, Square, Circle as CircleIcon, Type, Minus, Image as ImageIcon, Sliders } from 'lucide-react';
 import { drawShape } from '../../utils/canvasUtils.js';
 
 export default function DrawingModal({
@@ -15,8 +15,12 @@ export default function DrawingModal({
 
   const canvasRef = useRef(null);
   const drawingCanvasRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // States
+  // Layout Tab selection: 'draw' | 'image'
+  const [activeTab, setActiveTab] = useState('draw');
+
+  // Drawing States
   const [tool, setTool] = useState('brush'); // 'brush', 'erase', 'line', 'rect', 'circle', 'text', 'none'
   const [strokeColor, setStrokeColor] = useState('#6366f1');
   const [fillColor, setFillColor] = useState('#a78bfa');
@@ -25,9 +29,20 @@ export default function DrawingModal({
   const [brushSize, setBrushSize] = useState(15);
   const [brushOpacity, setBrushOpacity] = useState(1);
   const [fontSize, setFontSize] = useState(36);
+  const [fontWeight, setFontWeight] = useState(700); // text thickness
   const [textString, setTextString] = useState('Emblem');
 
-  // Drawing state
+  // Image Layer States
+  const [bgImage, setBgImage] = useState(null); // Loaded image object
+  const [imgX, setImgX] = useState(0);
+  const [imgY, setImgY] = useState(0);
+  const [imgScale, setImgScale] = useState(1.0);
+  const [imgRotation, setImgRotation] = useState(0);
+  const [imgBrightness, setImgBrightness] = useState(100);
+  const [imgContrast, setImgContrast] = useState(100);
+  const [imgSaturation, setImgSaturation] = useState(100);
+
+  // Pointer drawing tracking
   const isDrawing = useRef(false);
   const isDrawingShape = useRef(false);
   const lastDrawingPos = useRef({ x: 0, y: 0 });
@@ -60,6 +75,30 @@ export default function DrawingModal({
     }
   }, [isOpen, width, height, initialDataUrl]);
 
+  // Redraw when any visual parameter changes
+  useEffect(() => {
+    redrawComposite();
+  }, [
+    bgImage,
+    imgX,
+    imgY,
+    imgScale,
+    imgRotation,
+    imgBrightness,
+    imgContrast,
+    imgSaturation,
+    tool,
+    strokeColor,
+    fillColor,
+    strokeEnabled,
+    fillEnabled,
+    brushSize,
+    brushOpacity,
+    fontSize,
+    fontWeight,
+    textString
+  ]);
+
   const redrawComposite = (currentCoords = null) => {
     const canvas = canvasRef.current;
     const drawCvs = drawingCanvasRef.current;
@@ -68,16 +107,36 @@ export default function DrawingModal({
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid/transparent helper background
+    // 1. Draw helper grid backdrop
     ctx.save();
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    // Draw the drawing canvas layer
+    // 2. Draw background image layer with transforms and filters
+    if (bgImage) {
+      ctx.save();
+      ctx.filter = `brightness(${imgBrightness}%) contrast(${imgContrast}%) saturate(${imgSaturation}%)`;
+      ctx.translate(canvas.width / 2 + imgX, canvas.height / 2 + imgY);
+      ctx.rotate((imgRotation * Math.PI) / 180);
+      ctx.scale(imgScale, imgScale);
+
+      const imgW = bgImage.naturalWidth || bgImage.width;
+      const imgH = bgImage.naturalHeight || bgImage.height;
+      const scaleX = canvas.width / imgW;
+      const scaleY = canvas.height / imgH;
+      const coverScale = Math.max(scaleX, scaleY);
+      const drawW = imgW * coverScale;
+      const drawH = imgH * coverScale;
+
+      ctx.drawImage(bgImage, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.restore();
+    }
+
+    // 3. Draw user painted layer
     ctx.drawImage(drawCvs, 0, 0);
 
-    // Render shape preview overlay if drawing active
+    // 4. Render shape preview overlay if drawing active
     if (isDrawingShape.current && startPosRef.current && currentCoords && ['line', 'rect', 'circle'].includes(tool)) {
       ctx.save();
       drawShape(ctx, tool, startPosRef.current, currentCoords, {
@@ -88,7 +147,8 @@ export default function DrawingModal({
         brushSize,
         opacity: brushOpacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
       ctx.restore();
     }
@@ -137,11 +197,33 @@ export default function DrawingModal({
   };
 
   const handleClear = () => {
-    if (!window.confirm('Clear canvas? This action cannot be undone.')) return;
+    if (!window.confirm('Clear painted canvas? This won\'t remove the image layer.')) return;
     saveUndoState();
     const ctx = drawingCanvasRef.current.getContext('2d');
     ctx.clearRect(0, 0, width, height);
     redrawComposite();
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        setBgImage(img);
+        // Reset transforms for the new image layer
+        setImgX(0);
+        setImgY(0);
+        setImgScale(1.0);
+        setImgRotation(0);
+        setImgBrightness(100);
+        setImgContrast(100);
+        setImgSaturation(100);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handlePointerDown = (e) => {
@@ -166,7 +248,8 @@ export default function DrawingModal({
         brushSize,
         opacity: brushOpacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
       redrawComposite();
       return;
@@ -179,7 +262,9 @@ export default function DrawingModal({
       return;
     }
 
-    // Brush/Eraser
+    if (tool === 'none') return;
+
+    // Brush/Eraser drawing
     saveUndoState();
     isDrawing.current = true;
     lastDrawingPos.current = coords;
@@ -262,7 +347,8 @@ export default function DrawingModal({
         brushSize,
         opacity: brushOpacity,
         fontSize,
-        textString
+        textString,
+        fontWeight
       });
       isDrawingShape.current = false;
       startPosRef.current = null;
@@ -275,8 +361,41 @@ export default function DrawingModal({
   };
 
   const handleSave = () => {
-    if (!drawingCanvasRef.current) return;
-    const finalUrl = drawingCanvasRef.current.toDataURL('image/png');
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Compile composite canvas with transparent/white background (without helper slate background)
+    const tempCvs = document.createElement('canvas');
+    tempCvs.width = width;
+    tempCvs.height = height;
+    const tempCtx = tempCvs.getContext('2d');
+
+    // 1. Draw transformed image layer onto compile target
+    if (bgImage) {
+      tempCtx.save();
+      tempCtx.filter = `brightness(${imgBrightness}%) contrast(${imgContrast}%) saturate(${imgSaturation}%)`;
+      tempCtx.translate(width / 2 + imgX, height / 2 + imgY);
+      tempCtx.rotate((imgRotation * Math.PI) / 180);
+      tempCtx.scale(imgScale, imgScale);
+
+      const imgW = bgImage.naturalWidth || bgImage.width;
+      const imgH = bgImage.naturalHeight || bgImage.height;
+      const scaleX = width / imgW;
+      const scaleY = height / imgH;
+      const coverScale = Math.max(scaleX, scaleY);
+      const drawW = imgW * coverScale;
+      const drawH = imgH * coverScale;
+
+      tempCtx.drawImage(bgImage, -drawW / 2, -drawH / 2, drawW, drawH);
+      tempCtx.restore();
+    }
+
+    // 2. Draw user painted layer
+    if (drawingCanvasRef.current) {
+      tempCtx.drawImage(drawingCanvasRef.current, 0, 0);
+    }
+
+    const finalUrl = tempCvs.toDataURL('image/png');
     onSave(finalUrl);
     onClose();
   };
@@ -331,8 +450,8 @@ export default function DrawingModal({
         </div>
 
         {/* Workspace */}
-        <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden', minHeight: '500px' }}>
-          {/* Main draw area */}
+        <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden', minHeight: '520px' }}>
+          {/* Canvas workspace area */}
           <div style={{
             flexGrow: 1,
             display: 'flex',
@@ -351,234 +470,456 @@ export default function DrawingModal({
               style={{
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 borderRadius: '8px',
-                cursor: tool === 'erase' ? 'cell' : 'crosshair',
+                cursor: tool === 'erase' ? 'cell' : tool === 'none' ? 'default' : 'crosshair',
                 maxWidth: '100%',
                 maxHeight: '70vh',
                 touchAction: 'none'
               }}
             />
-            {/* Backing draw layer */}
             <canvas ref={drawingCanvasRef} style={{ display: 'none' }} />
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar controls */}
           <div style={{
             width: '320px',
             borderLeft: '1px solid var(--border-color)',
             background: '#0a101f',
-            padding: '1.25rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '1rem',
             boxSizing: 'border-box'
           }}>
-            {/* Tool picker */}
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 700 }}>TOOLS</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
-                {[
-                  { id: 'brush', label: 'Brush', icon: Paintbrush },
-                  { id: 'erase', label: 'Eraser', icon: Eraser },
-                  { id: 'line', label: 'Line', icon: Minus },
-                  { id: 'rect', label: 'Rect', icon: Square },
-                  { id: 'circle', label: 'Circle', icon: CircleIcon },
-                  { id: 'text', label: 'Text', icon: Type }
-                ].map(t => {
-                  const IconComp = t.icon;
-                  const isActive = tool === t.id;
-                  return (
-                    <button
-                      key={t.id}
-                      onClick={() => setTool(t.id)}
-                      style={{
-                        padding: '0.5rem',
-                        background: isActive ? 'var(--color-primary)' : 'var(--bg-surface-elevated)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '4px',
-                        color: isActive ? 'white' : 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '0.2rem',
-                        fontSize: '0.65rem'
-                      }}
-                    >
-                      <IconComp size={16} />
-                      {t.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Sizes & Opacities */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                  <span>Brush Size</span>
-                  <span>{brushSize}px</span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="100"
-                  value={brushSize}
-                  onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                  style={{ width: '100%', accentColor: 'var(--color-primary)' }}
-                />
-              </div>
-
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                  <span>Brush Opacity</span>
-                  <span>{Math.round(brushOpacity * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1.0"
-                  step="0.05"
-                  value={brushOpacity}
-                  onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
-                  style={{ width: '100%', accentColor: 'var(--color-primary)' }}
-                />
-              </div>
-            </div>
-
-            {/* Colors */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>STYLING</div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)' }}>
-                  <input type="checkbox" checked={strokeEnabled} onChange={(e) => setStrokeEnabled(e.target.checked)} />
-                  Outline
-                </label>
-                {strokeEnabled && (
-                  <input
-                    type="color"
-                    value={strokeColor}
-                    onChange={(e) => setStrokeColor(e.target.value)}
-                    style={{ border: 'none', background: 'transparent', width: '28px', height: '24px', cursor: 'pointer' }}
-                  />
-                )}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)' }}>
-                  <input type="checkbox" checked={fillEnabled} onChange={(e) => setFillEnabled(e.target.checked)} />
-                  Fill
-                </label>
-                {fillEnabled && (
-                  <input
-                    type="color"
-                    value={fillColor}
-                    onChange={(e) => setFillColor(e.target.value)}
-                    style={{ border: 'none', background: 'transparent', width: '28px', height: '24px', cursor: 'pointer' }}
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Text options */}
-            {tool === 'text' && (
-              <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.6rem', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700 }}>TEXT SETTINGS</div>
-                <input
-                  type="text"
-                  value={textString}
-                  onChange={(e) => setTextString(e.target.value)}
-                  placeholder="Text contents"
-                  style={{
-                    width: '100%',
-                    padding: '0.3rem 0.5rem',
-                    background: 'var(--bg-main)',
-                    border: '1px solid var(--border-color)',
-                    color: 'white',
-                    fontSize: '0.75rem',
-                    borderRadius: '4px'
-                  }}
-                />
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
-                    <span>Font Size</span>
-                    <span>{fontSize}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="120"
-                    value={fontSize}
-                    onChange={(e) => setFontSize(parseInt(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Edit actions */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: 'auto' }}>
+            {/* Tab Header Selector */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
               <button
-                onClick={handleUndo}
-                disabled={undoList.length === 0}
+                onClick={() => { setActiveTab('draw'); setTool('brush'); }}
                 style={{
-                  padding: '0.5rem',
-                  background: 'var(--bg-surface-elevated)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  color: undoList.length === 0 ? 'var(--text-muted)' : 'white',
-                  cursor: undoList.length === 0 ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.25rem',
-                  fontSize: '0.75rem'
-                }}
-              >
-                <Undo size={14} /> Undo
-              </button>
-              <button
-                onClick={handleClear}
-                style={{
-                  padding: '0.5rem',
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  border: '1px solid var(--color-danger)',
-                  borderRadius: '4px',
-                  color: 'var(--color-danger)',
+                  padding: '0.85rem',
+                  background: activeTab === 'draw' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                  border: 'none',
+                  borderBottom: `2.5px solid ${activeTab === 'draw' ? 'var(--color-primary)' : 'transparent'}`,
+                  color: activeTab === 'draw' ? 'white' : 'var(--text-secondary)',
+                  fontWeight: activeTab === 'draw' ? 700 : 500,
+                  fontSize: '0.8rem',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.25rem',
-                  fontSize: '0.75rem'
+                  gap: '0.3rem'
                 }}
               >
-                <RotateCcw size={14} /> Clear
+                <Paintbrush size={14} /> Draw Tools
+              </button>
+              <button
+                onClick={() => { setActiveTab('image'); setTool('none'); }}
+                style={{
+                  padding: '0.85rem',
+                  background: activeTab === 'image' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                  border: 'none',
+                  borderBottom: `2.5px solid ${activeTab === 'image' ? 'var(--color-primary)' : 'transparent'}`,
+                  color: activeTab === 'image' ? 'white' : 'var(--text-secondary)',
+                  fontWeight: activeTab === 'image' ? 700 : 500,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem'
+                }}
+              >
+                <ImageIcon size={14} /> Image Layer
               </button>
             </div>
 
-            {/* Save Action */}
-            <button
-              onClick={handleSave}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                background: 'var(--color-primary)',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                color: 'white',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.3rem',
-                fontSize: '0.85rem'
-              }}
-            >
-              <Check size={16} /> Save Canvas
-            </button>
+            {/* Tab content viewports */}
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', flexGrow: 1, overflowY: 'auto' }}>
+              
+              {activeTab === 'draw' ? (
+                <>
+                  {/* Tool picker */}
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 700 }}>SELECT DRAWING TOOL</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
+                      {[
+                        { id: 'brush', label: 'Brush', icon: Paintbrush },
+                        { id: 'erase', label: 'Eraser', icon: Eraser },
+                        { id: 'line', label: 'Line', icon: Minus },
+                        { id: 'rect', label: 'Rect', icon: Square },
+                        { id: 'circle', label: 'Circle', icon: CircleIcon },
+                        { id: 'text', label: 'Text', icon: Type }
+                      ].map(t => {
+                        const IconComp = t.icon;
+                        const isActive = tool === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => setTool(t.id)}
+                            style={{
+                              padding: '0.5rem 0.25rem',
+                              background: isActive ? 'var(--color-primary)' : 'var(--bg-surface-elevated)',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '4px',
+                              color: isActive ? 'white' : 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '0.2rem',
+                              fontSize: '0.65rem'
+                            }}
+                          >
+                            <IconComp size={15} />
+                            {t.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Size & Opacity */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                        <span>Brush Size</span>
+                        <span>{brushSize}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="100"
+                        value={brushSize}
+                        onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                        style={{ width: '100%', accentColor: 'var(--color-primary)' }}
+                      />
+                    </div>
+
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                        <span>Brush Opacity</span>
+                        <span>{Math.round(brushOpacity * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="1.0"
+                        step="0.05"
+                        value={brushOpacity}
+                        onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
+                        style={{ width: '100%', accentColor: 'var(--color-primary)' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Colors */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 700 }}>STYLING CONFIG</div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={strokeEnabled} onChange={(e) => setStrokeEnabled(e.target.checked)} />
+                        Outline (Stroke)
+                      </label>
+                      {strokeEnabled && (
+                        <input
+                          type="color"
+                          value={strokeColor}
+                          onChange={(e) => setStrokeColor(e.target.value)}
+                          style={{ border: 'none', background: 'transparent', width: '28px', height: '24px', cursor: 'pointer' }}
+                        />
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={fillEnabled} onChange={(e) => setFillEnabled(e.target.checked)} />
+                        Fill Inside
+                      </label>
+                      {fillEnabled && (
+                        <input
+                          type="color"
+                          value={fillColor}
+                          onChange={(e) => setFillColor(e.target.value)}
+                          style={{ border: 'none', background: 'transparent', width: '28px', height: '24px', cursor: 'pointer' }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Text parameters panel */}
+                  {tool === 'text' && (
+                    <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.6rem', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700 }}>TEXT SPECIFICS</div>
+                      <input
+                        type="text"
+                        value={textString}
+                        onChange={(e) => setTextString(e.target.value)}
+                        placeholder="Text value"
+                        style={{
+                          width: '100%',
+                          padding: '0.35rem 0.5rem',
+                          background: 'var(--bg-main)',
+                          border: '1px solid var(--border-color)',
+                          color: 'white',
+                          fontSize: '0.75rem',
+                          borderRadius: '4px'
+                        }}
+                      />
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                          <span>Font Size</span>
+                          <span>{fontSize}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="120"
+                          value={fontSize}
+                          onChange={(e) => setFontSize(parseInt(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                          <span>Font Weight (Thickness)</span>
+                          <span style={{ fontWeight: fontWeight }}>{fontWeight}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="100"
+                          max="900"
+                          step="100"
+                          value={fontWeight}
+                          onChange={(e) => setFontWeight(parseInt(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Image Layer properties */}
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: 700 }}>UPLOAD IMAGE FILE</div>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px dashed var(--border-color)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem'
+                      }}
+                    >
+                      <ImageIcon size={15} /> Choose Image...
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+
+                  {bgImage && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                        <Sliders size={12} /> TRANSFORMS & FIT
+                      </div>
+
+                      {/* Scale */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                          <span>Scale (Zoom)</span>
+                          <span>{Math.round(imgScale * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.1"
+                          max="4.0"
+                          step="0.05"
+                          value={imgScale}
+                          onChange={(e) => setImgScale(parseFloat(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+
+                      {/* Rotation */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                          <span>Rotation</span>
+                          <span>{imgRotation}°</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="360"
+                          step="1"
+                          value={imgRotation}
+                          onChange={(e) => setImgRotation(parseInt(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+
+                      {/* X Offset */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                          <span>Offset X (Horizontal)</span>
+                          <span>{imgX}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-400"
+                          max="400"
+                          value={imgX}
+                          onChange={(e) => setImgX(parseInt(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+
+                      {/* Y Offset */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                          <span>Offset Y (Vertical)</span>
+                          <span>{imgY}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-400"
+                          max="400"
+                          value={imgY}
+                          onChange={(e) => setImgY(parseInt(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 700, marginTop: '0.4rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.6rem' }}>
+                        IMAGE CORRECTION (FILTERS)
+                      </div>
+
+                      {/* Brightness */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                          <span>Brightness</span>
+                          <span>{imgBrightness}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="200"
+                          value={imgBrightness}
+                          onChange={(e) => setImgBrightness(parseInt(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+
+                      {/* Contrast */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                          <span>Contrast</span>
+                          <span>{imgContrast}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="200"
+                          value={imgContrast}
+                          onChange={(e) => setImgContrast(parseInt(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+
+                      {/* Saturation */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                          <span>Saturation</span>
+                          <span>{imgSaturation}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="200"
+                          value={imgSaturation}
+                          onChange={(e) => setImgSaturation(parseInt(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Undo & Clear Action Buttons */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem', marginTop: 'auto' }}>
+                <button
+                  onClick={handleUndo}
+                  disabled={undoList.length === 0}
+                  style={{
+                    padding: '0.5rem',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '4px',
+                    color: undoList.length === 0 ? 'var(--text-muted)' : 'white',
+                    cursor: undoList.length === 0 ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.25rem',
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  <Undo size={14} /> Undo Draw
+                </button>
+                <button
+                  onClick={handleClear}
+                  style={{
+                    padding: '0.5rem',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid var(--color-danger)',
+                    borderRadius: '4px',
+                    color: 'var(--color-danger)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.25rem',
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  <RotateCcw size={14} /> Clear Painted
+                </button>
+              </div>
+
+              {/* Save Button */}
+              <button
+                onClick={handleSave}
+                style={{
+                  width: '100%',
+                  padding: '0.7rem',
+                  background: 'var(--color-primary)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'white',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  fontSize: '0.82rem'
+                }}
+              >
+                <Check size={16} /> Save Canvas
+              </button>
+            </div>
           </div>
         </div>
       </div>

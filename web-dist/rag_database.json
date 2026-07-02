@@ -514,1915 +514,1915 @@
   "abilities": {
     "Fire": [
       [
-        "Passive \\icon(Permanent): Whenever you discard a card, gain one \\icon(Stone1).",
+        "♾️ Whenever you discard a card, gain one \\icon(Stone1).",
         2
       ],
       [
-        "Active \\icon(Active): Discard a card to return a Fire card from the discard pile to your hand.",
+        "⏳ Discard a card to return a Fire card from the discard pile to your hand.",
         1
       ],
       [
-        "Instant \\icon(Instant): Summon a Fire card of cost 2 or less from the discard pile for free.",
+        "⚡ Summon a Fire card of cost 2 or less from the discard pile for free.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Your cards cost one \\icon(Stone1) less to summon for each card you've discarded this turn.",
+        "♾️ Your cards cost one \\icon(Stone1) less to summon for each card you've discarded this turn.",
         3
       ],
       [
-        "Active \\icon(Active): Discard your hand, then draw that many cards.",
+        "⏳ Discard your hand, then draw that many cards.",
         2
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 2) for every two Fire cards in the discard pile.",
+        "⚡ Gain \\icon(Score, 2) for every two Fire cards in the discard pile.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Whenever a card is discarded, you may add it to your hand instead of the discard pile.",
+        "♾️ Whenever a card is discarded, you may add it to your hand instead of the discard pile.",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to look at the top three cards of the deck. Discard two and keep one.",
+        "⏳ Pay one \\icon(Stone1) to look at the top three cards of the deck. Discard two and keep one.",
         1
       ],
       [
-        "Instant \\icon(Instant): Discard up to three cards. For each card discarded, gain one \\icon(Stone1) and \\icon(Score, 1).",
+        "⚡ Discard up to three cards. For each card discarded, gain one \\icon(Stone1) and \\icon(Score, 1).",
         2
       ],
       [
-        "Passive \\icon(Permanent): If your hand is empty, draw a card at the start of your turn.",
+        "♾️ If your hand is empty, draw a card at the start of your turn.",
         3
       ],
       [
-        "Active \\icon(Active): Sacrifice a summoned card to return two cards from the discard pile to your hand.",
+        "⏳ Sacrifice a summoned card to return two cards from the discard pile to your hand.",
         2
       ],
       [
-        "Instant \\icon(Instant): Put up to three Fire cards from the discard pile on top of the deck in any order.",
+        "⚡ Put up to three Fire cards from the discard pile on top of the deck in any order.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever a Fire card is sold, gain one extra \\icon(Stone1).",
+        "♾️ Whenever a Fire card is sold, gain one extra \\icon(Stone1).",
         3
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 3 or higher to gain three \\icon(Stone1).",
+        "⏳ Discard a card of cost 3 or higher to gain three \\icon(Stone1).",
         2
       ],
       [
-        "Instant \\icon(Instant): Return all cards from the discard pile to the deck and shuffle.",
+        "⚡ Return all cards from the discard pile to the deck and shuffle.",
         0
       ],
       [
-        "Passive \\icon(Permanent): Whenever you gain \\icon(Score), you may discard a card to double the \\icon(Score) gained.",
+        "♾️ Whenever you gain \\icon(Score), you may discard a card to double the \\icon(Score) gained.",
         4
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone1) to randomly discard an opponent's card.",
+        "⏳ Choose a player. They must choose and discard a card from their Area.",
         3
       ],
       [
-        "Instant \\icon(Instant): Choose a card in the discard pile and summon it, paying its cost.",
+        "⚡ Choose a card in the discard pile and summon it, paying its cost.",
         1
       ],
       [
-        "Passive \\icon(Permanent): You may summon Fire cards even if your Area is full by discarding an active Fire card first.",
+        "♾️ You may summon Fire cards even if your Area is full by discarding an active Fire card first.",
         3
       ],
       [
-        "Active \\icon(Active): Discard a Fire card to discard a summoned card of cost 2 or less.",
+        "⏳ Discard a Fire card to discard a summoned card of cost 2 or less.",
         3
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Stone1) equal to the cost of the last card you discarded.",
+        "⚡ Gain \\icon(Stone1) equal to the cost of the last card you discarded.",
         1
       ],
       [
-        "Passive \\icon(Permanent): Whenever you summon a Fire card, gain one \\icon(Stone1).",
+        "♾️ Whenever you summon a Fire card, gain one \\icon(Stone1).",
         2
       ],
       [
-        "Active \\icon(Active): Discard two cards to gain \\icon(Score, 3).",
+        "⏳ Discard two cards to gain \\icon(Score, 3).",
         2
       ],
       [
-        "Instant \\icon(Instant): If you have exactly three Fire cards in your Area, gain \\icon(Score, 5).",
+        "⚡ If you have exactly three Fire cards in your Area, gain \\icon(Score, 5).",
         3
       ],
       [
-        "Passive \\icon(Permanent): the discard pile cannot be targeted by opponent effects.",
+        "♾️ the discard pile cannot be targeted by opponent effects.",
         1
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to move a card from the discard pile to the bottom of the deck.",
+        "⏳ Pay one \\icon(Stone1) to move a card from the discard pile to the bottom of the deck.",
         0
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it was a Fire card, draw two cards.",
+        "⚡ Discard a card. If it was a Fire card, draw two cards.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw a card outside of your draw phase, gain one \\icon(Stone1).",
+        "♾️ Whenever you draw a card outside of your draw phase, gain one \\icon(Stone1).",
         3
       ],
       [
-        "Active \\icon(Active): Discard a card to change its family to Fire until the end of the turn.",
+        "⏳ Discard a card to change its family to Fire until the end of the turn.",
         1
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 1) for each Fire card in all players' Areas.",
+        "⚡ Gain \\icon(Score, 1) for each Fire card in all players' Areas.",
         2
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to search the discard pile for a Fire card of cost 2 or less and add it to your hand.",
+        "⏳ Pay one \\icon(Stone1) to search the discard pile for a Fire card of cost 2 or less and add it to your hand.",
         2
       ],
       [
-        "Active \\icon(Active): Discard a Water card to gain two \\icon(Stone1).",
+        "⏳ Discard a Water card to gain two \\icon(Stone1).",
         1
       ],
       [
-        "Instant \\icon(Instant): Return a summoned Fire card to your hand.",
+        "⚡ Return a summoned Fire card to your hand.",
         1
       ],
       [
-        "Passive \\icon(Permanent): If you have more cards in the discard pile than the deck, Fire cards cost one \\icon(Stone1) less.",
+        "♾️ If you have more cards in the discard pile than the deck, Fire cards cost one \\icon(Stone1) less.",
         4
       ],
       [
-        "Active \\icon(Active): Discard an Earth card to gain \\icon(Score, 2).",
+        "⏳ Discard an Earth card to gain \\icon(Score, 2).",
         1
       ],
       [
-        "Instant \\icon(Instant): Draw cards until you have a Fire card in your hand.",
+        "⚡ Draw cards until you have a Fire card in your hand.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent discards a card, gain one \\icon(Stone1).",
+        "♾️ Whenever an opponent discards a card, gain one \\icon(Stone1).",
         2
       ],
       [
-        "Active \\icon(Active): Discard a Wind card to draw a card.",
+        "⏳ Discard a Wind card to draw a card.",
         1
       ],
       [
-        "Instant \\icon(Instant): Choose a Fire card in your hand. It costs zero to summon this turn.",
+        "⚡ Choose a Fire card in your hand. It costs zero to summon this turn.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you sell a card, you may add it to your hand instead of the discard pile.",
+        "♾️ Whenever you sell a card, you may add it to your hand instead of the discard pile.",
         4
       ],
       [
-        "Active \\icon(Active): Discard a Dragon card to gain \\icon(Score, 4).",
+        "⏳ Discard a Dragon card to gain \\icon(Score, 4).",
         2
       ],
       [
-        "Instant \\icon(Instant): Discard your entire hand. Gain \\icon(Score, 2) for each card discarded.",
+        "⚡ Discard your entire hand. Gain \\icon(Score, 2) for each card discarded.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Fire cards cannot be discarded.",
+        "♾️ Fire cards cannot be discarded.",
         4
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 0. Gain one \\icon(Stone1).",
+        "⏳ Discard a card of cost 0. Gain one \\icon(Stone1).",
         0
       ],
       [
-        "Instant \\icon(Instant): If your Area is empty, summon this card for free.",
+        "⚡ If your Area is empty, summon this card for free.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a card, an opponent must also discard a card.",
+        "♾️ Whenever you discard a card, an opponent must also discard a card.",
         4
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 1. Gain \\icon(Score, 1).",
+        "⏳ Discard a card of cost 1. Gain \\icon(Score, 1).",
         0
       ],
       [
-        "Instant \\icon(Instant): Swap a card in your hand with a card in your Area.",
+        "⚡ Swap a card in your hand with a card in your Area.",
         1
       ],
       [
-        "Passive \\icon(Permanent): You may have one extra card in your Area.",
+        "♾️ You may have one extra card in your Area.",
         3
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 2. Gain two \\icon(Stone1).",
+        "⏳ Discard a card of cost 2. Gain two \\icon(Stone1).",
         1
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it was an Earth card, gain \\icon(Score, 3).",
+        "⚡ Discard a card. If it was an Earth card, gain \\icon(Score, 3).",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent discards a summoned card, gain \\icon(Score, 2).",
+        "♾️ Whenever an opponent discards a summoned card, gain \\icon(Score, 2).",
         3
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 3. Gain \\icon(Score, 2).",
+        "⏳ Discard a card of cost 3. Gain \\icon(Score, 2).",
         1
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Stone1) equal to the number of cards in your hand.",
+        "⚡ Gain \\icon(Stone1) equal to the number of cards in your hand.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever you summon a card, you may discard a card to reduce its cost by one \\icon(Stone1).",
+        "♾️ Whenever you summon a card, you may discard a card to reduce its cost by one \\icon(Stone1).",
         3
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 4. Gain three \\icon(Stone1).",
+        "⏳ Discard a card of cost 4. Gain three \\icon(Stone1).",
         2
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it was a Water card, draw two cards.",
+        "⚡ Discard a card. If it was a Water card, draw two cards.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Your Fire cards cannot be discarded by other players' effects.",
+        "♾️ Your Fire cards cannot be discarded by other players' effects.",
         3
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 5. Gain \\icon(Score, 3).",
+        "⏳ Discard a card of cost 5. Gain \\icon(Score, 3).",
         2
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 1) for each Fire card in your hand.",
+        "⚡ Gain \\icon(Score, 1) for each Fire card in your hand.",
         1
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a card, you may place it on top of the deck instead of the discard pile.",
+        "♾️ Whenever you discard a card, you may place it on top of the deck instead of the discard pile.",
         4
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 6. Gain four \\icon(Stone1).",
+        "⏳ Discard a card of cost 6. Gain four \\icon(Stone1).",
         3
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it was a Wind card, return a card from the discard pile to your hand.",
+        "⚡ Discard a card. If it was a Wind card, return a card from the discard pile to your hand.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Selling Fire cards during the Tame phase rewards you with four \\icon(Stone1) instead of two.",
+        "♾️ Selling Fire cards during the Tame phase rewards you with four \\icon(Stone1) instead of two.",
         3
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 7. Gain \\icon(Score, 4).",
+        "⏳ Discard a card of cost 7. Gain \\icon(Score, 4).",
         3
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Stone1) equal to the number of Fire cards in the discard pile.",
+        "⚡ Gain \\icon(Stone1) equal to the number of Fire cards in the discard pile.",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may discard cards from your Area as if they were in your hand.",
+        "♾️ You may discard cards from your Area as if they were in your hand.",
         2
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 8. Gain five \\icon(Stone1).",
+        "⏳ Discard a card of cost 8. Gain five \\icon(Stone1).",
         4
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it was a Dragon card, gain \\icon(Score, 5).",
+        "⚡ Discard a card. If it was a Dragon card, gain \\icon(Score, 5).",
         3
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent summons a card, they must discard a card.",
+        "♾️ Whenever an opponent summons a card, they must discard a card.",
         4
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 9. Gain \\icon(Score, 5).",
+        "⏳ Discard a card of cost 9. Gain \\icon(Score, 5).",
         4
       ],
       [
-        "Instant \\icon(Instant): Reveal your hand. If all cards are Fire cards, gain \\icon(Score, 5).",
+        "⚡ Reveal your hand. If all cards are Fire cards, gain \\icon(Score, 5).",
         3
       ],
       [
-        "Passive \\icon(Permanent): You may discard cards from the deck to pay for summon costs.",
+        "♾️ You may discard cards from the deck to pay for summon costs.",
         4
       ],
       [
-        "Active \\icon(Active): Discard a card of cost 10. Gain six \\icon(Stone1).",
+        "⏳ Discard a card of cost 10. Gain six \\icon(Stone1).",
         4
       ],
       [
-        "Instant \\icon(Instant): Reveal the top card of the deck. If it's a Fire card, summon it for free.",
+        "⚡ Reveal the top card of the deck. If it's a Fire card, summon it for free.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a Fire card, gain \\icon(Score, 1).",
+        "♾️ Whenever you discard a Fire card, gain \\icon(Score, 1).",
         2
       ],
       [
-        "Active \\icon(Active): Discard two cards of the same family to gain three \\icon(Stone1).",
+        "⏳ Discard two cards of the same family to gain three \\icon(Stone1).",
         2
       ],
       [
-        "Instant \\icon(Instant): Return a card from the discard pile to your hand. It costs zero to summon this turn.",
+        "⚡ Return a card from the discard pile to your hand. It costs zero to summon this turn.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Fire cards in your hand cost one \\icon(Stone1) less to summon.",
+        "♾️ Fire cards in your hand cost one \\icon(Stone1) less to summon.",
         3
       ],
       [
-        "Active \\icon(Active): Discard three cards to gain \\icon(Score, 5).",
+        "⏳ Discard three cards to gain \\icon(Score, 5).",
         3
       ],
       [
-        "Instant \\icon(Instant): Swap a Fire card in your hand with any card in the discard pile.",
+        "⚡ Swap a Fire card in your hand with any card in the discard pile.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw a Fire card, reveal it and gain one \\icon(Stone1).",
+        "♾️ Whenever you draw a Fire card, reveal it and gain one \\icon(Stone1).",
         2
       ],
       [
-        "Active \\icon(Active): Discard a card to increase the cost of an opponent's card by one \\icon(Stone1).",
+        "⏳ Choose a player. They must choose and discard a card from their Area.",
         2
       ],
       [
-        "Instant \\icon(Instant): Discard your hand and draw three cards.",
+        "⚡ Discard your hand and draw three cards.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Your Fire cards cannot be targeted by opponent effects.",
+        "♾️ Your Fire cards cannot be targeted by opponent effects.",
         3
       ],
       [
-        "Active \\icon(Active): Discard a card to decrease the cost of a card in your hand by two \\icon(Stone1).",
+        "⏳ Discard a card to decrease the cost of a card in your hand by two \\icon(Stone1).",
         2
       ],
       [
-        "Instant \\icon(Instant): Reveal the top three cards of the deck. Keep all Fire cards and discard the rest.",
+        "⚡ Reveal the top three cards of the deck. Keep all Fire cards and discard the rest.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent discards a Fire card, you may add it to your hand.",
+        "⏳ Choose a player. They must choose and discard a card from their Area.",
         3
       ],
       [
-        "Active \\icon(Active): Discard a Fire card to gain \\icon(Score, 2) and one \\icon(Stone1).",
+        "⏳ Discard a Fire card to gain \\icon(Score, 2) and one \\icon(Stone1).",
         2
       ],
       [
-        "Instant \\icon(Instant): If you have exactly one Fire card in your hand, gain \\icon(Score, 3).",
+        "⚡ If you have exactly one Fire card in your hand, gain \\icon(Score, 3).",
         1
       ],
       [
-        "Passive \\icon(Permanent): Fire cards in your Area gain: 'Active \\icon(Active): Discard this card to gain \\icon(Score, 2).'",
+        "♾️ Fire cards in your Area gain: '⏳ Discard this card to gain \\icon(Score, 2).'",
         2
       ],
       [
-        "Active \\icon(Active): Discard a card from your hand to draw a card from the deck.",
+        "⏳ Discard a card from your hand to draw a card from the deck.",
         1
       ],
       [
-        "Instant \\icon(Instant): Discard a Fire card from your Area to discard any summoned card.",
+        "⚡ Discard a Fire card from your Area to discard any summoned card.",
         3
       ],
       [
-        "Passive \\icon(Permanent): You may discard a card to cancel an opponent's Active effect.",
+        "♾️ You may discard a card to cancel an opponent's Active effect.",
         4
       ],
       [
-        "Active \\icon(Active): Discard a card to swap one of your \\icon(Stone1) for a \\icon(Stone3).",
+        "⏳ Discard a card to swap one of your \\icon(Stone1) for a \\icon(Stone3).",
         2
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 0, gain \\icon(Score, 2).",
+        "⚡ Discard a card. If it has a cost of 0, gain \\icon(Score, 2).",
         1
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a card, gain one \\icon(Stone6).",
+        "♾️ Whenever you discard a card, gain one \\icon(Stone6).",
         4
       ],
       [
-        "Active \\icon(Active): Discard a card to change the family of a summoned card to Fire.",
+        "⏳ Discard a card to change the family of a summoned card to Fire.",
         1
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 5 or more, gain \\icon(Score, 4).",
+        "⚡ Discard a card. If it has a cost of 5 or more, gain \\icon(Score, 4).",
         2
       ],
       [
-        "Passive \\icon(Permanent): the discard pile is shuffled back into the deck at the end of each turn.",
+        "♾️ the discard pile is shuffled back into the deck at the end of each turn.",
         0
       ]
     ],
     "Water": [
       [
-        "Passive \\icon(Permanent): Whenever you gain a \\icon(Stone1), gain a \\icon(Stone3) instead.",
+        "♾️ Whenever you gain a \\icon(Stone1), gain a \\icon(Stone3) instead.",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to gain one \\icon(Stone3).",
+        "⏳ Pay one \\icon(Stone1) to gain one \\icon(Stone3).",
         2
       ],
       [
-        "Instant \\icon(Instant): Gain two \\icon(Stone3).",
+        "⚡ Gain two \\icon(Stone3).",
         3
       ],
       [
-        "Passive \\icon(Permanent): Your Water cards cost one \\icon(Stone3) less to summon.",
+        "♾️ Your Water cards cost one \\icon(Stone3) less to summon.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to gain two \\icon(Stone1) and one \\icon(Stone6).",
+        "⏳ Pay one \\icon(Stone3) to gain two \\icon(Stone1) and one \\icon(Stone6).",
         3
       ],
       [
-        "Instant \\icon(Instant): Convert all your \\icon(Stone1) into \\icon(Stone3).",
+        "⚡ Convert all your \\icon(Stone1) into \\icon(Stone3).",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you pay for a card using only \\icon(Stone3), gain \\icon(Score, 2).",
+        "♾️ Whenever you pay for a card using only \\icon(Stone3), gain \\icon(Score, 2).",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to gain three \\icon(Stone3).",
+        "⏳ Pay one \\icon(Stone6) to gain three \\icon(Stone3).",
         4
       ],
       [
-        "Instant \\icon(Instant): If you have exactly one \\icon(Stone3), gain \\icon(Score, 5).",
+        "⚡ If you have exactly one \\icon(Stone3), gain \\icon(Score, 5).",
         2
       ],
       [
-        "Passive \\icon(Permanent): You may store one extra \\icon(Stone3) at the end of your turn.",
+        "♾️ You may store one extra \\icon(Stone3) at the end of your turn.",
         2
       ],
       [
-        "Active \\icon(Active): Discard a card to gain one \\icon(Stone3).",
+        "⏳ Discard a card to gain one \\icon(Stone3).",
         2
       ],
       [
-        "Instant \\icon(Instant): Swap your stones with an opponent's stones.",
+        "⚡ Swap your stones with an opponent's stones.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent gains a \\icon(Stone3), you gain one \\icon(Stone1).",
+        "♾️ Whenever an opponent gains a \\icon(Stone3), you gain one \\icon(Stone1).",
         3
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone1) to gain \\icon(Score, 1) and one \\icon(Stone3).",
+        "⏳ Pay two \\icon(Stone1) to gain \\icon(Score, 1) and one \\icon(Stone3).",
         3
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Stone3) equal to the number of Water cards in your Area.",
+        "⚡ Gain \\icon(Stone3) equal to the number of Water cards in your Area.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Water cards in your hand can be summoned using \\icon(Stone1) instead of their normal cost.",
+        "♾️ Water cards in your hand can be summoned using \\icon(Stone1) instead of their normal cost.",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to draw a card.",
+        "⏳ Pay one \\icon(Stone3) to draw a card.",
         2
       ],
       [
-        "Instant \\icon(Instant): discard a summoned card. Gain \\icon(Stone3) equal to half its cost (rounded down).",
+        "⚡ discard a summoned card. Gain \\icon(Stone3) equal to half its cost (rounded down).",
         3
       ],
       [
-        "Passive \\icon(Permanent): Whenever you gain \\icon(Score), you may convert one \\icon(Score) into one \\icon(Stone3).",
+        "♾️ Whenever you gain \\icon(Score), you may convert one \\icon(Score) into one \\icon(Stone3).",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to force an opponent to discard a card.",
+        "⏳ Pay one \\icon(Stone3) to force an opponent to discard a card.",
         3
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 1) for each \\icon(Stone3) you have.",
+        "⚡ Gain \\icon(Score, 1) for each \\icon(Stone3) you have.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Your \\icon(Stone3) cannot be stolen or discarded by opponent effects.",
+        "♾️ Your \\icon(Stone3) cannot be stolen or discarded by opponent effects.",
         2
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone1) to gain one \\icon(Stone6).",
+        "⏳ Pay three \\icon(Stone1) to gain one \\icon(Stone6).",
         2
       ],
       [
-        "Instant \\icon(Instant): If you have no stones, gain two \\icon(Stone3).",
+        "⚡ If you have no stones, gain two \\icon(Stone3).",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever you summon a Water card, gain one \\icon(Stone3).",
+        "♾️ Whenever you summon a Water card, gain one \\icon(Stone3).",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to return a summoned card to its owner's hand.",
+        "⏳ Pay one \\icon(Stone3) to return a summoned card to its owner's hand.",
         4
       ],
       [
-        "Instant \\icon(Instant): Convert one \\icon(Stone6) into two \\icon(Stone3).",
+        "⚡ Convert one \\icon(Stone6) into two \\icon(Stone3).",
         2
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Fire cards using \\icon(Stone3).",
+        "♾️ You may pay for Fire cards using \\icon(Stone3).",
         3
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to look at an opponent's hand.",
+        "⏳ Pay one \\icon(Stone3) to look at the top three cards of the deck and put them back in any order.",
         1
       ],
       [
-        "Instant \\icon(Instant): Gain one \\icon(Stone3) for each card in your hand.",
+        "⚡ Gain one \\icon(Stone3) for each card in your hand.",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Earth cards using \\icon(Stone3).",
+        "♾️ You may pay for Earth cards using \\icon(Stone3).",
         3
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to change the family of a summoned card to Water.",
+        "⏳ Pay one \\icon(Stone3) to change the family of a summoned card to Water.",
         2
       ],
       [
-        "Instant \\icon(Instant): Choose a Water card in your hand. It costs zero to summon this turn.",
+        "⚡ Choose a Water card in your hand. It costs zero to summon this turn.",
         5
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Wind cards using \\icon(Stone3).",
+        "♾️ You may pay for Wind cards using \\icon(Stone3).",
         3
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to gain \\icon(Score, 2).",
+        "⏳ Pay one \\icon(Stone3) to gain \\icon(Score, 2).",
         3
       ],
       [
-        "Instant \\icon(Instant): Discard all your stones. Gain \\icon(Score, 1) for each stone discarded.",
+        "⚡ Discard all your stones. Gain \\icon(Score, 1) for each stone discarded.",
         2
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Dragon cards using \\icon(Stone3).",
+        "♾️ You may pay for Dragon cards using \\icon(Stone3).",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to move a card from the discard pile to your hand.",
+        "⏳ Pay one \\icon(Stone3) to move a card from the discard pile to your hand.",
         3
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Stone3) equal to the number of Water cards in all players' Areas.",
+        "⚡ Gain \\icon(Stone3) equal to the number of Water cards in all players' Areas.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw a card, you may pay one \\icon(Stone1) to gain one \\icon(Stone3).",
+        "♾️ Whenever you draw a card, you may pay one \\icon(Stone1) to gain one \\icon(Stone3).",
         3
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone3) to gain \\icon(Score, 5).",
+        "⏳ Pay two \\icon(Stone3) to gain \\icon(Score, 5).",
         5
       ],
       [
-        "Instant \\icon(Instant): If you have exactly three \\icon(Stone3), gain \\icon(Score, 6).",
+        "⚡ If you have exactly three \\icon(Stone3), gain \\icon(Score, 6).",
         3
       ],
       [
-        "Passive \\icon(Permanent): Your Water cards cannot be discarded.",
+        "♾️ Your Water cards cannot be discarded.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) and one \\icon(Stone3) to gain one \\icon(Stone6).",
+        "⏳ Pay one \\icon(Stone1) and one \\icon(Stone3) to gain one \\icon(Stone6).",
         3
       ],
       [
-        "Instant \\icon(Instant): Convert all your \\icon(Stone6) into \\icon(Stone3).",
+        "⚡ Convert all your \\icon(Stone6) into \\icon(Stone3).",
         3
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent summons a Water card, you gain one \\icon(Stone3).",
+        "♾️ Whenever an opponent summons a Water card, you gain one \\icon(Stone3).",
         4
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone3) to gain \\icon(Score, 8).",
+        "⏳ Pay three \\icon(Stone3) to gain \\icon(Score, 8).",
         7
       ],
       [
-        "Instant \\icon(Instant): Gain one \\icon(Stone3) for each empty slot in your Area.",
+        "⚡ Gain one \\icon(Stone3) for each empty slot in your Area.",
         3
       ],
       [
-        "Passive \\icon(Permanent): You may have one extra Water card in your Area.",
+        "♾️ You may have one extra Water card in your Area.",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to gain two \\icon(Stone1) and one \\icon(Stone3).",
+        "⏳ Pay one \\icon(Stone6) to gain two \\icon(Stone1) and one \\icon(Stone3).",
         2
       ],
       [
-        "Instant \\icon(Instant): Reveal your hand. If all cards are Water cards, gain three \\icon(Stone3).",
+        "⚡ Reveal your hand. If all cards are Water cards, gain three \\icon(Stone3).",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you pay using a \\icon(Stone3), earn \\icon(Score, 1).",
+        "♾️ Whenever you pay using a \\icon(Stone3), earn \\icon(Score, 1).",
         3
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone1) and one \\icon(Stone6) to gain two \\icon(Stone3).",
+        "⏳ Pay two \\icon(Stone1) and one \\icon(Stone6) to gain two \\icon(Stone3).",
         4
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 2) for each \\icon(Stone1) you have.",
+        "⚡ Gain \\icon(Score, 2) for each \\icon(Stone1) you have.",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever you sell a Water card, you may also gain one \\icon(Stone1).",
+        "♾️ Whenever you sell a Water card, you may also gain one \\icon(Stone1).",
         3
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) and one \\icon(Stone6) to gain \\icon(Score, 4).",
+        "⏳ Pay one \\icon(Stone3) and one \\icon(Stone6) to gain \\icon(Score, 4).",
         4
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 3) for each \\icon(Stone6) you have.",
+        "⚡ Gain \\icon(Score, 3) for each \\icon(Stone6) you have.",
         3
       ],
       [
-        "Passive \\icon(Permanent): You can keep up to six stones instead of four.",
+        "♾️ You can keep up to six stones instead of four.",
         3
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone3) and one \\icon(Stone6) to gain \\icon(Score, 6).",
+        "⏳ Pay two \\icon(Stone3) and one \\icon(Stone6) to gain \\icon(Score, 6).",
         6
       ],
       [
-        "Instant \\icon(Instant): Convert all your stones to \\icon(Stone1). Gain \\icon(Score, 1) for each.",
+        "⚡ Convert all your stones to \\icon(Stone1). Gain \\icon(Score, 1) for each.",
         2
       ],
       [
-        "Passive \\icon(Permanent): You may summon Water cards from your hand for one less \\icon(Stone3).",
+        "♾️ You may summon Water cards from your hand for one less \\icon(Stone3).",
         4
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone1) to draw a card.",
+        "⏳ Pay three \\icon(Stone1) to draw a card.",
         2
       ],
       [
-        "Instant \\icon(Instant): Convert all your stones to \\icon(Stone6).",
+        "⚡ Convert all your stones to \\icon(Stone6).",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may discard cards from your Area as if they were in your hand.",
+        "♾️ You may discard cards from your Area as if they were in your hand.",
         2
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone3) to draw two cards.",
+        "⏳ Pay three \\icon(Stone3) to draw two cards.",
         4
       ],
       [
-        "Instant \\icon(Instant): Gain one \\icon(Stone1), one \\icon(Stone3), and one \\icon(Stone6).",
+        "⚡ Gain one \\icon(Stone1), one \\icon(Stone3), and one \\icon(Stone6).",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent gains a \\icon(Stone6), you gain one \\icon(Stone3).",
+        "♾️ Whenever an opponent gains a \\icon(Stone6), you gain one \\icon(Stone3).",
         4
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone6) to gain \\icon(Score, 10).",
+        "⏳ Pay three \\icon(Stone6) to gain \\icon(Score, 10).",
         7
       ],
       [
-        "Instant \\icon(Instant): If you have one of each stone, gain \\icon(Score, 5).",
+        "⚡ If you have one of each stone, gain \\icon(Score, 5).",
         3
       ],
       [
-        "Passive \\icon(Permanent): You may pay for summon costs using only \\icon(Stone3).",
+        "♾️ You may pay for summon costs using only \\icon(Stone3).",
         6
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone1) to gain \\icon(Score, 3).",
+        "⏳ Pay four \\icon(Stone1) to gain \\icon(Score, 3).",
         3
       ],
       [
-        "Instant \\icon(Instant): Gain one \\icon(Stone3) for each card in the discard pile.",
+        "⚡ Gain one \\icon(Stone3) for each card in the discard pile.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a Water card, gain one \\icon(Stone3).",
+        "♾️ Whenever you discard a Water card, gain one \\icon(Stone3).",
         3
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone3) to gain \\icon(Score, 7).",
+        "⏳ Pay four \\icon(Stone3) to gain \\icon(Score, 7).",
         6
       ],
       [
-        "Instant \\icon(Instant): Return a Water card from the discard pile to your hand. It costs zero to summon this turn.",
+        "⚡ Return a Water card from the discard pile to your hand. It costs zero to summon this turn.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Water cards in your hand cost one \\icon(Stone3) less to summon.",
+        "♾️ Water cards in your hand cost one \\icon(Stone3) less to summon.",
         4
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone6) to gain \\icon(Score, 15).",
+        "⏳ Pay four \\icon(Stone6) to gain \\icon(Score, 15).",
         10
       ],
       [
-        "Instant \\icon(Instant): Swap a Water card in your hand with any card in the discard pile.",
+        "⚡ Swap a Water card in your hand with any card in the discard pile.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw a Water card, reveal it and gain one \\icon(Stone3).",
+        "♾️ Whenever you draw a Water card, reveal it and gain one \\icon(Stone3).",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to increase the cost of an opponent's card by one \\icon(Stone3).",
+        "⏳ Pay one \\icon(Stone1) to increase the cost of an opponent's card by one \\icon(Stone3).",
         2
       ],
       [
-        "Instant \\icon(Instant): Discard your hand and gain one \\icon(Stone3) for each card discarded.",
+        "⚡ Discard your hand and gain one \\icon(Stone3) for each card discarded.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Your Water cards cannot be targeted by opponent effects.",
+        "♾️ Your Water cards cannot be targeted by opponent effects.",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to decrease the cost of a card in your hand by two \\icon(Stone1).",
+        "⏳ Pay one \\icon(Stone3) to decrease the cost of a card in your hand by two \\icon(Stone1).",
         3
       ],
       [
-        "Instant \\icon(Instant): Reveal the top three cards of the deck. Keep all Water cards and discard the rest.",
+        "⚡ Reveal the top three cards of the deck. Keep all Water cards and discard the rest.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent discards a Water card, you may add it to your hand.",
+        "⏳ Choose a player. They must choose and discard a card from their Area.",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to gain \\icon(Score, 2) and one \\icon(Stone3).",
+        "⏳ Pay one \\icon(Stone6) to gain \\icon(Score, 2) and one \\icon(Stone3).",
         3
       ],
       [
-        "Instant \\icon(Instant): If you have exactly one Water card in your hand, gain two \\icon(Stone3).",
+        "⚡ If you have exactly one Water card in your hand, gain two \\icon(Stone3).",
         2
       ],
       [
-        "Passive \\icon(Permanent): Water cards in your Area gain: 'Active \\icon(Active): Pay one \\icon(Stone3) to gain \\icon(Score, 2).'",
+        "♾️ Water cards in your Area gain: '⏳ Pay one \\icon(Stone3) to gain \\icon(Score, 2).'",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to view an opponent's hand.",
+        "⏳ Pay one \\icon(Stone3) to look at the top three cards of the deck and put them back in any order.",
         2
       ],
       [
-        "Instant \\icon(Instant): Discard a Water card from your Area to gain three \\icon(Stone3).",
+        "⚡ Discard a Water card from your Area to gain three \\icon(Stone3).",
         3
       ],
       [
-        "Passive \\icon(Permanent): You may pay one \\icon(Stone3) to cancel an opponent's Active effect.",
+        "♾️ You may pay one \\icon(Stone3) to cancel an opponent's Active effect.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to swap one of your \\icon(Stone6) for two \\icon(Stone3).",
+        "⏳ Pay one \\icon(Stone3) to swap one of your \\icon(Stone6) for two \\icon(Stone3).",
         3
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 0, gain two \\icon(Stone3).",
+        "⚡ Discard a card. If it has a cost of 0, gain two \\icon(Stone3).",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a card, gain one \\icon(Stone3).",
+        "♾️ Whenever you discard a card, gain one \\icon(Stone3).",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to change the family of a summoned card to Water.",
+        "⏳ Pay one \\icon(Stone3) to change the family of a summoned card to Water.",
         2
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 5 or more, gain three \\icon(Stone3).",
+        "⚡ Discard a card. If it has a cost of 5 or more, gain three \\icon(Stone3).",
         3
       ],
       [
-        "Passive \\icon(Permanent): Your stones are not discarded at the end of the round.",
+        "♾️ Your stones are not discarded at the end of the round.",
         7
       ]
     ],
     "Earth": [
       [
-        "Passive \\icon(Permanent): At the start of your turn, lose \\icon(Score, 1) and gain one \\icon(Stone6).",
+        "♾️ At the start of your turn, lose \\icon(Score, 1) and gain one \\icon(Stone6).",
         4
       ],
       [
-        "Active \\icon(Active): Discard a summoned card to gain \\icon(Score, 3) times its cost.",
+        "⏳ Discard a summoned card to gain \\icon(Score, 3) times its cost.",
         5
       ],
       [
-        "Instant \\icon(Instant): discard all your summoned cards. Gain \\icon(Score, 10) for each.",
+        "⚡ discard all your summoned cards. Gain \\icon(Score, 10) for each.",
         10
       ],
       [
-        "Passive \\icon(Permanent): Your cards cost one \\icon(Stone6) less to summon, but you lose \\icon(Score, 2) when you summon them.",
+        "♾️ Your cards cost one \\icon(Stone6) less to summon, but you lose \\icon(Score, 2) when you summon them.",
         6
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6) to discard an opponent's card of cost 3 or less.",
+        "⏳ Choose a player. They must choose and discard a card from their Area.",
         4
       ],
       [
-        "Instant \\icon(Instant): Lose half your \\icon(Score) (rounded down) to gain that many \\icon(Stone6).",
+        "⚡ Lose half your \\icon(Score) (rounded down) to gain that many \\icon(Stone6).",
         7
       ],
       [
-        "Passive \\icon(Permanent): Whenever you would gain \\icon(Stone1) or \\icon(Stone3), gain \\icon(Stone6) instead.",
+        "♾️ Whenever you would gain \\icon(Stone1) or \\icon(Stone3), gain \\icon(Stone6) instead.",
         8
       ],
       [
-        "Active \\icon(Active): Sacrifice this card to gain \\icon(Score, 5) and one \\icon(Stone6).",
+        "⏳ Sacrifice this card to gain \\icon(Score, 5) and one \\icon(Stone6).",
         3
       ],
       [
-        "Instant \\icon(Instant): Discard your hand. Gain \\icon(Score, 4) for each Earth card discarded.",
+        "⚡ Discard your hand. Gain \\icon(Score, 4) for each Earth card discarded.",
         5
       ],
       [
-        "Passive \\icon(Permanent): You cannot gain \\icon(Stone1) or \\icon(Stone3). All your cards cost \\icon(Stone6).",
+        "♾️ You cannot gain \\icon(Stone1) or \\icon(Stone3). All your cards cost \\icon(Stone6).",
         2
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to gain \\icon(Score, 5).",
+        "⏳ Pay one \\icon(Stone6) to gain \\icon(Score, 5).",
         6
       ],
       [
-        "Instant \\icon(Instant): If you have the lowest score among all players, earn \\icon(Score, 6).",
+        "⚡ If you have the lowest score among all players, earn \\icon(Score, 6).",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you lose \\icon(Score), gain one \\icon(Stone6).",
+        "♾️ Whenever you lose \\icon(Score), gain one \\icon(Stone6).",
         5
       ],
       [
-        "Active \\icon(Active): Discard an Earth card to discard a summoned card.",
+        "⏳ Discard an Earth card to discard a summoned card.",
         4
       ],
       [
-        "Instant \\icon(Instant): discard a card in your Area to gain \\icon(Score, 8).",
+        "⚡ discard a card in your Area to gain \\icon(Score, 8).",
         6
       ],
       [
-        "Passive \\icon(Permanent): Earth cards in your hand cost one \\icon(Stone6) less to summon.",
+        "♾️ Earth cards in your hand cost one \\icon(Stone6) less to summon.",
         7
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6) to draw two cards and lose \\icon(Score, 2).",
+        "⏳ Pay two \\icon(Stone6) to draw two cards and lose \\icon(Score, 2).",
         3
       ],
       [
-        "Instant \\icon(Instant): Lose \\icon(Score, 5) to summon this card for free.",
+        "⚡ Lose \\icon(Score, 5) to summon this card for free.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent gains \\icon(Score), you may lose \\icon(Score, 1) to gain one \\icon(Stone6).",
+        "♾️ Whenever an opponent gains \\icon(Score), you may lose \\icon(Score, 1) to gain one \\icon(Stone6).",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to force all opponents to lose \\icon(Score, 2).",
+        "⏳ Pay one \\icon(Stone6) to force all opponents to lose \\icon(Score, 2).",
         5
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 2) for each \\icon(Stone6) you have.",
+        "⚡ Gain \\icon(Score, 2) for each \\icon(Stone6) you have.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Your Earth cards cannot be discarded or returned to your hand.",
+        "♾️ Your Earth cards cannot be discarded or returned to your hand.",
         7
       ],
       [
-        "Active \\icon(Active): Sacrifice a summoned Earth card to gain two \\icon(Stone6).",
+        "⏳ Sacrifice a summoned Earth card to gain two \\icon(Stone6).",
         3
       ],
       [
-        "Instant \\icon(Instant): If you have exactly one Earth card in your Area, gain \\icon(Score, 10).",
+        "⚡ If you have exactly one Earth card in your Area, gain \\icon(Score, 10).",
         6
       ],
       [
-        "Passive \\icon(Permanent): You may have two fewer cards in your Area, but they produce double their normal effects.",
+        "♾️ You may have two fewer cards in your Area, but they produce double their normal effects.",
         8
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone6) to gain \\icon(Score, 15).",
+        "⏳ Pay three \\icon(Stone6) to gain \\icon(Score, 15).",
         9
       ],
       [
-        "Instant \\icon(Instant): discard all cards in your hand. Gain one \\icon(Stone6) for each.",
+        "⚡ discard all cards in your hand. Gain one \\icon(Stone6) for each.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you summon an Earth card, you may discard a card in your Area to gain \\icon(Score, 5).",
+        "♾️ Whenever you summon an Earth card, you may discard a card in your Area to gain \\icon(Score, 5).",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to swap a card in your Area with one in your hand.",
+        "⏳ Pay one \\icon(Stone6) to swap a card in your Area with one in your hand.",
         3
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 5) if you have the fewest cards in your Area.",
+        "⚡ Gain \\icon(Score, 5) if you have the fewest cards in your Area.",
         3
       ],
       [
-        "Passive \\icon(Permanent): You may pay for summon costs using \\icon(Score) instead of stones.",
+        "♾️ You may pay for summon costs using \\icon(Score) instead of stones.",
         10
       ],
       [
-        "Active \\icon(Active): Discard a card from your hand to make a chosen opponent lose \\icon(Score, 2).",
+        "⏳ Choose a player. They must choose and discard a card from their Area.",
         3
       ],
       [
-        "Instant \\icon(Instant): discard a summoned card. Its owner gains \\icon(Stone6) equal to its cost.",
+        "⚡ discard a summoned card. Its owner gains \\icon(Stone6) equal to its cost.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever you gain \\icon(Score), you must discard a card.",
+        "♾️ Whenever you gain \\icon(Score), you must discard a card.",
         2
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6) to summon up to two cards from your hand for free.",
+        "⏳ Pay two \\icon(Stone6) to summon up to two cards from your hand for free.",
         7
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 1) for each Earth card in the discard pile.",
+        "⚡ Gain \\icon(Score, 1) for each Earth card in the discard pile.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Earth cards in your Area gain: 'Active \\icon(Active): Lose \\icon(Score, 1) to gain one \\icon(Stone6).'",
+        "♾️ Earth cards in your Area gain: '⏳ Lose \\icon(Score, 1) to gain one \\icon(Stone6).'",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to view the top five cards of the deck.",
+        "⏳ Pay one \\icon(Stone6) to view the top five cards of the deck.",
         2
       ],
       [
-        "Instant \\icon(Instant): Discard your hand and draw five cards. Lose \\icon(Score, 5).",
+        "⚡ Discard your hand and draw five cards. Lose \\icon(Score, 5).",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may not summon Fire, Water, or Wind cards.",
+        "♾️ You may not summon Fire, Water, or Wind cards.",
         0
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone6) to discard any summoned card.",
+        "⏳ Pay three \\icon(Stone6) to discard any summoned card.",
         7
       ],
       [
-        "Instant \\icon(Instant): If you have exactly three Earth cards in your Area, gain \\icon(Score, 12).",
+        "⚡ If you have exactly three Earth cards in your Area, gain \\icon(Score, 12).",
         8
       ],
       [
-        "Passive \\icon(Permanent): Whenever a card is discarded, you gain \\icon(Score, 2).",
+        "♾️ Whenever a card is discarded, you gain \\icon(Score, 2).",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) and lose \\icon(Score, 2) to draw a card.",
+        "⏳ Pay one \\icon(Stone6) and lose \\icon(Score, 2) to draw a card.",
         2
       ],
       [
-        "Instant \\icon(Instant): Reveal your hand. If all cards are Earth cards, gain \\icon(Score, 8).",
+        "⚡ Reveal your hand. If all cards are Earth cards, gain \\icon(Score, 8).",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever you summon an Earth card, you may discard it immediately to earn points equal to double its cost.",
+        "♾️ Whenever you summon an Earth card, you may discard it immediately to earn points equal to double its cost.",
         4
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6) to return a discarded card to your hand.",
+        "⏳ Pay two \\icon(Stone6) to return a discarded card to your hand.",
         4
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 3) for each Earth card in your hand.",
+        "⚡ Gain \\icon(Score, 3) for each Earth card in your hand.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a summoned Earth card, gain one \\icon(Stone6).",
+        "♾️ Whenever you discard a summoned Earth card, gain one \\icon(Stone6).",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to change the family of a summoned card to Earth.",
+        "⏳ Pay one \\icon(Stone6) to change the family of a summoned card to Earth.",
         3
       ],
       [
-        "Instant \\icon(Instant): discard a summoned card of cost 4 or more to gain \\icon(Score, 6).",
+        "⚡ discard a summoned card of cost 4 or more to gain \\icon(Score, 6).",
         6
       ],
       [
-        "Passive \\icon(Permanent): Earth cards in your Area cannot be discarded by other players' effects.",
+        "♾️ Earth cards in your Area cannot be discarded by other players' effects.",
         4
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6) to gain \\icon(Score, 4) and one \\icon(Stone1).",
+        "⏳ Pay two \\icon(Stone6) to gain \\icon(Score, 4) and one \\icon(Stone1).",
         5
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Stone6) equal to the number of Earth cards in all players' Areas.",
+        "⚡ Gain \\icon(Stone6) equal to the number of Earth cards in all players' Areas.",
         7
       ],
       [
-        "Passive \\icon(Permanent): If you have at least three Earth cards in your Area, earn \\icon(Score, 3) at the end of the round.",
+        "♾️ If you have at least three Earth cards in your Area, earn \\icon(Score, 3) at the end of the round.",
         5
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone6) to draw a card and gain \\icon(Score, 3).",
+        "⏳ Pay three \\icon(Stone6) to draw a card and gain \\icon(Score, 3).",
         6
       ],
       [
-        "Instant \\icon(Instant): If you have exactly five cards in the discard pile, gain \\icon(Score, 7).",
+        "⚡ If you have exactly five cards in the discard pile, gain \\icon(Score, 7).",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may discard cards from your Area to pay for summon costs.",
+        "♾️ You may discard cards from your Area to pay for summon costs.",
         6
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone6) to gain \\icon(Score, 10).",
+        "⏳ Pay four \\icon(Stone6) to gain \\icon(Score, 10).",
         9
       ],
       [
-        "Instant \\icon(Instant): Gain one \\icon(Stone6), one \\icon(Stone3), and one \\icon(Stone1).",
+        "⚡ Gain one \\icon(Stone6), one \\icon(Stone3), and one \\icon(Stone1).",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent gains a \\icon(Stone1), you may lose \\icon(Score, 1) to gain one \\icon(Stone6).",
+        "♾️ Whenever an opponent gains a \\icon(Stone1), you may lose \\icon(Score, 1) to gain one \\icon(Stone6).",
         3
       ],
       [
-        "Active \\icon(Active): Pay five \\icon(Stone6) to gain \\icon(Score, 18).",
+        "⏳ Pay five \\icon(Stone6) to gain \\icon(Score, 18).",
         10
       ],
       [
-        "Instant \\icon(Instant): If you have no stones, gain \\icon(Score, 5) and one \\icon(Stone6).",
+        "⚡ If you have no stones, gain \\icon(Score, 5) and one \\icon(Stone6).",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Earth cards using only \\icon(Stone6).",
+        "♾️ You may pay for Earth cards using only \\icon(Stone6).",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6). All other players lose \\icon(Score, 2).",
+        "⏳ Pay one \\icon(Stone6). All other players lose \\icon(Score, 2).",
         4
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 2) for each card in the discard pile of cost 5 or more.",
+        "⚡ Gain \\icon(Score, 2) for each card in the discard pile of cost 5 or more.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard an Earth card, gain \\icon(Score, 2).",
+        "♾️ Whenever you discard an Earth card, gain \\icon(Score, 2).",
         4
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6). A chosen opponent loses \\icon(Score, 4).",
+        "⏳ Pay two \\icon(Stone6). A chosen opponent loses \\icon(Score, 4).",
         5
       ],
       [
-        "Instant \\icon(Instant): Return an Earth card from the discard pile to your Area. It costs zero to summon this turn.",
+        "⚡ Return an Earth card from the discard pile to your Area. It costs zero to summon this turn.",
         7
       ],
       [
-        "Passive \\icon(Permanent): Earth cards in your hand cost one \\icon(Stone6) less to summon.",
+        "♾️ Earth cards in your hand cost one \\icon(Stone6) less to summon.",
         6
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone6) to force an opponent to discard a summoned card.",
+        "⏳ Pay three \\icon(Stone6) to force an opponent to discard a summoned card.",
         8
       ],
       [
-        "Instant \\icon(Instant): Swap an Earth card in your hand with any card in the discard pile.",
+        "⚡ Swap an Earth card in your hand with any card in the discard pile.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw an Earth card, reveal it and gain \\icon(Score, 1).",
+        "♾️ Whenever you draw an Earth card, reveal it and gain \\icon(Score, 1).",
         3
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to increase the cost of an opponent's card by two \\icon(Stone1).",
+        "⏳ Pay one \\icon(Stone6) to increase the cost of an opponent's card by two \\icon(Stone1).",
         3
       ],
       [
-        "Instant \\icon(Instant): Discard your hand and gain \\icon(Score, 2) for each card discarded.",
+        "⚡ Discard your hand and gain \\icon(Score, 2) for each card discarded.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Your Earth cards cannot be targeted by opponent effects.",
+        "♾️ Your Earth cards cannot be targeted by opponent effects.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to decrease the cost of a card in your hand by three \\icon(Stone1).",
+        "⏳ Pay one \\icon(Stone6) to decrease the cost of a card in your hand by three \\icon(Stone1).",
         4
       ],
       [
-        "Instant \\icon(Instant): Reveal the top three cards of the deck. Keep all Earth cards and discard the rest.",
+        "⚡ Reveal the top three cards of the deck. Keep all Earth cards and discard the rest.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent discards an Earth card, you may add it to your hand.",
+        "⏳ Choose a player. They must choose and discard a card from their Area.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to gain \\icon(Score, 3) and one \\icon(Stone1).",
+        "⏳ Pay one \\icon(Stone6) to gain \\icon(Score, 3) and one \\icon(Stone1).",
         5
       ],
       [
-        "Instant \\icon(Instant): If you have exactly one Earth card in your hand, gain \\icon(Score, 5).",
+        "⚡ If you have exactly one Earth card in your hand, gain \\icon(Score, 5).",
         3
       ],
       [
-        "Passive \\icon(Permanent): Earth cards in your Area gain: 'Active \\icon(Active): Pay one \\icon(Stone6) to gain \\icon(Score, 3).'",
+        "♾️ Earth cards in your Area gain: '⏳ Pay one \\icon(Stone6) to gain \\icon(Score, 3).'",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to view an opponent's hand and discard one card from it.",
+        "⏳ Pay two \\icon(Stone1) to choose a player. They must discard a summoned card from their Area.",
         5
       ],
       [
-        "Instant \\icon(Instant): Discard an Earth card from your Area to gain \\icon(Score, 6).",
+        "⚡ Discard an Earth card from your Area to gain \\icon(Score, 6).",
         5
       ],
       [
-        "Passive \\icon(Permanent): You may pay one \\icon(Stone6) to cancel an opponent's Active effect.",
+        "♾️ You may pay one \\icon(Stone6) to cancel an opponent's Active effect.",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to swap one of your \\icon(Stone3) for two \\icon(Stone6).",
+        "⏳ Pay one \\icon(Stone6) to swap one of your \\icon(Stone3) for two \\icon(Stone6).",
         4
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 0, gain \\icon(Score, 3).",
+        "⚡ Discard a card. If it has a cost of 0, gain \\icon(Score, 3).",
         2
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a card, gain one \\icon(Stone6) and lose \\icon(Score, 1).",
+        "♾️ Whenever you discard a card, gain one \\icon(Stone6) and lose \\icon(Score, 1).",
         3
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to change the family of a summoned card to Earth.",
+        "⏳ Pay one \\icon(Stone6) to change the family of a summoned card to Earth.",
         3
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 5 or more, gain \\icon(Score, 5).",
+        "⚡ Discard a card. If it has a cost of 5 or more, gain \\icon(Score, 5).",
         4
       ],
       [
-        "Passive \\icon(Permanent): Your stones are converted to \\icon(Score) at the end of the round (1 Score per stone).",
+        "♾️ Your stones are converted to \\icon(Score) at the end of the round (1 Score per stone).",
         8
       ]
     ],
     "Wind": [
       [
-        "Passive \\icon(Permanent): At the start of the round, draw one extra card.",
+        "♾️ At the start of the round, draw one extra card.",
         5
       ],
       [
-        "Active \\icon(Active): Draw two cards, then discard one.",
+        "⏳ Draw two cards, then discard one.",
         3
       ],
       [
-        "Instant \\icon(Instant): Draw three cards.",
+        "⚡ Draw three cards.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw a card, gain one \\icon(Stone1).",
+        "♾️ Whenever you draw a card, gain one \\icon(Stone1).",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to reduce the cost of all cards in your hand by one \\icon(Stone1) this turn.",
+        "⏳ Pay one \\icon(Stone1) to reduce the cost of all cards in your hand by one \\icon(Stone1) this turn.",
         6
       ],
       [
-        "Instant \\icon(Instant): Draw cards until you have five cards in your hand.",
+        "⚡ Draw cards until you have five cards in your hand.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Cards cost one \\icon(Stone1) less to summon for each card in your hand.",
+        "♾️ Cards cost one \\icon(Stone1) less to summon for each card in your hand.",
         8
       ],
       [
-        "Active \\icon(Active): Discard a Wind card to draw three cards.",
+        "⏳ Discard a Wind card to draw three cards.",
         4
       ],
       [
-        "Instant \\icon(Instant): Swap your hand with an opponent's hand.",
+        "⏳ Pay one \\icon(Stone3) to look at the top three cards of the deck and put them back in any order.",
         6
       ],
       [
-        "Passive \\icon(Permanent): You may draw an extra card at the start of your turn.",
+        "♾️ You may draw an extra card at the start of your turn.",
         6
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone1) to draw a card.",
+        "⏳ Pay two \\icon(Stone1) to draw a card.",
         2
       ],
       [
-        "Instant \\icon(Instant): Draw a card for each Wind card in your Area.",
+        "⚡ Draw a card for each Wind card in your Area.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent draws a card outside their draw phase, you may draw a card.",
+        "♾️ Whenever an opponent draws a card outside their draw phase, you may draw a card.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to draw two cards.",
+        "⏳ Pay one \\icon(Stone3) to draw two cards.",
         4
       ],
       [
-        "Instant \\icon(Instant): Reveal your hand. Gain \\icon(Score, 1) for each Wind card.",
+        "⚡ Reveal your hand. Gain \\icon(Score, 1) for each Wind card.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Wind cards in your hand cost one \\icon(Stone3) less to summon.",
+        "♾️ Wind cards in your hand cost one \\icon(Stone3) less to summon.",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to draw five cards.",
+        "⏳ Pay one \\icon(Stone6) to draw five cards.",
         6
       ],
       [
-        "Instant \\icon(Instant): Discard any number of cards, then draw that many cards.",
+        "⚡ Discard any number of cards, then draw that many cards.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw a card during the Active phase, gain \\icon(Score, 2).",
+        "♾️ Whenever you draw a card during the Active phase, gain \\icon(Score, 2).",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to view an opponent's hand and take one card from it.",
+        "⏳ Pay one \\icon(Stone3) to look at the top three cards of the deck and put them back in any order.",
         6
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 1) for each card in your hand.",
+        "⚡ Gain \\icon(Score, 1) for each card in your hand.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you summon a Wind card, draw a card.",
+        "♾️ Whenever you summon a Wind card, draw a card.",
         7
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone1) to return a summoned card to its owner's hand.",
+        "⏳ Pay two \\icon(Stone1) to return a summoned card to its owner's hand.",
         5
       ],
       [
-        "Instant \\icon(Instant): Draw a card for each empty slot in your Area.",
+        "⚡ Draw a card for each empty slot in your Area.",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Fire cards using Wind cards from your hand (each counts as one \\icon(Stone1)).",
+        "♾️ You may pay for Fire cards using Wind cards from your hand (each counts as one \\icon(Stone1)).",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to swap a card in your hand with a card in your Area.",
+        "⏳ Pay one \\icon(Stone1) to swap a card in your hand with a card in your Area.",
         3
       ],
       [
-        "Instant \\icon(Instant): If you have exactly three Wind cards in your hand, gain \\icon(Score, 6).",
+        "⚡ If you have exactly three Wind cards in your hand, gain \\icon(Score, 6).",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Water cards using Wind cards from your hand.",
+        "♾️ You may pay for Water cards using Wind cards from your hand.",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to change the family of a summoned card to Wind.",
+        "⏳ Pay one \\icon(Stone1) to change the family of a summoned card to Wind.",
         3
       ],
       [
-        "Instant \\icon(Instant): Choose a Wind card in your hand. It costs zero to summon this turn.",
+        "⚡ Choose a Wind card in your hand. It costs zero to summon this turn.",
         7
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Earth cards using Wind cards from your hand.",
+        "♾️ You may pay for Earth cards using Wind cards from your hand.",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to draw a card and gain \\icon(Score, 1).",
+        "⏳ Pay one \\icon(Stone1) to draw a card and gain \\icon(Score, 1).",
         4
       ],
       [
-        "Instant \\icon(Instant): Discard all your stones. Draw that many cards.",
+        "⚡ Discard all your stones. Draw that many cards.",
         3
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Dragon cards using Wind cards from your hand.",
+        "♾️ You may pay for Dragon cards using Wind cards from your hand.",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to move a card from the discard pile to your hand.",
+        "⏳ Pay one \\icon(Stone1) to move a card from the discard pile to your hand.",
         4
       ],
       [
-        "Instant \\icon(Instant): Draw a card for each Wind card in all players' Areas.",
+        "⚡ Draw a card for each Wind card in all players' Areas.",
         6
       ],
       [
-        "Passive \\icon(Permanent): Whenever you gain a stone, you may draw a card instead.",
+        "♾️ Whenever you gain a stone, you may draw a card instead.",
         5
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone1) to gain \\icon(Score, 3) and draw a card.",
+        "⏳ Pay two \\icon(Stone1) to gain \\icon(Score, 3) and draw a card.",
         5
       ],
       [
-        "Instant \\icon(Instant): If you have exactly five cards in your hand, gain \\icon(Score, 5).",
+        "⚡ If you have exactly five cards in your hand, gain \\icon(Score, 5).",
         4
       ],
       [
-        "Passive \\icon(Permanent): Your Wind cards cannot be discarded.",
+        "♾️ Your Wind cards cannot be discarded.",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) and one \\icon(Stone3) to draw three cards.",
+        "⏳ Pay one \\icon(Stone1) and one \\icon(Stone3) to draw three cards.",
         5
       ],
       [
-        "Instant \\icon(Instant): Reveal the top five cards of the deck. Keep all Wind cards and discard the rest.",
+        "⚡ Reveal the top five cards of the deck. Keep all Wind cards and discard the rest.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent summons a Wind card, you draw a card.",
+        "♾️ Whenever an opponent summons a Wind card, you draw a card.",
         5
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone1) to gain \\icon(Score, 5).",
+        "⏳ Pay three \\icon(Stone1) to gain \\icon(Score, 5).",
         5
       ],
       [
-        "Instant \\icon(Instant): Gain one \\icon(Stone1) for each card in your hand.",
+        "⚡ Gain one \\icon(Stone1) for each card in your hand.",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may have one extra Wind card in your Area.",
+        "♾️ You may have one extra Wind card in your Area.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to draw four cards and lose \\icon(Score, 2).",
+        "⏳ Pay one \\icon(Stone6) to draw four cards and lose \\icon(Score, 2).",
         5
       ],
       [
-        "Instant \\icon(Instant): Reveal your hand. If all cards are Wind cards, gain \\icon(Score, 8).",
+        "⚡ Reveal your hand. If all cards are Wind cards, gain \\icon(Score, 8).",
         6
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw a card during the Active phase, you may reveal it and earn \\icon(Score, 1).",
+        "♾️ Whenever you draw a card during the Active phase, you may reveal it and earn \\icon(Score, 1).",
         4
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone1) and one \\icon(Stone6) to draw five cards.",
+        "⏳ Pay two \\icon(Stone1) and one \\icon(Stone6) to draw five cards.",
         7
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 2) for each Wind card in the discard pile.",
+        "⚡ Gain \\icon(Score, 2) for each Wind card in the discard pile.",
         5
       ],
       [
-        "Passive \\icon(Permanent): At the start of the Active phase, draw one card.",
+        "♾️ At the start of the Active phase, draw one card.",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) and one \\icon(Stone6) to draw four cards.",
+        "⏳ Pay one \\icon(Stone3) and one \\icon(Stone6) to draw four cards.",
         6
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 3) for each Wind card you have in your hand.",
+        "⚡ Gain \\icon(Score, 3) for each Wind card you have in your hand.",
         6
       ],
       [
-        "Passive \\icon(Permanent): Whenever you sell a Wind card, draw a card.",
+        "♾️ Whenever you sell a Wind card, draw a card.",
         4
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone3) and one \\icon(Stone6) to gain \\icon(Score, 8).",
+        "⏳ Pay two \\icon(Stone3) and one \\icon(Stone6) to gain \\icon(Score, 8).",
         8
       ],
       [
-        "Instant \\icon(Instant): Discard your hand, then draw four cards.",
+        "⚡ Discard your hand, then draw four cards.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Wind cards in your Area cannot be discarded by other players' effects.",
+        "♾️ Wind cards in your Area cannot be discarded by other players' effects.",
         5
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone1) to force an opponent to discard a card.",
+        "⏳ Pay three \\icon(Stone1) to force an opponent to discard a card.",
         4
       ],
       [
-        "Instant \\icon(Instant): Draw a card for each \\icon(Stone6) you have.",
+        "⚡ Draw a card for each \\icon(Stone6) you have.",
         5
       ],
       [
-        "Passive \\icon(Permanent): You may discard cards from your Area as if they were in your hand.",
+        "♾️ You may discard cards from your Area as if they were in your hand.",
         3
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone3) to draw five cards.",
+        "⏳ Pay three \\icon(Stone3) to draw five cards.",
         7
       ],
       [
-        "Instant \\icon(Instant): Gain one \\icon(Stone1), one \\icon(Stone3), and one \\icon(Stone6).",
+        "⚡ Gain one \\icon(Stone1), one \\icon(Stone3), and one \\icon(Stone6).",
         6
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent draws a card, you gain one \\icon(Stone1).",
+        "♾️ Whenever an opponent draws a card, you gain one \\icon(Stone1).",
         5
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone6) to gain \\icon(Score, 12).",
+        "⏳ Pay three \\icon(Stone6) to gain \\icon(Score, 12).",
         9
       ],
       [
-        "Instant \\icon(Instant): If you have one of each family in your hand, gain \\icon(Score, 10).",
+        "⚡ If you have one of each family in your hand, gain \\icon(Score, 10).",
         7
       ],
       [
-        "Passive \\icon(Permanent): You may pay for summon costs using only cards from your hand (each counts as one \\icon(Stone1)).",
+        "♾️ You may pay for summon costs using only cards from your hand (each counts as one \\icon(Stone1)).",
         8
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone1) to gain \\icon(Score, 4).",
+        "⏳ Pay four \\icon(Stone1) to gain \\icon(Score, 4).",
         4
       ],
       [
-        "Instant \\icon(Instant): Draw a card for each card in the discard pile of cost 5 or more.",
+        "⚡ Draw a card for each card in the discard pile of cost 5 or more.",
         6
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a Wind card, draw a card.",
+        "♾️ Whenever you discard a Wind card, draw a card.",
         5
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone3) to gain \\icon(Score, 8).",
+        "⏳ Pay four \\icon(Stone3) to gain \\icon(Score, 8).",
         7
       ],
       [
-        "Instant \\icon(Instant): Return a Wind card from the discard pile to your hand. It costs zero to summon this turn.",
+        "⚡ Return a Wind card from the discard pile to your hand. It costs zero to summon this turn.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Wind cards in your hand cost one \\icon(Stone6) less to summon.",
+        "♾️ Wind cards in your hand cost one \\icon(Stone6) less to summon.",
         7
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone6) to gain \\icon(Score, 18).",
+        "⏳ Pay four \\icon(Stone6) to gain \\icon(Score, 18).",
         10
       ],
       [
-        "Instant \\icon(Instant): Swap a Wind card in your hand with any card in the discard pile.",
+        "⚡ Swap a Wind card in your hand with any card in the discard pile.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw a Wind card, reveal it and gain \\icon(Score, 1).",
+        "♾️ Whenever you draw a Wind card, reveal it and gain \\icon(Score, 1).",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to increase the cost of an opponent's card by one \\icon(Stone1).",
+        "⏳ Pay one \\icon(Stone1) to increase the cost of an opponent's card by one \\icon(Stone1).",
         3
       ],
       [
-        "Instant \\icon(Instant): Discard your hand and draw five cards.",
+        "⚡ Discard your hand and draw five cards.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Your Wind cards cannot be targeted by opponent effects.",
+        "♾️ Your Wind cards cannot be targeted by opponent effects.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to decrease the cost of a card in your hand by two \\icon(Stone1).",
+        "⏳ Pay one \\icon(Stone1) to decrease the cost of a card in your hand by two \\icon(Stone1).",
         4
       ],
       [
-        "Instant \\icon(Instant): Reveal the top three cards of the deck. Keep all Wind cards and discard the rest.",
+        "⚡ Reveal the top three cards of the deck. Keep all Wind cards and discard the rest.",
         4
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent discards a Wind card, you may add it to your hand.",
+        "⏳ Choose a player. They must choose and discard a card from their Area.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to gain \\icon(Score, 3) and draw a card.",
+        "⏳ Pay one \\icon(Stone6) to gain \\icon(Score, 3) and draw a card.",
         5
       ],
       [
-        "Instant \\icon(Instant): If you have exactly one Wind card in your hand, gain \\icon(Score, 4).",
+        "⚡ If you have exactly one Wind card in your hand, gain \\icon(Score, 4).",
         3
       ],
       [
-        "Passive \\icon(Permanent): Wind cards in your Area gain: 'Active \\icon(Active): Pay one \\icon(Stone1) to draw a card.'",
+        "♾️ Wind cards in your Area gain: '⏳ Pay one \\icon(Stone1) to draw a card.'",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to view an opponent's hand and discard one card from it.",
+        "⏳ Pay two \\icon(Stone1) to choose a player. They must discard a summoned card from their Area.",
         4
       ],
       [
-        "Instant \\icon(Instant): Discard a Wind card from your Area to draw three cards.",
+        "⚡ Discard a Wind card from your Area to draw three cards.",
         4
       ],
       [
-        "Passive \\icon(Permanent): You may pay one \\icon(Stone1) to cancel an opponent's Active effect.",
+        "♾️ You may pay one \\icon(Stone1) to cancel an opponent's Active effect.",
         5
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to swap one of your \\icon(Stone3) for two \\icon(Stone1).",
+        "⏳ Pay one \\icon(Stone1) to swap one of your \\icon(Stone3) for two \\icon(Stone1).",
         3
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 0, draw two cards.",
+        "⚡ Discard a card. If it has a cost of 0, draw two cards.",
         3
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a card, you may pay one \\icon(Stone1) to draw a card.",
+        "♾️ Whenever you discard a card, you may pay one \\icon(Stone1) to draw a card.",
         4
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone1) to change the family of a summoned card to Wind.",
+        "⏳ Pay one \\icon(Stone1) to change the family of a summoned card to Wind.",
         3
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 5 or more, draw three cards.",
+        "⚡ Discard a card. If it has a cost of 5 or more, draw three cards.",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever you summon a Wind card, you may search the deck for a Wind card of cost 3 or less and add it to your hand.",
+        "♾️ Whenever you summon a Wind card, you may search the deck for a Wind card of cost 3 or less and add it to your hand.",
         6
       ]
     ],
     "Dragon": [
       [
-        "Passive \\icon(Permanent): You may only have three cards in your Area, but Dragon cards score double.",
+        "♾️ You may only have three cards in your Area, but Dragon cards score double.",
         8
       ],
       [
-        "Active \\icon(Active): discard a summoned card to gain \\icon(Score, 5).",
+        "⏳ discard a summoned card to gain \\icon(Score, 5).",
         7
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 10). You may not summon any more cards this turn.",
+        "⚡ Gain \\icon(Score, 10). You may not summon any more cards this turn.",
         10
       ],
       [
-        "Passive \\icon(Permanent): Your Dragon cards cost one \\icon(Stone6) less to summon.",
+        "♾️ Your Dragon cards cost one \\icon(Stone6) less to summon.",
         9
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to remove an opponent's card from the game.",
+        "⏳ Pay one \\icon(Stone6) to remove an opponent's card from the game.",
         8
       ],
       [
-        "Instant \\icon(Instant): Remove all cards in the discard pile from the game. Gain \\icon(Score, 2) for each.",
+        "⚡ Remove all cards in the discard pile from the game. Gain \\icon(Score, 2) for each.",
         12
       ],
       [
-        "Passive \\icon(Permanent): Whenever a card is removed from the game, gain \\icon(Score, 3).",
+        "♾️ Whenever a card is removed from the game, gain \\icon(Score, 3).",
         7
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6) to gain \\icon(Score, 8).",
+        "⏳ Pay two \\icon(Stone6) to gain \\icon(Score, 8).",
         9
       ],
       [
-        "Instant \\icon(Instant): If you have exactly one Dragon card in your Area, gain \\icon(Score, 15).",
+        "⚡ If you have exactly one Dragon card in your Area, gain \\icon(Score, 15).",
         11
       ],
       [
-        "Passive \\icon(Permanent): You have one fewer slot in your Area.",
+        "♾️ You have one fewer slot in your Area.",
         5
       ],
       [
-        "Active \\icon(Active): Discard two cards to remove a summoned card from the game.",
+        "⏳ Discard two cards to remove a summoned card from the game.",
         6
       ],
       [
-        "Instant \\icon(Instant): discard all summoned cards of cost 4 or less.",
+        "⚡ discard all summoned cards of cost 4 or less.",
         9
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent summons a card, they must pay an extra \\icon(Stone1).",
+        "♾️ Whenever an opponent summons a card, they must pay an extra \\icon(Stone1).",
         8
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone1) to gain \\icon(Score, 4).",
+        "⏳ Pay three \\icon(Stone1) to gain \\icon(Score, 4).",
         6
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 5) for each Dragon card in your Area.",
+        "⚡ Gain \\icon(Score, 5) for each Dragon card in your Area.",
         10
       ],
       [
-        "Passive \\icon(Permanent): Dragon cards in your hand cost one \\icon(Stone3) less to summon.",
+        "♾️ Dragon cards in your hand cost one \\icon(Stone3) less to summon.",
         8
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to draw three cards.",
+        "⏳ Pay one \\icon(Stone6) to draw three cards.",
         7
       ],
       [
-        "Instant \\icon(Instant): Remove a card in your Area from the game to gain \\icon(Score, 12).",
+        "⚡ Remove a card in your Area from the game to gain \\icon(Score, 12).",
         9
       ],
       [
-        "Passive \\icon(Permanent): Whenever you gain \\icon(Score), you may discard a card to gain an extra \\icon(Score, 2).",
+        "♾️ Whenever you gain \\icon(Score), you may discard a card to gain an extra \\icon(Score, 2).",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone3) to force an opponent to discard two cards.",
+        "⏳ Pay one \\icon(Stone3) to force an opponent to discard two cards.",
         6
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 3) for each card removed from the game.",
+        "⚡ Gain \\icon(Score, 3) for each card removed from the game.",
         8
       ],
       [
-        "Passive \\icon(Permanent): Your Dragon cards cannot be discarded or removed from the game.",
+        "♾️ Your Dragon cards cannot be discarded or removed from the game.",
         10
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone3) to return a summoned card to its owner's hand.",
+        "⏳ Pay two \\icon(Stone3) to return a summoned card to its owner's hand.",
         6
       ],
       [
-        "Instant \\icon(Instant): If you have no cards in your hand, gain \\icon(Score, 10).",
+        "⚡ If you have no cards in your hand, gain \\icon(Score, 10).",
         8
       ],
       [
-        "Passive \\icon(Permanent): You may have one extra Dragon card in your Area.",
+        "♾️ You may have one extra Dragon card in your Area.",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to swap a card in your Area with one in your hand.",
+        "⏳ Pay one \\icon(Stone6) to swap a card in your Area with one in your hand.",
         5
       ],
       [
-        "Instant \\icon(Instant): If you have exactly three Dragon cards in your hand, gain \\icon(Score, 8).",
+        "⚡ If you have exactly three Dragon cards in your hand, gain \\icon(Score, 8).",
         7
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Dragon cards using any combination of stones.",
+        "♾️ You may pay for Dragon cards using any combination of stones.",
         11
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to change the family of a summoned card to Dragon.",
+        "⏳ Pay one \\icon(Stone6) to change the family of a summoned card to Dragon.",
         6
       ],
       [
-        "Instant \\icon(Instant): Choose a Dragon card in your hand. It costs zero to summon this turn.",
+        "⚡ Choose a Dragon card in your hand. It costs zero to summon this turn.",
         12
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Fire cards using Dragon cards from your hand.",
+        "♾️ You may pay for Fire cards using Dragon cards from your hand.",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to draw a card and gain \\icon(Score, 2).",
+        "⏳ Pay one \\icon(Stone6) to draw a card and gain \\icon(Score, 2).",
         6
       ],
       [
-        "Instant \\icon(Instant): Remove all your stones from the game. Gain \\icon(Score, 3) for each.",
+        "⚡ Remove all your stones from the game. Gain \\icon(Score, 3) for each.",
         8
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Water cards using Dragon cards from your hand.",
+        "♾️ You may pay for Water cards using Dragon cards from your hand.",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to move a card from the discard pile to your hand.",
+        "⏳ Pay one \\icon(Stone6) to move a card from the discard pile to your hand.",
         6
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 2) for each Dragon card in all players' Areas.",
+        "⚡ Gain \\icon(Score, 2) for each Dragon card in all players' Areas.",
         9
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Earth cards using Dragon cards from your hand.",
+        "♾️ You may pay for Earth cards using Dragon cards from your hand.",
         7
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6) to gain \\icon(Score, 6) and draw a card.",
+        "⏳ Pay two \\icon(Stone6) to gain \\icon(Score, 6) and draw a card.",
         9
       ],
       [
-        "Instant \\icon(Instant): If you have exactly five cards in your hand, gain \\icon(Score, 7).",
+        "⚡ If you have exactly five cards in your hand, gain \\icon(Score, 7).",
         6
       ],
       [
-        "Passive \\icon(Permanent): You may pay for Wind cards using Dragon cards from your hand.",
+        "♾️ You may pay for Wind cards using Dragon cards from your hand.",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) and one \\icon(Stone3) to gain \\icon(Score, 7).",
+        "⏳ Pay one \\icon(Stone6) and one \\icon(Stone3) to gain \\icon(Score, 7).",
         8
       ],
       [
-        "Instant \\icon(Instant): Reveal the top five cards of the deck. Keep all Dragon cards and discard the rest.",
+        "⚡ Reveal the top five cards of the deck. Keep all Dragon cards and discard the rest.",
         7
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent summons a Dragon card, you gain \\icon(Score, 5).",
+        "♾️ Whenever an opponent summons a Dragon card, you gain \\icon(Score, 5).",
         8
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone6) to gain \\icon(Score, 12).",
+        "⏳ Pay three \\icon(Stone6) to gain \\icon(Score, 12).",
         11
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 2) for each card in your hand.",
+        "⚡ Gain \\icon(Score, 2) for each card in your hand.",
         6
       ],
       [
-        "Passive \\icon(Permanent): Whenever you summon a Dragon card, all other players lose \\icon(Score, 2).",
+        "♾️ Whenever you summon a Dragon card, all other players lose \\icon(Score, 2).",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to remove a card in the discard pile from the game and gain \\icon(Score, 4).",
+        "⏳ Pay one \\icon(Stone6) to remove a card in the discard pile from the game and gain \\icon(Score, 4).",
         7
       ],
       [
-        "Instant \\icon(Instant): Reveal your hand. If all cards are Dragon cards, gain \\icon(Score, 15).",
+        "⚡ Reveal your hand. If all cards are Dragon cards, gain \\icon(Score, 15).",
         10
       ],
       [
-        "Passive \\icon(Permanent): Dragon cards in your Area cannot be discarded by other players' effects.",
+        "♾️ Dragon cards in your Area cannot be discarded by other players' effects.",
         6
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6) and one \\icon(Stone3) to draw five cards.",
+        "⏳ Pay two \\icon(Stone6) and one \\icon(Stone3) to draw five cards.",
         10
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 3) for each Dragon card in the discard pile.",
+        "⚡ Gain \\icon(Score, 3) for each Dragon card in the discard pile.",
         7
       ],
       [
-        "Passive \\icon(Permanent): At the end of the round, earn \\icon(Score, 2) for each Dragon card in your Area.",
+        "♾️ At the end of the round, earn \\icon(Score, 2) for each Dragon card in your Area.",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) and one \\icon(Stone3) to draw four cards.",
+        "⏳ Pay one \\icon(Stone6) and one \\icon(Stone3) to draw four cards.",
         8
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 4) for each Dragon card you have in your hand.",
+        "⚡ Gain \\icon(Score, 4) for each Dragon card you have in your hand.",
         8
       ],
       [
-        "Passive \\icon(Permanent): You may summon Dragon cards even if your Area is full by discarding one of your active cards.",
+        "♾️ You may summon Dragon cards even if your Area is full by discarding one of your active cards.",
         6
       ],
       [
-        "Active \\icon(Active): Pay two \\icon(Stone6) and one \\icon(Stone3) to gain \\icon(Score, 10).",
+        "⏳ Pay two \\icon(Stone6) and one \\icon(Stone3) to gain \\icon(Score, 10).",
         11
       ],
       [
-        "Instant \\icon(Instant): Discard your hand. Gain \\icon(Score, 5) for each Dragon card discarded.",
+        "⚡ Discard your hand. Gain \\icon(Score, 5) for each Dragon card discarded.",
         9
       ],
       [
-        "Passive \\icon(Permanent): Your Dragon cards cannot be targeted by opponent effects.",
+        "♾️ Your Dragon cards cannot be targeted by opponent effects.",
         9
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone6) to force an opponent to remove a card from the game.",
+        "⏳ Pay three \\icon(Stone6) to force an opponent to remove a card from the game.",
         11
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 5) for each \\icon(Stone6) you have.",
+        "⚡ Gain \\icon(Score, 5) for each \\icon(Stone6) you have.",
         10
       ],
       [
-        "Passive \\icon(Permanent): You may remove cards from your Area from the game to pay for summon costs.",
+        "♾️ You may remove cards from your Area from the game to pay for summon costs.",
         8
       ],
       [
-        "Active \\icon(Active): Pay three \\icon(Stone6) to draw five cards.",
+        "⏳ Pay three \\icon(Stone6) to draw five cards.",
         10
       ],
       [
-        "Instant \\icon(Instant): Gain one \\icon(Stone1), one \\icon(Stone3), and one \\icon(Stone6).",
+        "⚡ Gain one \\icon(Stone1), one \\icon(Stone3), and one \\icon(Stone6).",
         7
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent draws a card, you may pay one \\icon(Stone6) to gain \\icon(Score, 3).",
+        "♾️ Whenever an opponent draws a card, you may pay one \\icon(Stone6) to gain \\icon(Score, 3).",
         7
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone6) to gain \\icon(Score, 18).",
+        "⏳ Pay four \\icon(Stone6) to gain \\icon(Score, 18).",
         12
       ],
       [
-        "Instant \\icon(Instant): If you have one of each family in your hand, gain \\icon(Score, 15).",
+        "⚡ If you have one of each family in your hand, gain \\icon(Score, 15).",
         10
       ],
       [
-        "Passive \\icon(Permanent): You may pay for summon costs using only cards from your hand (each counts as one \\icon(Stone6)).",
+        "♾️ You may pay for summon costs using only cards from your hand (each counts as one \\icon(Stone6)).",
         11
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone3) to gain \\icon(Score, 8).",
+        "⏳ Pay four \\icon(Stone3) to gain \\icon(Score, 8).",
         8
       ],
       [
-        "Instant \\icon(Instant): Gain \\icon(Score, 2) for each card in the discard pile of cost 5 or more.",
+        "⚡ Gain \\icon(Score, 2) for each card in the discard pile of cost 5 or more.",
         8
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a Dragon card, gain \\icon(Score, 2).",
+        "♾️ Whenever you discard a Dragon card, gain \\icon(Score, 2).",
         6
       ],
       [
-        "Active \\icon(Active): Pay four \\icon(Stone6) to gain \\icon(Score, 20).",
+        "⏳ Pay four \\icon(Stone6) to gain \\icon(Score, 20).",
         12
       ],
       [
-        "Instant \\icon(Instant): Return a Dragon card from the discard pile to your hand. It costs zero to summon this turn.",
+        "⚡ Return a Dragon card from the discard pile to your hand. It costs zero to summon this turn.",
         9
       ],
       [
-        "Passive \\icon(Permanent): Dragon cards in your hand cost one \\icon(Stone6) less to summon.",
+        "♾️ Dragon cards in your hand cost one \\icon(Stone6) less to summon.",
         9
       ],
       [
-        "Active \\icon(Active): Pay five \\icon(Stone6) to gain \\icon(Score, 25).",
+        "⏳ Pay five \\icon(Stone6) to gain \\icon(Score, 25).",
         12
       ],
       [
-        "Instant \\icon(Instant): Swap a Dragon card in your hand with any card in the discard pile.",
+        "⚡ Swap a Dragon card in your hand with any card in the discard pile.",
         6
       ],
       [
-        "Passive \\icon(Permanent): Whenever you draw a Dragon card, reveal it and gain \\icon(Score, 2).",
+        "♾️ Whenever you draw a Dragon card, reveal it and gain \\icon(Score, 2).",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to increase the cost of an opponent's card by one \\icon(Stone6).",
+        "⏳ Pay one \\icon(Stone6) to increase the cost of an opponent's card by one \\icon(Stone6).",
         8
       ],
       [
-        "Instant \\icon(Instant): Discard your hand and draw five cards. Gain \\icon(Score, 5).",
+        "⚡ Discard your hand and draw five cards. Gain \\icon(Score, 5).",
         9
       ],
       [
-        "Passive \\icon(Permanent): At the end of the round, if you have the highest cost card in your Area, earn \\icon(Score, 4).",
+        "♾️ At the end of the round, if you have the highest cost card in your Area, earn \\icon(Score, 4).",
         8
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to decrease the cost of a card in your hand by two \\icon(Stone6).",
+        "⏳ Pay one \\icon(Stone6) to decrease the cost of a card in your hand by two \\icon(Stone6).",
         9
       ],
       [
-        "Instant \\icon(Instant): Reveal the top three cards of the deck. Keep all Dragon cards and discard the rest.",
+        "⚡ Reveal the top three cards of the deck. Keep all Dragon cards and discard the rest.",
         6
       ],
       [
-        "Passive \\icon(Permanent): Whenever an opponent discards a Dragon card, you may add it to your hand.",
+        "⏳ Choose a player. They must choose and discard a card from their Area.",
         7
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to gain \\icon(Score, 5) and draw a card.",
+        "⏳ Pay one \\icon(Stone6) to gain \\icon(Score, 5) and draw a card.",
         8
       ],
       [
-        "Instant \\icon(Instant): If you have exactly one Dragon card in your hand, gain \\icon(Score, 8).",
+        "⚡ If you have exactly one Dragon card in your hand, gain \\icon(Score, 8).",
         6
       ],
       [
-        "Passive \\icon(Permanent): Dragon cards in your Area gain: 'Active \\icon(Active): Pay one \\icon(Stone6) to gain \\icon(Score, 5).'",
+        "♾️ Dragon cards in your Area gain: '⏳ Pay one \\icon(Stone6) to gain \\icon(Score, 5).'",
         10
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to view an opponent's hand and remove one card from it.",
+        "⏳ Pay one \\icon(Stone3) to look at the top three cards of the deck and put them back in any order.",
         9
       ],
       [
-        "Instant \\icon(Instant): Discard a Dragon card from your Area to draw three cards and gain \\icon(Score, 5).",
+        "⚡ Discard a Dragon card from your Area to draw three cards and gain \\icon(Score, 5).",
         9
       ],
       [
-        "Passive \\icon(Permanent): You may pay one \\icon(Stone6) to cancel an opponent's Active effect.",
+        "♾️ You may pay one \\icon(Stone6) to cancel an opponent's Active effect.",
         8
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to swap one of your \\icon(Stone3) for two \\icon(Stone6).",
+        "⏳ Pay one \\icon(Stone6) to swap one of your \\icon(Stone3) for two \\icon(Stone6).",
         7
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 0, gain \\icon(Score, 5).",
+        "⚡ Discard a card. If it has a cost of 0, gain \\icon(Score, 5).",
         5
       ],
       [
-        "Passive \\icon(Permanent): Whenever you discard a card, you may pay one \\icon(Stone6) to gain \\icon(Score, 3).",
+        "♾️ Whenever you discard a card, you may pay one \\icon(Stone6) to gain \\icon(Score, 3).",
         6
       ],
       [
-        "Active \\icon(Active): Pay one \\icon(Stone6) to change the family of a summoned card to Dragon.",
+        "⏳ Pay one \\icon(Stone6) to change the family of a summoned card to Dragon.",
         6
       ],
       [
-        "Instant \\icon(Instant): Discard a card. If it has a cost of 5 or more, gain \\icon(Score, 8).",
+        "⚡ Discard a card. If it has a cost of 5 or more, gain \\icon(Score, 8).",
         7
       ],
       [
-        "Passive \\icon(Permanent): You may summon Dragon cards even if your Area is full by removing an active card from the game.",
+        "♾️ You may summon Dragon cards even if your Area is full by removing an active card from the game.",
         8
       ]
     ]

@@ -318,7 +318,8 @@ export default function ComponentDesigner({ onShowArtImporter }) {
             brushSize,
             opacity: brushOpacity,
             fontSize,
-            textString
+            textString,
+            fontWeight
           });
         }
       }

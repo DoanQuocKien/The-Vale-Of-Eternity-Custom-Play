@@ -8,6 +8,9 @@ export default function FamilyDesigner() {
   const activePackId = useAppStore(state => state.activePackId);
   const saveFamily = useAppStore(state => state.saveFamily);
   const deleteFamily = useAppStore(state => state.deleteFamily);
+  const cards = useAppStore(state => state.cards);
+  const saveCard = useAppStore(state => state.saveCard);
+  const loadCards = useAppStore(state => state.loadCards);
 
   // Editor states
   const [editingFamily, setEditingFamily] = useState(null);
@@ -81,6 +84,9 @@ export default function FamilyDesigner() {
       return;
     }
 
+    const isRename = editingFamily && editingFamily.name && editingFamily.name !== name.trim();
+    const oldName = editingFamily?.name;
+
     const payload = {
       ...editingFamily,
       name: name.trim(),
@@ -91,6 +97,42 @@ export default function FamilyDesigner() {
     };
 
     const saved = await saveFamily(payload);
+
+    if (isRename && oldName) {
+      // Find all cards matching old family name or ID and update them
+      const updatedCards = cards.filter(c => c.family === oldName || c.family === saved.id);
+      for (const card of updatedCards) {
+        const updatedCard = { ...card, family: saved.id };
+        
+        // Update layout calibrations keys
+        if (updatedCard.layout) {
+          const newLayout = { ...updatedCard.layout };
+          for (const key of Object.keys(newLayout)) {
+            if (newLayout[key] && newLayout[key].families) {
+              const fams = { ...newLayout[key].families };
+              if (fams[oldName]) {
+                fams[saved.id] = fams[oldName];
+                delete fams[oldName];
+              }
+              newLayout[key] = { ...newLayout[key], families: fams };
+            }
+            if (newLayout[key] && newLayout[key].colors) {
+              const cols = { ...newLayout[key].colors };
+              if (cols[oldName]) {
+                cols[saved.id] = cols[oldName];
+                delete cols[oldName];
+              }
+              newLayout[key] = { ...newLayout[key], colors: cols };
+            }
+          }
+          updatedCard.layout = newLayout;
+        }
+
+        await saveCard(updatedCard);
+      }
+      await loadCards(activePackId);
+    }
+
     selectFamily(saved);
     alert('Family saved successfully!');
   };

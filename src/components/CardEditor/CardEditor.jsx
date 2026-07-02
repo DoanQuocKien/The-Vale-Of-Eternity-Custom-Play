@@ -2027,7 +2027,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                     <input
                       type="color"
                       value={layout.effect.bgColor ?? '#000000'}
-                      onChange={(e) => updateSetting('bgColor', e.target.value)}
+                      onChange={(e) => updateSetting('bgColor', e.target.value, 'effect')}
                       style={{
                         flex: 1,
                         height: '32px',
@@ -2044,7 +2044,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                       max="1"
                       step="0.05"
                       value={layout.effect.bgOpacity ?? 0.6}
-                      onChange={(e) => updateSetting('bgOpacity', parseFloat(e.target.value))}
+                      onChange={(e) => updateSetting('bgOpacity', parseFloat(e.target.value), 'effect')}
                       style={{ flex: 2 }}
                       title={`Opacity: ${layout.effect.bgOpacity ?? 0.6}`}
                     />
@@ -2063,7 +2063,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                       max="35"
                       step="0.5"
                       value={layout.effect.panelHeight ?? 8.5}
-                      onChange={(e) => updateSetting('panelHeight', parseFloat(e.target.value))}
+                      onChange={(e) => updateSetting('panelHeight', parseFloat(e.target.value), 'effect')}
                       style={{ width: '100%' }}
                     />
                   </div>
@@ -2078,7 +2078,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                       max="20"
                       step="0.5"
                       value={layout.effect.panelGap ?? 1.5}
-                      onChange={(e) => updateSetting('panelGap', parseFloat(e.target.value))}
+                      onChange={(e) => updateSetting('panelGap', parseFloat(e.target.value), 'effect')}
                       style={{ width: '100%' }}
                     />
                   </div>
@@ -2175,7 +2175,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                         max="20"
                         step="0.1"
                         value={layout.effect.fontSize ?? 3.8}
-                        onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))}
+                        onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value), 'effect')}
                         style={{ width: '100%' }}
                       />
                     </div>
@@ -2190,7 +2190,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                         max="8"
                         step="0.1"
                         value={layout.effect.borderRadius ?? 1.5}
-                        onChange={(e) => updateSetting('borderRadius', parseFloat(e.target.value))}
+                        onChange={(e) => updateSetting('borderRadius', parseFloat(e.target.value), 'effect')}
                         style={{ width: '100%' }}
                       />
                     </div>
@@ -2205,7 +2205,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                         max="50"
                         step="0.5"
                         value={layout.effect.textLeft ?? 10.0}
-                        onChange={(e) => updateSetting('textLeft', parseFloat(e.target.value))}
+                        onChange={(e) => updateSetting('textLeft', parseFloat(e.target.value), 'effect')}
                         style={{ width: '100%' }}
                       />
                     </div>
@@ -2220,7 +2220,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                         max="100"
                         step="1"
                         value={layout.effect.textWidth ?? 80}
-                        onChange={(e) => updateSetting('textWidth', parseInt(e.target.value))}
+                        onChange={(e) => updateSetting('textWidth', parseInt(e.target.value), 'effect')}
                         style={{ width: '100%' }}
                       />
                     </div>
