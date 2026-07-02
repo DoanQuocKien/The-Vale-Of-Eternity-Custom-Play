@@ -42,8 +42,13 @@ export default function App() {
   const handleTabChange = (targetTab) => {
     if (activeTab === targetTab) return;
     if (hasUnsavedChanges) {
+      const sourceName = 
+        activeTab === 'editor' ? 'Card Editor' :
+        activeTab === 'tokens' ? 'Token Designer' :
+        activeTab === 'components' ? 'Board Component Designer' :
+        'Designer';
       const confirmLeave = window.confirm(
-        "You have unsaved changes in the Card Editor. Are you sure you want to leave? Your changes will be lost."
+        `You have unsaved changes in the ${sourceName}. Are you sure you want to leave? Your changes will be lost.`
       );
       if (!confirmLeave) return;
       setHasUnsavedChanges(false);

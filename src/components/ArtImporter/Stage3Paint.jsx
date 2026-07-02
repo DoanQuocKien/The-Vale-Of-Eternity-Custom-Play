@@ -1,5 +1,5 @@
 import React from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Move, Square, Circle as CircleIcon, Type, Paintbrush, Eraser, Trash2, Check, Sliders } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Move, Square, Circle as CircleIcon, Type, Paintbrush, Eraser, Trash2, Check, Sliders, RefreshCw } from 'lucide-react';
 import ColorPickerPanel from './ColorPickerPanel.jsx'; // We'll extract ColorPickerPanel too!
 
 const Stage3Paint = ({
@@ -113,10 +113,11 @@ const Stage3Paint = ({
           </h3>
 
           {/* Tools Grid Selector */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.35rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem' }}>
             {[
               { id: 'brush', label: 'Brush', icon: <Paintbrush size={12} /> },
               { id: 'erase', label: 'Eraser', icon: <Eraser size={12} /> },
+              { id: 'restore', label: 'Restore Art', icon: <RefreshCw size={12} /> },
               { id: 'line', label: 'Line', icon: <span style={{ fontWeight: 800 }}>╱</span> },
               { id: 'rect', label: 'Rect', icon: <Square size={12} /> },
               { id: 'circle', label: 'Circle', icon: <CircleIcon size={12} /> },
@@ -232,9 +233,9 @@ const Stage3Paint = ({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.1rem' }}>
                   <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Font Weight (Thickness)</span>
-                  <span style={{ color: 'var(--color-primary)', fontWeight: fontWeight }}>{fontWeight}</span>
+                  <span style={{ color: 'var(--color-primary)', fontWeight: fontWeight * 10 }}>{fontWeight}</span>
                 </div>
-                <input type="range" min={100} max={900} step={100} value={fontWeight} onChange={(e) => setFontWeight(parseInt(e.target.value))} style={{ width: '100%' }} />
+                <input type="range" min={1} max={100} step={1} value={fontWeight} onChange={(e) => setFontWeight(parseInt(e.target.value))} style={{ width: '100%' }} />
               </div>
               <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>* Click canvas to place text</span>
             </div>

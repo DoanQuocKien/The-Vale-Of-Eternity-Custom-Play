@@ -200,10 +200,7 @@ export function drawShape(ctx, type, start, end, params) {
     if (fillEnabled) ctx.fill();
     if (strokeEnabled) ctx.stroke();
   } else if (type === 'text') {
-    let fw = fontWeight !== undefined ? fontWeight : 'bold';
-    if (typeof fw === 'number' && fw >= 1 && fw <= 100) {
-      fw = fw * 10;
-    }
+    const fw = fontWeight !== undefined ? (typeof fontWeight === 'number' && fontWeight <= 100 ? fontWeight * 10 : fontWeight) : 'light';
     ctx.font = `${fw} ${fontSize}px 'Outfit', 'Inter', sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

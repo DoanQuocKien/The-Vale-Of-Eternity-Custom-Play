@@ -109,7 +109,7 @@ export default function ArtImporter({
   const [fontSize, setFontSize] = useState(30);
   const [textString, setTextString] = useState('Creature');
   const [polygonPoints, setPolygonPoints] = useState([]);
-  const [fontWeight, setFontWeight] = useState(700);
+  const [fontWeight, setFontWeight] = useState(30);
   const [brushSize, setBrushSize] = useState(20);
 
   const isDrawingShape = useRef(false);
@@ -454,7 +454,7 @@ export default function ArtImporter({
       loadImageFromDataUrl(processedDataUrl).then(img => {
         editedProcessedCanvasRef.current = imageToCanvas(img, 1200);
       });
-      if (deskewedDataUrl && !isCreateMode) {
+      if (deskewedDataUrl) {
         loadImageFromDataUrl(deskewedDataUrl).then(img => {
           originalImgRef.current = img;
         });

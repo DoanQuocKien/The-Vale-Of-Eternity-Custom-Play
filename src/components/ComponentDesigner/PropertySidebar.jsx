@@ -514,13 +514,13 @@ const PropertySidebar = ({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'white' }}>
                       <span>Font Weight</span>
-                      <span style={{ fontWeight: fontWeight }}>{fontWeight}</span>
+                      <span style={{ fontWeight: fontWeight * 10 }}>{fontWeight}</span>
                     </div>
                     <input
                       type="range"
-                      min="100"
-                      max="900"
-                      step="100"
+                      min="1"
+                      max="100"
+                      step="1"
                       value={fontWeight}
                       onChange={(e) => setFontWeight(parseInt(e.target.value))}
                       style={{ width: '100%' }}

@@ -354,7 +354,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
   const [fontSize, setFontSize] = useState(60);
   const [textString, setTextString] = useState('Token');
   const [polygonPoints, setPolygonPoints] = useState([]);
-  const [fontWeight, setFontWeight] = useState(70);
+  const [fontWeight, setFontWeight] = useState(30);
 
   // Undo list
   const [undoList, setUndoList] = useState([]);
@@ -1648,7 +1648,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
                         <span>Font Weight (Thickness)</span>
-                        <span style={{ fontWeight: fontWeight * 10 }}>{fontWeight}</span>
+                        <span style={{ fontWeight: fontWeight }}>{fontWeight}</span>
                       </div>
                       <input
                         type="range"

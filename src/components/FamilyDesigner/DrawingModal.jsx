@@ -27,7 +27,7 @@ export default function DrawingModal({
   const [brushSize, setBrushSize] = useState(15);
   const [brushOpacity, setBrushOpacity] = useState(1);
   const [fontSize, setFontSize] = useState(36);
-  const [fontWeight, setFontWeight] = useState(70); // text thickness
+  const [fontWeight, setFontWeight] = useState(30); // text thickness
   const [textString, setTextString] = useState('Emblem');
   const [polygonPoints, setPolygonPoints] = useState([]);
 
@@ -800,7 +800,7 @@ export default function DrawingModal({
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
                           <span>Font Weight (Thickness)</span>
-                          <span style={{ fontWeight: fontWeight * 10 }}>{fontWeight}</span>
+                          <span style={{ fontWeight: fontWeight }}>{fontWeight}</span>
                         </div>
                         <input
                           type="range"

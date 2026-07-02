@@ -99,7 +99,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   const [brushOpacity, setBrushOpacity] = useState(1);
   const [fontSize, setFontSize] = useState(48);
   const [textString, setTextString] = useState('Text Label');
-  const [fontWeight, setFontWeight] = useState(700);
+  const [fontWeight, setFontWeight] = useState(30);
 
   // Drawing state tracking
   const isDrawing = useRef(false);

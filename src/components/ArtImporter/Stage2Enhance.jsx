@@ -223,14 +223,13 @@ const Stage2Enhance = ({
           const ragCards = [];
           for (let i = 0; i < 5; i++) {
             const card = await runPythonRandomCard();
-            if (card) {
-              ragCards.push({
-                name: card.name,
-                ability: card.effect,
-                cost: card.cost,
-                family: card.family
-              });
-            }
+            if (!card) break;
+            ragCards.push({
+              name: card.name,
+              ability: card.effect,
+              cost: card.cost,
+              family: card.family
+            });
           }
           if (ragCards.length > 0) {
             ideasQueue = ragCards;

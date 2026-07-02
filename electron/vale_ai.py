@@ -191,6 +191,8 @@ def enhance_lines(input_path, output_path):
 install_and_import('sentence_transformers')
 from sentence_transformers import SentenceTransformer, util
 
+_model = None
+
 # Family-grouped names for semantic synthesis aligned with game mechanics
 FAMILY_NAMES = {
     "Fire": [
@@ -839,7 +841,11 @@ def recommend_cards(card_json_str):
     import random
     
     try:
-        input_card = json.loads(card_json_str)
+        if os.path.exists(card_json_str):
+            with open(card_json_str, 'r', encoding='utf-8') as f:
+                input_card = json.load(f)
+        else:
+            input_card = json.loads(card_json_str)
     except Exception as e:
         return {"error": f"Invalid JSON inputs: {str(e)}"}
 

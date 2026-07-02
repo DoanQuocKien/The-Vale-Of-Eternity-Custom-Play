@@ -15,7 +15,7 @@ async function getPythonCommand() {
     return `"${window.NL_PATH}/bin/vale_ai.exe"`;
   } catch (e) {
     // Fall back to python script in dev mode
-    return `python "${window.NL_PATH}/electron/vale_ai.py"`;
+    return `python "electron/vale_ai.py"`;
   }
 }
 
@@ -61,8 +61,8 @@ export async function runPythonImageProcess(subcommand, inputDataUrl, onProgress
   }
 
   const timestamp = Date.now();
-  const tempInPath = `${window.NL_PATH}/temp_${subcommand}_in_${timestamp}.png`;
-  const tempOutPath = `${window.NL_PATH}/temp_${subcommand}_out_${timestamp}.png`;
+  const tempInPath = `./temp_${subcommand}_in_${timestamp}.png`;
+  const tempOutPath = `./temp_${subcommand}_out_${timestamp}.png`;
 
   try {
     onProgress?.(10);
@@ -108,81 +108,155 @@ export async function runPythonImageProcess(subcommand, inputDataUrl, onProgress
   }
 }
 
-/**
- * Execute a RAG recommendation query against the database of cards.
- * 
- * @param {object} cardData - Metadata of the designed card
- * @returns {Promise<object[]>} List of recommended synergistic cards
- */
+let cachedRagDb = null;
+
+const FAMILY_THEMES = {
+  Fire: ["Blaze", "Cinder", "Ember", "Flame", "Lava", "Magma", "Pyro", "Volcanic", "Ash", "Scorch"],
+  Water: ["Aquatic", "Coral", "Deepsea", "Glacier", "Mist", "River", "Sea", "Tidal", "Vapor", "Abyssal"],
+  Earth: ["Agate", "Ancient", "Basalt", "Bramble", "Canyon", "Earthquake", "Emerald", "Monolith", "Moss", "Obsidian", "Onyx", "Tectonic"],
+  Wind: ["Aether", "Astral", "Cloud", "Lightning", "Storm", "Typhoon", "Vortex", "Wind", "Zephyr", "Sky", "Gryphon"],
+  Dragon: ["Apex", "Archon", "Bone", "Dragon", "Drake", "Hydra", "Peak", "Wyrm", "Wyvern", "Zenith"]
+};
+
+async function getRagDatabase() {
+  if (cachedRagDb) return cachedRagDb;
+  try {
+    const res = await fetch('/rag_database.json');
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    cachedRagDb = await res.json();
+    return cachedRagDb;
+  } catch (err) {
+    console.error('Failed to load rag_database.json:', err);
+    return null;
+  }
+}
+
 export async function runPythonRecommendation(cardData) {
-  if (typeof window === 'undefined') {
-    return [];
+  const db = await getRagDatabase();
+  if (!db) return [];
+
+  const name = cardData.name || "";
+  const cost = parseInt(cardData.cost) || 0;
+  const family = cardData.family || "Water";
+  const effect = cardData.effect || "";
+
+  // Target input text components to look for keyword overlap
+  const inputText = `${name} ${effect}`.toLowerCase();
+  
+  const allFamilies = ["Fire", "Water", "Earth", "Wind", "Dragon"];
+  // Keep input family first, then others
+  const otherFamilies = allFamilies.filter(f => f !== family);
+  // Shuffle other families
+  for (let i = otherFamilies.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [otherFamilies[i], otherFamilies[j]] = [otherFamilies[j], otherFamilies[i]];
+  }
+  const conceptFamilies = [family, ...otherFamilies];
+
+  const finalOutput = [];
+
+  // Helper helper to token-match two texts
+  const getKeywords = (text) => {
+    if (!text) return [];
+    return text.toLowerCase()
+      .replace(/[^\w\s\u26a1\u23f3\u221e\\(\u00e0-\u00ff]/gi, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !['the', 'and', 'for', 'you', 'your', 'with', 'from', 'this', 'that', 'card', 'cards', 'whenever', 'gain', 'have'].includes(w));
+  };
+
+  const inputKeywords = getKeywords(inputText);
+
+  const calculateSimilarity = (candidateText) => {
+    const candKeywords = getKeywords(candidateText);
+    if (inputKeywords.length === 0 || candKeywords.length === 0) return 0.1; // small baseline
+    const s1 = new Set(inputKeywords);
+    let intersect = 0;
+    for (const kw of candKeywords) {
+      if (s1.has(kw)) intersect++;
+    }
+    return intersect / (s1.size + candKeywords.length - intersect);
+  };
+
+  for (let idx = 0; idx < 5; idx++) {
+    const conceptFamily = conceptFamilies[idx];
+    const namesPool = db.names[conceptFamily];
+    const abilitiesPool = db.abilities[conceptFamily];
+
+    // Score all names in pool against input text
+    const namesWithScores = namesPool.map(n => ({
+      name: n,
+      score: calculateSimilarity(n)
+    }));
+    namesWithScores.sort((a, b) => b.score - a.score);
+    const topNames = namesWithScores.slice(0, 5);
+    const chosenNameObj = topNames[Math.floor(Math.random() * topNames.length)];
+    const baseName = chosenNameObj.name;
+
+    // Score all abilities in pool
+    const abilitiesWithScores = abilitiesPool.map(ab => {
+      const [abText, abCost] = ab;
+      let score = calculateSimilarity(abText);
+      if (abCost === cost) score += 0.1;
+      return {
+        text: abText,
+        cost: abCost,
+        score: score
+      };
+    });
+    abilitiesWithScores.sort((a, b) => b.score - a.score);
+    const topAbilities = abilitiesWithScores.slice(0, 5);
+    const chosenAbObj = topAbilities[Math.floor(Math.random() * topAbilities.length)];
+
+    // Construct thematic name
+    const themes = FAMILY_THEMES[conceptFamily];
+    const themeWord = themes[Math.floor(Math.random() * themes.length)];
+    const noun = baseName.split(' ').pop();
+    const nameStr = `${themeWord} ${noun}`;
+
+    finalOutput.push({
+      name: nameStr,
+      cost: chosenAbObj.cost,
+      family: conceptFamily,
+      effect: chosenAbObj.text,
+      score: Math.round((chosenAbObj.score * 0.7 + chosenNameObj.score * 0.3) * 1000) / 1000
+    });
   }
 
-  try {
-    const response = await fetch("http://127.0.0.1:8009/recommend", {
-      method: "POST",
-      body: JSON.stringify(cardData)
-    });
-    
-    if (response.ok) {
-      return await response.json();
-    } else {
-      console.error('[PythonRunner recommend] Failed:', await response.text());
-      return [];
-    }
-  } catch (err) {
-    console.error('[PythonRunner recommend] Error:', err);
-    return [];
-  }
+  return finalOutput;
 }
 
-/**
- * Generate a dynamically synthesized random card concept from the RAG pools.
- * 
- * @returns {Promise<object|null>} The generated card concept
- */
 export async function runPythonRandomCard() {
-  if (typeof window === 'undefined') {
-    return null;
+  const db = await getRagDatabase();
+  if (!db) {
+    return {
+      name: "Ember Whelp",
+      cost: 3,
+      family: "Fire",
+      effect: "⚡ Gain \\icon(Score, 2)."
+    };
   }
 
-  try {
-    const response = await fetch("http://127.0.0.1:8009/random-card", {
-      method: "POST"
-    });
-    
-    if (response.ok) {
-      return await response.json();
-    } else {
-      console.error('[PythonRunner random-card] Failed:', await response.text());
-      return null;
-    }
-  } catch (err) {
-    console.error('[PythonRunner random-card] Error:', err);
-    return null;
-  }
+  const families = ["Fire", "Water", "Earth", "Wind", "Dragon"];
+  const family = families[Math.floor(Math.random() * families.length)];
+  const namesPool = db.names[family];
+  const abilitiesPool = db.abilities[family];
+
+  const baseName = namesPool[Math.floor(Math.random() * namesPool.length)];
+  const [abilityStr, costVal] = abilitiesPool[Math.floor(Math.random() * abilitiesPool.length)];
+
+  const themes = FAMILY_THEMES[family];
+  const themeWord = themes[Math.floor(Math.random() * themes.length)];
+  const noun = baseName.split(' ').pop();
+  const nameStr = `${themeWord} ${noun}`;
+
+  return {
+    name: nameStr,
+    cost: costVal,
+    family: family,
+    effect: abilityStr
+  };
 }
 
-// Global reference for server process
-let aiServerProcess = null;
-
-/**
- * Starts the Python AI sidecar in API server mode.
- */
 export async function startAIServer() {
-  if (typeof window === 'undefined' || !window.Neutralino) return;
-  try {
-    const runCmd = await getPythonCommand();
-    const cmd = `${runCmd} api-server`;
-    console.log("[PythonRunner] Starting AI background server...");
-    
-    // We launch it as a background process so it doesn't block the UI
-    window.Neutralino.os.execCommand(cmd, { background: true }).then((res) => {
-       aiServerProcess = res;
-    });
-    
-  } catch (err) {
-    console.error("[PythonRunner] Failed to start AI server:", err);
-  }
+  // Deprecated: Persistent Python background server is completely removed in favor of pure JS client-side loading.
 }
