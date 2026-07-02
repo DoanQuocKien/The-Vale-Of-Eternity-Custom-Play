@@ -548,7 +548,7 @@ const Stage2Enhance = ({
               borderRadius: '6px',
               border: '1px solid rgba(255,255,255,0.04)'
             }}>
-              {parseEffectText(currentIdea.ability)}
+              {parseEffectText(currentIdea.ability, [], customFamilies)}
             </div>
           </div>
         </div>

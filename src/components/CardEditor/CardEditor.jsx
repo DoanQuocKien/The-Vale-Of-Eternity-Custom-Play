@@ -498,7 +498,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               overflow: 'visible',
               flexShrink: 0
             }}>
-              {parseEffectText(text, tokens)}
+              {parseEffectText(text, tokens, families)}
             </div>
           </div>
 

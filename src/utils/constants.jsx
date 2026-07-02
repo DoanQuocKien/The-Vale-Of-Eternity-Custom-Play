@@ -241,7 +241,7 @@ export function getTimingIcon(line) {
   return { icon: null, text: cleanLine };
 }
 
-export function parseEffectText(text, tokens = []) {
+export function parseEffectText(text, tokens = [], families = []) {
   return (
     <span dangerouslySetInnerHTML={{
       __html: text.replace(/\\icon\((.*?)\)/g, (match, iconName) => {
@@ -266,8 +266,14 @@ export function parseEffectText(text, tokens = []) {
                   </span>`;
         }
 
-        // Check if this matches a custom token (case-insensitive, underscores == spaces)
+        // Check if this matches a custom family name (case-insensitive, underscores == spaces)
         const normalise = (s) => s.toLowerCase().replace(/[\s_]+/g, '_');
+        const matchedFamily = families.find(f => normalise(f.name) === normalise(parts[0]));
+        if (matchedFamily && matchedFamily.icon) {
+          return `<img src="${matchedFamily.icon}" style="height: 1.3em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain;" />`;
+        }
+
+        // Check if this matches a custom token (case-insensitive, underscores == spaces)
         const matchedToken = tokens.find(t => normalise(t.name) === normalise(parts[0]));
 
         if (matchedToken) {

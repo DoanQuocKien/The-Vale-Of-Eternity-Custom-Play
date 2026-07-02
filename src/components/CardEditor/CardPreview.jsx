@@ -84,7 +84,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
               overflow: 'visible',
               flexShrink: 0
             }}>
-              {parseEffectText(text, tokens)}
+              {parseEffectText(text, tokens, families)}
             </div>
           </div>
           {icon && (
