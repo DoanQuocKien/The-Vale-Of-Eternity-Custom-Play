@@ -841,8 +841,7 @@ def recommend_cards(card_json_str):
     try:
         input_card = json.loads(card_json_str)
     except Exception as e:
-        print(json.dumps({"error": f"Invalid JSON inputs: {str(e)}"}), flush=True)
-        return
+        return {"error": f"Invalid JSON inputs: {str(e)}"}
 
     name = input_card.get("name", "").strip()
     cost = int(input_card.get("cost", 0))
@@ -850,7 +849,10 @@ def recommend_cards(card_json_str):
     effect = input_card.get("effect", "").strip()
     
     print("Loading local semantic RAG embedding model...", file=sys.stderr, flush=True)
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+    global _model
+    if _model is None:
+        _model = SentenceTransformer('all-MiniLM-L6-v2')
+    model = _model
     
     input_text = f"{name} ({family}): cost {cost}. {effect}"
     input_embedding = model.encode(input_text, convert_to_numpy=True)
@@ -876,6 +878,14 @@ def recommend_cards(card_json_str):
     for idx in range(5):
         concept_family = concept_families[idx]
         
+        # Load database files inside function call to get dynamic updates
+        db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'public', 'rag_database.json')
+        with open(db_path, 'r', encoding='utf-8') as f:
+            _rag_db = json.load(f)
+
+        FAMILY_NAMES = _rag_db['names']
+        FAMILY_ABILITIES = _rag_db['abilities']
+
         names_pool = FAMILY_NAMES[concept_family]
         abilities_pool = FAMILY_ABILITIES[concept_family]
         
@@ -910,12 +920,20 @@ def recommend_cards(card_json_str):
         }
         final_output.append(concept_card)
         
-    print(json.dumps(final_output, indent=2, ensure_ascii=False), flush=True)
+    return final_output
 
 def generate_random_card():
     import re
     import random
     
+    # Load database files inside function call to get dynamic updates
+    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'public', 'rag_database.json')
+    with open(db_path, 'r', encoding='utf-8') as f:
+        _rag_db = json.load(f)
+
+    FAMILY_NAMES = _rag_db['names']
+    FAMILY_ABILITIES = _rag_db['abilities']
+
     all_families = ["Fire", "Water", "Earth", "Wind", "Dragon"]
     family = random.choice(all_families)
     names_pool = FAMILY_NAMES[family]
@@ -942,11 +960,59 @@ def generate_random_card():
         "family": family,
         "effect": ability_str
     }
-    
-    print(json.dumps(output_card, indent=2, ensure_ascii=False), flush=True)
+    return output_card
 
 
 # ── MAIN ROUTING CLI ──
+
+import http.server
+import socketserver
+import urllib.parse
+import threading
+
+class AIHandler(http.server.SimpleHTTPRequestHandler):
+    def do_POST(self):
+        if self.path == '/recommend':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            card_json = post_data.decode('utf-8')
+            try:
+                rec = recommend_cards(card_json)
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(rec, ensure_ascii=False).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(str(e).encode('utf-8'))
+        elif self.path == '/random-card':
+            try:
+                card = generate_random_card()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(card, ensure_ascii=False).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(str(e).encode('utf-8'))
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+def run_server(port=8009):
+    # Pre-load the model before starting the server to avoid lazy loading
+    print(f"Pre-loading RAG model on port {port}...", flush=True)
+    global _model
+    if _model is None:
+        _model = SentenceTransformer('all-MiniLM-L6-v2')
+    print("Model loaded. Starting server...", flush=True)
+    with socketserver.TCPServer(("", port), AIHandler) as httpd:
+        print(f"Serving AI sidecar API at port {port}", flush=True)
+        httpd.serve_forever()
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python vale_ai.py <subcommand> [args...]", flush=True)
@@ -954,7 +1020,10 @@ if __name__ == "__main__":
 
     subcommand = sys.argv[1]
 
-    if subcommand == "remove-bg":
+    if subcommand == "api-server":
+        run_server(8009)
+
+    elif subcommand == "remove-bg":
         if len(sys.argv) < 4:
             print("Usage: python vale_ai.py remove-bg <input> <output>", flush=True)
             sys.exit(1)
@@ -982,10 +1051,12 @@ if __name__ == "__main__":
         if len(sys.argv) < 3:
             print("Usage: python vale_ai.py recommend <card_json>", flush=True)
             sys.exit(1)
-        recommend_cards(sys.argv[2])
+        res = recommend_cards(sys.argv[2])
+        print(json.dumps(res, indent=2, ensure_ascii=False), flush=True)
 
     elif subcommand == "random-card":
-        generate_random_card()
+        res = generate_random_card()
+        print(json.dumps(res, indent=2, ensure_ascii=False), flush=True)
 
     else:
         print(f"Unknown subcommand: {subcommand}", flush=True)

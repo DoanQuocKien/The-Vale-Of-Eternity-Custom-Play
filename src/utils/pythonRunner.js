@@ -115,20 +115,20 @@ export async function runPythonImageProcess(subcommand, inputDataUrl, onProgress
  * @returns {Promise<object[]>} List of recommended synergistic cards
  */
 export async function runPythonRecommendation(cardData) {
-  if (typeof window === 'undefined' || !window.Neutralino) {
+  if (typeof window === 'undefined') {
     return [];
   }
 
   try {
-    const runCmd = await getPythonCommand();
-    const jsonStr = JSON.stringify(cardData).replace(/"/g, '\\"');
-    const cmd = `${runCmd} recommend "${jsonStr}"`;
+    const response = await fetch("http://127.0.0.1:8009/recommend", {
+      method: "POST",
+      body: JSON.stringify(cardData)
+    });
     
-    const result = await window.Neutralino.os.execCommand(cmd);
-    if (result.exitCode === 0) {
-      return JSON.parse(result.stdOut.trim());
+    if (response.ok) {
+      return await response.json();
     } else {
-      console.error('[PythonRunner recommend] Failed:', result.stdErr);
+      console.error('[PythonRunner recommend] Failed:', await response.text());
       return [];
     }
   } catch (err) {
@@ -143,23 +143,46 @@ export async function runPythonRecommendation(cardData) {
  * @returns {Promise<object|null>} The generated card concept
  */
 export async function runPythonRandomCard() {
-  if (typeof window === 'undefined' || !window.Neutralino) {
+  if (typeof window === 'undefined') {
     return null;
   }
 
   try {
-    const runCmd = await getPythonCommand();
-    const cmd = `${runCmd} random-card`;
+    const response = await fetch("http://127.0.0.1:8009/random-card", {
+      method: "POST"
+    });
     
-    const result = await window.Neutralino.os.execCommand(cmd);
-    if (result.exitCode === 0) {
-      return JSON.parse(result.stdOut.trim());
+    if (response.ok) {
+      return await response.json();
     } else {
-      console.error('[PythonRunner random-card] Failed:', result.stdErr);
+      console.error('[PythonRunner random-card] Failed:', await response.text());
       return null;
     }
   } catch (err) {
     console.error('[PythonRunner random-card] Error:', err);
     return null;
+  }
+}
+
+// Global reference for server process
+let aiServerProcess = null;
+
+/**
+ * Starts the Python AI sidecar in API server mode.
+ */
+export async function startAIServer() {
+  if (typeof window === 'undefined' || !window.Neutralino) return;
+  try {
+    const runCmd = await getPythonCommand();
+    const cmd = `${runCmd} api-server`;
+    console.log("[PythonRunner] Starting AI background server...");
+    
+    // We launch it as a background process so it doesn't block the UI
+    window.Neutralino.os.execCommand(cmd, { background: true }).then((res) => {
+       aiServerProcess = res;
+    });
+    
+  } catch (err) {
+    console.error("[PythonRunner] Failed to start AI server:", err);
   }
 }

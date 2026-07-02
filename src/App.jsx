@@ -9,6 +9,7 @@ import TokenDesigner from './components/TokenDesigner/TokenDesigner.jsx';
 import ComponentDesigner from './components/ComponentDesigner/ComponentDesigner.jsx';
 import { useAppStore } from './store/useAppStore.js';
 import { RefreshCw } from 'lucide-react';
+import { startAIServer } from './utils/pythonRunner.js';
 import { MOCK_PRESETS, DEFAULT_LAYOUT } from './utils/constants.jsx';
 
 export default function App() {
@@ -51,6 +52,7 @@ export default function App() {
 
   useEffect(() => {
     initializeApp();
+    startAIServer();
   }, [initializeApp]);
 
   const handleOpenPdfExport = (cards, packName) => {
