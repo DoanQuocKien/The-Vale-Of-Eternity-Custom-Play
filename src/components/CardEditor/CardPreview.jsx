@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAppStore } from '../../store/useAppStore.js';
 import {
   getResolvedElementLayout,
   getPriceColor,
@@ -8,15 +9,31 @@ import {
 } from '../../utils/constants.jsx';
 
 const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
-  const { name, cost, family, credit, effect, artImageData, layout } = card;
+  const { name, cost, family, credit, effect, artImageData, layout, tokenOverlays = [] } = card;
   const cardLayout = layout || defaultLayout;
+
+  const tokens = useAppStore(state => state.tokens);
+  const families = useAppStore(state => state.families);
+
+  const customFamily = families.find(fam => fam.id === family || fam.name === family);
 
   const resolvedPriceTL = getResolvedElementLayout('priceTL', family, cardLayout);
   const resolvedPriceBR = getResolvedElementLayout('priceBR', family, cardLayout);
   const resolvedCredit = getResolvedElementLayout('credit', family, cardLayout);
 
-  const priceColorTL = getPriceColor('priceTL', family, cardLayout);
-  const priceColorBR = getPriceColor('priceBR', family, cardLayout);
+  const rawPriceColorTL = getPriceColor('priceTL', family, cardLayout);
+  const rawPriceColorBR = getPriceColor('priceBR', family, cardLayout);
+  const rawCreditColor = getPriceColor('credit', family, cardLayout);
+
+  const priceColorTL = (rawPriceColorTL === '#ffffff' && customFamily) ? customFamily.primaryColor : rawPriceColorTL;
+  const priceColorBR = (rawPriceColorBR === '#ffffff' && customFamily) ? customFamily.primaryColor : rawPriceColorBR;
+  const creditColor = (rawCreditColor === '#ffffff' && customFamily) ? (customFamily.secondaryColor || customFamily.primaryColor) : rawCreditColor;
+
+  const bgSrc = customFamily
+    ? (customFamily.bgArt || getBackgroundPath('Water'))
+    : getBackgroundPath(family);
+
+  const familyColor = customFamily ? customFamily.primaryColor : `var(--family-${family.toLowerCase()})`;
 
   const renderStaticEffectPanels = () => {
     const lines = (effect || '').split('\n');
@@ -26,9 +43,9 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
 
     const panelHeight = cardLayout.effect.panelHeight ?? 8.5;
     const panelGap = cardLayout.effect.panelGap ?? 1.5;
-    const textLeft = cardLayout.effect.textLeft ?? 0;
+    const textLeft = cardLayout.effect.textLeft ?? 10.0;
     const textTop = cardLayout.effect.textTop ?? 1.5;
-    const textWidth = cardLayout.effect.textWidth ?? 100;
+    const textWidth = cardLayout.effect.textWidth ?? 80;
     const textHeight = cardLayout.effect.textHeight ?? 70;
     const textAlign = cardLayout.effect.textAlign ?? 'left';
 
@@ -51,7 +68,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
             fontSize: `${cardLayout.effect.fontSize}cqw`,
             fontFamily: 'var(--font-effect)',
             borderRadius: `${cardLayout.effect.borderRadius}cqw`,
-            borderLeft: `2.5px solid var(--family-${family.toLowerCase()})`,
+            borderLeft: `2.5px solid ${familyColor}`,
             boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
             position: 'relative',
             boxSizing: 'border-box',
@@ -67,7 +84,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
               overflow: 'visible',
               flexShrink: 0
             }}>
-              {parseEffectText(text)}
+              {parseEffectText(text, tokens)}
             </div>
           </div>
           {icon && (
@@ -106,7 +123,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
       }}
     >
       <img
-        src={getBackgroundPath(family)}
+        src={bgSrc}
         alt="Background"
         style={{
           width: '100%',
@@ -133,6 +150,53 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
           }}
         />
       )}
+
+      {/* Token Overlays rendering */}
+      {tokenOverlays.map(ov => {
+        const tok = tokens.find(t => t.id === ov.tokenId);
+        const srcImage = tok?.croppedDataUrl || tok?.imageDataUrl;
+        if (!tok || !srcImage) return null;
+        
+        const bboxW = tok.bbox && typeof tok.bbox.w === 'number' ? tok.bbox.w : null;
+        const bboxH = tok.bbox && typeof tok.bbox.h === 'number' ? tok.bbox.h : null;
+        const bw = bboxW !== null ? bboxW : (tok.canvasW || 1728);
+        const bh = bboxH !== null ? bboxH : (tok.canvasH || 2414);
+
+        let aspect = 1728 / 2414;
+        if (bw > 0 && bh > 0) {
+          aspect = bw / bh;
+        }
+
+        const overlaySize = ov.size && !isNaN(ov.size) ? ov.size : 15;
+        const cx = ov.cx && !isNaN(ov.cx) ? ov.cx : 50;
+        const cy = ov.cy && !isNaN(ov.cy) ? ov.cy : 50;
+
+        return (
+          <div
+            key={ov.instanceId}
+            style={{
+              position: 'absolute',
+              left: `${cx}%`,
+              top: `${cy}%`,
+              width: `${overlaySize}cqw`,
+              height: `${overlaySize / aspect}cqw`,
+              transform: 'translate(-50%, -50%)',
+              zIndex: 1,
+              pointerEvents: 'none'
+            }}
+          >
+            <img
+              src={srcImage}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }}
+            />
+          </div>
+        );
+      })}
 
       {/* Everything Else (Name, Effect, Credit) at zIndex: 1 */}
       <div style={{
@@ -172,7 +236,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
         width: `${resolvedCredit.width}%`,
         fontSize: `${resolvedCredit.fontSize}cqw`,
         fontFamily: 'var(--font-credit)',
-        color: getPriceColor('credit', family, cardLayout),
+        color: creditColor,
         textAlign: 'center',
         transform: 'translate(0, -50%)',
         zIndex: 1,
@@ -228,10 +292,8 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
       </div>
 
       {/* Family Emblem - Top-Left at zIndex: 4 */}
-      <img
-        src={`./img/TextIcon/${family}.png`}
-        alt={`${family} Emblem TL`}
-        style={{
+      {customFamily && !customFamily.icon ? (
+        <div style={{
           position: 'absolute',
           left: '8.45%',
           top: '6.46%',
@@ -240,17 +302,42 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
           transform: 'translate(-50%, -50%)',
           zIndex: 4,
           borderRadius: '50%',
-          border: '1.5px solid rgba(0, 0, 0, 0.3)',
-          boxSizing: 'border-box',
+          border: '1.5px solid white',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+          background: customFamily.primaryColor,
+          color: 'white',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '5cqw',
           pointerEvents: 'none'
-        }}
-      />
+        }}>
+          {customFamily.name.charAt(0).toUpperCase()}
+        </div>
+      ) : (
+        <img
+          src={customFamily?.icon || `./img/TextIcon/${family}.png`}
+          alt={`${family} Emblem TL`}
+          style={{
+            position: 'absolute',
+            left: '8.45%',
+            top: '6.46%',
+            width: '11.91cqw',
+            height: '11.91cqw',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 4,
+            borderRadius: '50%',
+            border: '1.5px solid rgba(0, 0, 0, 0.3)',
+            boxSizing: 'border-box',
+            pointerEvents: 'none'
+          }}
+        />
+      )}
 
       {/* Family Emblem - Bottom-Right at zIndex: 4 */}
-      <img
-        src={`./img/TextIcon/${family}.png`}
-        alt={`${family} Emblem BR`}
-        style={{
+      {customFamily && !customFamily.icon ? (
+        <div style={{
           position: 'absolute',
           left: '90.97%',
           top: '93.54%',
@@ -259,11 +346,38 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
           transform: 'translate(-50%, -50%)',
           zIndex: 4,
           borderRadius: '50%',
-          border: '1.5px solid rgba(0, 0, 0, 0.3)',
-          boxSizing: 'border-box',
+          border: '1.5px solid white',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+          background: customFamily.primaryColor,
+          color: 'white',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '4.5cqw',
           pointerEvents: 'none'
-        }}
-      />
+        }}>
+          {customFamily.name.charAt(0).toUpperCase()}
+        </div>
+      ) : (
+        <img
+          src={customFamily?.icon || `./img/TextIcon/${family}.png`}
+          alt={`${family} Emblem BR`}
+          style={{
+            position: 'absolute',
+            left: '90.97%',
+            top: '93.54%',
+            width: '9.84cqw',
+            height: '9.84cqw',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 4,
+            borderRadius: '50%',
+            border: '1.5px solid rgba(0, 0, 0, 0.3)',
+            boxSizing: 'border-box',
+            pointerEvents: 'none'
+          }}
+        />
+      )}
     </div>
   );
 });

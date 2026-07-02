@@ -1,7 +1,7 @@
 import { MOCK_PRESETS, DEFAULT_LAYOUT } from '../utils/constants.jsx';
 
 const DB_NAME = 'ValeOfEternityDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export function openDB() {
   return new Promise((resolve, reject) => {
@@ -22,6 +22,10 @@ export function openDB() {
       if (!db.objectStoreNames.contains('components')) {
         const componentStore = db.createObjectStore('components', { keyPath: 'id' });
         componentStore.createIndex('packId', 'packId', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('families')) {
+        const familyStore = db.createObjectStore('families', { keyPath: 'id' });
+        familyStore.createIndex('packId', 'packId', { unique: false });
       }
     };
     request.onsuccess = (e) => resolve(e.target.result);
@@ -56,7 +60,7 @@ export function dbSavePack(pack) {
 export function dbDeletePack(packId) {
   return openDB().then(db => {
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['packs', 'cards', 'tokens', 'components'], 'readwrite');
+      const transaction = db.transaction(['packs', 'cards', 'tokens', 'components', 'families'], 'readwrite');
       
       // Delete pack
       transaction.objectStore('packs').delete(packId);
@@ -96,9 +100,21 @@ export function dbDeletePack(packId) {
           cursor.continue();
         }
       };
+
+      // Delete all custom families in that pack
+      const familyStore = transaction.objectStore('families');
+      const familyIndex = familyStore.index('packId');
+      const familyRequest = familyIndex.openCursor(IDBKeyRange.only(packId));
+      familyRequest.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
       
       transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
+      transaction.onerror = (e) => reject(e.target.error);
     });
   });
 }
@@ -243,4 +259,41 @@ export async function seedDefaultData() {
       await dbSaveCard(card);
     }
   }
+}
+
+export function dbGetFamilies(packId) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('families', 'readonly');
+      const store = transaction.objectStore('families');
+      const index = store.index('packId');
+      const request = index.getAll(IDBKeyRange.only(packId));
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+export function dbSaveFamily(family) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('families', 'readwrite');
+      const store = transaction.objectStore('families');
+      const request = store.put(family);
+      request.onsuccess = () => resolve(family);
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+export function dbDeleteFamily(familyId) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('families', 'readwrite');
+      const store = transaction.objectStore('families');
+      const request = store.delete(familyId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  });
 }

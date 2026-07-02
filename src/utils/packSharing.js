@@ -2,14 +2,16 @@ import {
   dbGetCards,
   dbGetTokens,
   dbGetComponents,
+  dbGetFamilies,
   dbSavePack,
   dbSaveCard,
   dbSaveToken,
-  dbSaveComponent
+  dbSaveComponent,
+  dbSaveFamily
 } from '../services/db.js';
 
 /**
- * Compiles pack, cards, tokens, and components into a single JSON object.
+ * Compiles pack, cards, tokens, components, and custom families into a single JSON object.
  * @param {Object} pack The pack object from IndexedDB
  * @returns {Promise<string>} Serialized JSON string
  */
@@ -17,9 +19,10 @@ export async function serializePack(pack) {
   const cards = await dbGetCards(pack.id);
   const tokens = await dbGetTokens(pack.id);
   const components = await dbGetComponents(pack.id);
+  const families = await dbGetFamilies(pack.id);
 
   const packData = {
-    version: '1.3.0',
+    version: '1.4.0',
     pack: {
       id: pack.id,
       name: pack.name,
@@ -27,7 +30,8 @@ export async function serializePack(pack) {
     },
     cards,
     tokens,
-    components
+    components,
+    families
   };
 
   return JSON.stringify(packData, null, 2);
@@ -55,7 +59,7 @@ export function downloadPackFile(packName, serializedJson) {
 /**
  * Parses and processes the imported pack file, re-mapping all IDs to avoid collisions.
  * @param {string} fileContent The JSON string content of the imported file
- * @returns {Object} The processed pack, cards, tokens, and components
+ * @returns {Object} The processed pack, cards, tokens, components, and families
  */
 export function processImportedPack(fileContent) {
   let packData;
@@ -82,8 +86,22 @@ export function processImportedPack(fileContent) {
 
   const tokenIdMap = {};
   const cardIdMap = {};
+  const familyIdMap = {};
 
-  // 1. Remap Tokens
+  // 1. Remap Families
+  const importedFamilies = (packData.families || []).map((family, index) => {
+    const newFamilyId = `family-${timestamp}-${index}`;
+    familyIdMap[family.id] = newFamilyId;
+    return {
+      ...family,
+      id: newFamilyId,
+      packId: newPackId,
+      createdAt: timestamp,
+      updatedAt: timestamp
+    };
+  });
+
+  // 2. Remap Tokens
   const importedTokens = (packData.tokens || []).map((token, index) => {
     const newTokenId = `token-${timestamp}-${index}`;
     tokenIdMap[token.id] = newTokenId;
@@ -96,10 +114,16 @@ export function processImportedPack(fileContent) {
     };
   });
 
-  // 2. Remap Cards
+  // 3. Remap Cards
   const importedCards = (packData.cards || []).map((card, index) => {
     const newCardId = `card-${timestamp}-${index}`;
     cardIdMap[card.id] = newCardId;
+
+    // Rewrite family reference if it's custom
+    let cardFamily = card.family;
+    if (familyIdMap[cardFamily]) {
+      cardFamily = familyIdMap[cardFamily];
+    }
 
     // Rewrite effect text references to tokens (e.g. \icon(token-xxxx))
     let effectText = card.effectText || '';
@@ -126,6 +150,7 @@ export function processImportedPack(fileContent) {
       ...card,
       id: newCardId,
       packId: newPackId,
+      family: cardFamily,
       effectText,
       tokens: newCardTokens,
       createdAt: timestamp,
@@ -133,7 +158,7 @@ export function processImportedPack(fileContent) {
     };
   });
 
-  // 3. Remap Components
+  // 4. Remap Components
   const importedComponents = (packData.components || []).map((comp, index) => {
     const newCompId = `component-${timestamp}-${index}`;
 
@@ -165,7 +190,8 @@ export function processImportedPack(fileContent) {
     pack: importedPack,
     cards: importedCards,
     tokens: importedTokens,
-    components: importedComponents
+    components: importedComponents,
+    families: importedFamilies
   };
 }
 
@@ -174,10 +200,17 @@ export function processImportedPack(fileContent) {
  * @param {Object} importedData Output of processImportedPack
  */
 export async function saveImportedPack(importedData) {
-  const { pack, cards, tokens, components } = importedData;
+  const { pack, cards, tokens, components, families } = importedData;
 
   // Save pack metadata
   await dbSavePack(pack);
+
+  // Save families
+  if (families) {
+    for (const family of families) {
+      await dbSaveFamily(family);
+    }
+  }
 
   // Save tokens
   for (const token of tokens) {

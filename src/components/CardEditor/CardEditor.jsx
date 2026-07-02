@@ -24,6 +24,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   const activeCard = useAppStore(state => state.activeCard);
   const setActiveCard = useAppStore(state => state.setActiveCard);
   const tokens = useAppStore(state => state.tokens);
+  const families = useAppStore(state => state.families);
 
   const [loadedCardId, setLoadedCardId] = useState(null);
   const hasUnsavedChanges = useAppStore(state => state.hasUnsavedChanges);
@@ -454,11 +455,14 @@ const CardEditor = ({ onShowArtImporter }) => {
 
     const panelHeight = layout.effect.panelHeight ?? 8.5;
     const panelGap = layout.effect.panelGap ?? 1.5;
-    const textLeft = layout.effect.textLeft ?? 0;
+    const textLeft = layout.effect.textLeft ?? 10.0;
     const textTop = layout.effect.textTop ?? 1.5;
-    const textWidth = layout.effect.textWidth ?? 100;
+    const textWidth = layout.effect.textWidth ?? 80;
     const textHeight = layout.effect.textHeight ?? 70;
     const textAlign = layout.effect.textAlign ?? 'left';
+
+    const activeFamily = families.find(fam => fam.id === backgroundFamily || fam.name === backgroundFamily);
+    const panelFamilyColor = activeFamily ? activeFamily.primaryColor : `var(--family-${backgroundFamily.toLowerCase()})`;
 
     return lines.map((line, idx) => {
       if (!line.trim()) return null;
@@ -480,7 +484,7 @@ const CardEditor = ({ onShowArtImporter }) => {
             fontSize: `${layout.effect.fontSize}cqw`,
             fontFamily: 'var(--font-effect)',
             borderRadius: `${layout.effect.borderRadius}cqw`,
-            borderLeft: `2.5px solid var(--family-${backgroundFamily.toLowerCase()})`,
+            borderLeft: `2.5px solid ${panelFamilyColor}`,
             boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
             position: 'relative',
             boxSizing: 'border-box',
@@ -532,6 +536,22 @@ const CardEditor = ({ onShowArtImporter }) => {
   const resolvedPriceBR = getResolvedElementLayout('priceBR', backgroundFamily, layout);
   const resolvedCredit = getResolvedElementLayout('credit', backgroundFamily, layout);
   const resolvedSelected = getResolvedElementLayout(selectedElement, backgroundFamily, layout);
+
+  const customFamily = families.find(fam => fam.id === backgroundFamily || fam.name === backgroundFamily);
+
+  const rawPriceColorTL = getPriceColor('priceTL', backgroundFamily, layout);
+  const rawPriceColorBR = getPriceColor('priceBR', backgroundFamily, layout);
+  const rawCreditColor = getPriceColor('credit', backgroundFamily, layout);
+
+  const priceColorTL = (rawPriceColorTL === '#ffffff' && customFamily) ? customFamily.primaryColor : rawPriceColorTL;
+  const priceColorBR = (rawPriceColorBR === '#ffffff' && customFamily) ? customFamily.primaryColor : rawPriceColorBR;
+  const creditColor = (rawCreditColor === '#ffffff' && customFamily) ? (customFamily.secondaryColor || customFamily.primaryColor) : rawCreditColor;
+
+  const bgSrc = customFamily
+    ? (customFamily.bgArt || getBackgroundPath('Water'))
+    : getBackgroundPath(backgroundFamily);
+
+  const familyColor = customFamily ? customFamily.primaryColor : `var(--family-${backgroundFamily.toLowerCase()})`;
 
   return (
     <div style={{
@@ -613,7 +633,7 @@ const CardEditor = ({ onShowArtImporter }) => {
           }}
         >
           <img
-            src={getBackgroundPath(backgroundFamily)}
+            src={bgSrc}
             alt="Card Background"
             style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', zIndex: 0 }}
           />
@@ -756,7 +776,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               width: `${resolvedCredit.width}%`,
               fontSize: `${resolvedCredit.fontSize}cqw`,
               fontFamily: 'var(--font-credit)',
-              color: getPriceColor('credit', backgroundFamily, layout),
+              color: creditColor,
               textAlign: 'center',
               cursor: 'move',
               userSelect: 'none',
@@ -795,7 +815,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               top: `${resolvedPriceTL.top}%`,
               fontSize: `${resolvedPriceTL.fontSize}cqw`,
               fontFamily: 'var(--font-price)',
-              color: getPriceColor('priceTL', backgroundFamily, layout),
+              color: priceColorTL,
               lineHeight: 1,
               cursor: 'move',
               userSelect: 'none',
@@ -818,7 +838,7 @@ const CardEditor = ({ onShowArtImporter }) => {
               top: `${resolvedPriceBR.top}%`,
               fontSize: `${resolvedPriceBR.fontSize}cqw`,
               fontFamily: 'var(--font-price)',
-              color: getPriceColor('priceBR', backgroundFamily, layout),
+              color: priceColorBR,
               lineHeight: 1,
               cursor: 'move',
               userSelect: 'none',
@@ -834,10 +854,8 @@ const CardEditor = ({ onShowArtImporter }) => {
           </div>
 
           {/* Family Emblem - Top-Left at zIndex: 4 */}
-          <img
-            src={`./img/TextIcon/${backgroundFamily}.png`}
-            alt={`${backgroundFamily} Emblem TL`}
-            style={{
+          {customFamily && !customFamily.icon ? (
+            <div style={{
               position: 'absolute',
               left: '8.45%',
               top: '6.46%',
@@ -846,17 +864,43 @@ const CardEditor = ({ onShowArtImporter }) => {
               transform: 'translate(-50%, -50%)',
               zIndex: 4,
               borderRadius: '50%',
-              border: '1.5px solid rgba(0, 0, 0, 0.3)',
-              boxSizing: 'border-box',
-              pointerEvents: 'none'
-            }}
-          />
+              border: '1.5px solid white',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+              background: customFamily.primaryColor,
+              color: 'white',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '5cqw',
+              pointerEvents: 'none',
+              boxSizing: 'border-box'
+            }}>
+              {customFamily.name.charAt(0).toUpperCase()}
+            </div>
+          ) : (
+            <img
+              src={customFamily?.icon || `./img/TextIcon/${backgroundFamily}.png`}
+              alt={`${backgroundFamily} Emblem TL`}
+              style={{
+                position: 'absolute',
+                left: '8.45%',
+                top: '6.46%',
+                width: '11.91cqw',
+                height: '11.91cqw',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 4,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(0, 0, 0, 0.3)',
+                boxSizing: 'border-box',
+                pointerEvents: 'none'
+              }}
+            />
+          )}
 
           {/* Family Emblem - Bottom-Right at zIndex: 4 */}
-          <img
-            src={`./img/TextIcon/${backgroundFamily}.png`}
-            alt={`${backgroundFamily} Emblem BR`}
-            style={{
+          {customFamily && !customFamily.icon ? (
+            <div style={{
               position: 'absolute',
               left: '90.97%',
               top: '93.54%',
@@ -865,11 +909,39 @@ const CardEditor = ({ onShowArtImporter }) => {
               transform: 'translate(-50%, -50%)',
               zIndex: 4,
               borderRadius: '50%',
-              border: '1.5px solid rgba(0, 0, 0, 0.3)',
-              boxSizing: 'border-box',
-              pointerEvents: 'none'
-            }}
-          />
+              border: '1.5px solid white',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+              background: customFamily.primaryColor,
+              color: 'white',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '4.5cqw',
+              pointerEvents: 'none',
+              boxSizing: 'border-box'
+            }}>
+              {customFamily.name.charAt(0).toUpperCase()}
+            </div>
+          ) : (
+            <img
+              src={customFamily?.icon || `./img/TextIcon/${backgroundFamily}.png`}
+              alt={`${backgroundFamily} Emblem BR`}
+              style={{
+                position: 'absolute',
+                left: '90.97%',
+                top: '93.54%',
+                width: '9.84cqw',
+                height: '9.84cqw',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 4,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(0, 0, 0, 0.3)',
+                boxSizing: 'border-box',
+                pointerEvents: 'none'
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -1068,6 +1140,9 @@ const CardEditor = ({ onShowArtImporter }) => {
                 >
                   {['Fire', 'Water', 'Earth', 'Wind', 'Dragon'].map(f => (
                     <option key={f} value={f}>{f}</option>
+                  ))}
+                  {families.map(fam => (
+                    <option key={fam.id} value={fam.id}>{fam.name}</option>
                   ))}
                 </select>
               </div>
@@ -2131,6 +2206,21 @@ const CardEditor = ({ onShowArtImporter }) => {
                         step="0.5"
                         value={layout.effect.textLeft ?? 10.0}
                         onChange={(e) => updateSetting('textLeft', parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        <span>Text Width (%)</span>
+                        <span>{layout.effect.textWidth ?? 80}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="20"
+                        max="100"
+                        step="1"
+                        value={layout.effect.textWidth ?? 80}
+                        onChange={(e) => updateSetting('textWidth', parseInt(e.target.value))}
                         style={{ width: '100%' }}
                       />
                     </div>

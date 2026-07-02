@@ -12,6 +12,9 @@ import {
   dbGetComponents,
   dbSaveComponent,
   dbDeleteComponent,
+  dbGetFamilies,
+  dbSaveFamily,
+  dbDeleteFamily,
   DEFAULT_PACK_ID,
   seedDefaultData
 } from '../services/db.js';
@@ -30,6 +33,7 @@ export const useAppStore = create((set, get) => ({
   explorerCards: [],
   tokens: [],
   components: [],
+  families: [],
 
   // Editor State
   activeCard: null,
@@ -60,6 +64,7 @@ export const useAppStore = create((set, get) => ({
     await get().loadExplorerCards(packId);
     await get().loadTokens(packId);
     await get().loadComponents(packId);
+    await get().loadFamilies(packId);
   },
 
   loadExplorerCards: async (packId) => {
@@ -280,5 +285,33 @@ export const useAppStore = create((set, get) => ({
 
     // Refresh internal data arrays to trigger a clean top-level UI redraw
     await get().loadPacks();
+  },
+
+  loadFamilies: async (packId) => {
+    const idToLoad = packId || get().activePackId;
+    if (!idToLoad) return [];
+    const families = await dbGetFamilies(idToLoad);
+    set({ families: families || [] });
+    return families;
+  },
+
+  saveFamily: async (family) => {
+    const familyToSave = {
+      ...family,
+      packId: get().activePackId,
+      updatedAt: Date.now()
+    };
+    if (!familyToSave.id) {
+      familyToSave.id = 'family-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      familyToSave.createdAt = Date.now();
+    }
+    await dbSaveFamily(familyToSave);
+    await get().loadFamilies(get().activePackId);
+    return familyToSave;
+  },
+
+  deleteFamily: async (familyId) => {
+    await dbDeleteFamily(familyId);
+    await get().loadFamilies(get().activePackId);
   }
 }));
