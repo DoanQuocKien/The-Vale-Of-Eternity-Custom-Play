@@ -204,12 +204,15 @@ export function drawShape(ctx, type, start, end, params) {
     ctx.font = `${fw} ${fontSize}px 'Outfit', 'Inter', sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    if (fillEnabled) {
-      ctx.fillStyle = fillColor;
-      ctx.fillText(textString, start.x, start.y);
-    }
+    
+    // Always fill the text (fallback to strokeColor if fill is disabled so it has color)
+    ctx.fillStyle = fillEnabled ? fillColor : strokeColor;
+    ctx.fillText(textString, start.x, start.y);
+
+    // Only draw a thin outline/stroke if explicitly requested, instead of huge general brushSize
     if (strokeEnabled) {
       ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeSize !== undefined ? strokeSize : Math.max(1, fontSize / 20);
       ctx.strokeText(textString, start.x, start.y);
     }
   }
