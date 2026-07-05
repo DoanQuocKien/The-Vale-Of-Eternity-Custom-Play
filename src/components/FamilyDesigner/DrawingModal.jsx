@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Undo, RotateCcw, Paintbrush, Eraser, Check, X, Square, Circle as CircleIcon, Type, Minus, Image as ImageIcon, Sliders } from 'lucide-react';
+import { Undo, RotateCcw, Paintbrush, PaintBucket, Eraser, Check, X, Square, Circle as CircleIcon, Type, Minus, Image as ImageIcon, Sliders } from 'lucide-react';
 import { drawShape } from '../../utils/canvasUtils.js';
+import { useAppStore } from '../../store/useAppStore.js';
 
 export default function DrawingModal({
   isOpen,
@@ -14,6 +15,21 @@ export default function DrawingModal({
   const canvasRef = useRef(null);
   const drawingCanvasRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const families = useAppStore(state => state.families);
+  const themeColors = [
+    { name: 'Fire', hex: '#ef4444' },
+    { name: 'Water', hex: '#3b82f6' },
+    { name: 'Earth', hex: '#10b981' },
+    { name: 'Wind', hex: '#ec4899' }, // Pink Air Theme
+    { name: 'Dragon', hex: '#8b5cf6' },
+    { name: 'Gold', hex: '#eab308' },
+    { name: 'Slate', hex: '#64748b' }
+  ];
+  const allPresetColors = [
+    ...themeColors,
+    ...families.map(f => ({ name: f.name, hex: f.primaryColor }))
+  ].filter((v, i, a) => a.findIndex(t => t.hex.toLowerCase() === v.hex.toLowerCase()) === i);
 
   // Layout Tab selection: 'draw' | 'image'
   const [activeTab, setActiveTab] = useState('draw');
@@ -239,6 +255,88 @@ export default function DrawingModal({
     redrawComposite();
   };
 
+  const performFloodFill = (startX, startY) => {
+    const drawCvs = drawingCanvasRef.current;
+    if (!drawCvs) return;
+    const ctx = drawCvs.getContext('2d');
+    const w = drawCvs.width;
+    const h = drawCvs.height;
+
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+
+    const startXRound = Math.round(startX);
+    const startYRound = Math.round(startY);
+
+    if (startXRound < 0 || startXRound >= w || startYRound < 0 || startYRound >= h) return;
+
+    const startIdx = (startYRound * w + startXRound) * 4;
+    const targetR = data[startIdx];
+    const targetG = data[startIdx + 1];
+    const targetB = data[startIdx + 2];
+    const targetA = data[startIdx + 3];
+
+    const targetFillColor = fillEnabled ? fillColor : strokeColor;
+    const hex = targetFillColor.replace('#', '');
+    const fillR = parseInt(hex.substring(0, 2), 16);
+    const fillG = parseInt(hex.substring(2, 4), 16);
+    const fillB = parseInt(hex.substring(4, 6), 16);
+    const fillA = Math.round(brushOpacity * 255);
+
+    if (
+      Math.abs(targetR - fillR) < 5 &&
+      Math.abs(targetG - fillG) < 5 &&
+      Math.abs(targetB - fillB) < 5 &&
+      Math.abs(targetA - fillA) < 5
+    ) {
+      return;
+    }
+
+    const queue = [];
+    queue.push(startXRound, startYRound);
+
+    const visited = new Uint8Array(w * h);
+    visited[startYRound * w + startXRound] = 1;
+
+    const colorMatch = (idx) => {
+      return Math.abs(data[idx] - targetR) < 15 &&
+             Math.abs(data[idx + 1] - targetG) < 15 &&
+             Math.abs(data[idx + 2] - targetB) < 15 &&
+             Math.abs(data[idx + 3] - targetA) < 15;
+    };
+
+    let head = 0;
+    while (head < queue.length) {
+      const x = queue[head++];
+      const y = queue[head++];
+
+      const idx = (y * w + x) * 4;
+      data[idx] = fillR;
+      data[idx + 1] = fillG;
+      data[idx + 2] = fillB;
+      data[idx + 3] = fillA;
+
+      const checkDir = (nx, ny) => {
+        const vIdx = ny * w + nx;
+        if (visited[vIdx]) return;
+
+        const pIdx = vIdx * 4;
+        if (colorMatch(pIdx)) {
+          visited[vIdx] = 1;
+          queue.push(nx, ny);
+        }
+      };
+
+      if (x > 0) checkDir(x - 1, y);
+      if (x < w - 1) checkDir(x + 1, y);
+      if (y > 0) checkDir(x, y - 1);
+      if (y < h - 1) checkDir(x, y + 1);
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+    redrawComposite();
+  };
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -298,6 +396,12 @@ export default function DrawingModal({
 
     const coords = getCanvasCoords(e);
     if (!coords) return;
+
+    if (tool === 'fill') {
+      saveUndoState();
+      performFloodFill(coords.x, coords.y);
+      return;
+    }
 
     if (tool === 'polygon') {
       if (polygonPoints.length >= 3) {
@@ -623,6 +727,7 @@ export default function DrawingModal({
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
                       {[
                         { id: 'brush', label: 'Brush', icon: Paintbrush },
+                        { id: 'fill', label: 'Bucket', icon: PaintBucket },
                         { id: 'erase', label: 'Eraser', icon: Eraser },
                         { id: 'line', label: 'Line', icon: Minus },
                         { id: 'rect', label: 'Rect', icon: Square },
@@ -762,6 +867,46 @@ export default function DrawingModal({
                         />
                       )}
                     </div>
+
+                    {/* Quick Palette */}
+                    {allPresetColors.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.2rem' }}>
+                        <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Preset Colors (Updates active fill/stroke)
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                          {allPresetColors.map((cp) => {
+                            const isCurrent = (fillEnabled ? fillColor : strokeColor).toLowerCase() === cp.hex.toLowerCase();
+                            return (
+                              <button
+                                key={cp.hex}
+                                onClick={() => {
+                                  if (fillEnabled) {
+                                    setFillColor(cp.hex);
+                                  } else {
+                                    setStrokeColor(cp.hex);
+                                  }
+                                }}
+                                title={`${cp.name} (${cp.hex})`}
+                                style={{
+                                  width: '22px',
+                                  height: '22px',
+                                  borderRadius: '50%',
+                                  backgroundColor: cp.hex,
+                                  border: isCurrent ? '2px solid white' : '1px solid rgba(255,255,255,0.15)',
+                                  boxShadow: isCurrent ? '0 0 8px rgba(255,255,255,0.4)' : '0 1px 3px rgba(0,0,0,0.3)',
+                                  cursor: 'pointer',
+                                  padding: 0,
+                                  transition: 'transform 0.1s ease',
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Text parameters panel */}

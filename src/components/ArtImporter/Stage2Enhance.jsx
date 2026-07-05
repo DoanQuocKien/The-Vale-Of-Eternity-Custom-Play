@@ -163,11 +163,26 @@ const Stage2Enhance = ({
       return;
     }
 
+    const generateRandomIdea = () => {
+      const name = CARD_NAMES[Math.floor(Math.random() * CARD_NAMES.length)];
+      const ability = CARD_ABILITIES[Math.floor(Math.random() * CARD_ABILITIES.length)];
+      const cost = Math.floor(Math.random() * 6) + 1;
+      const family = FAMILIES[Math.floor(Math.random() * FAMILIES.length)];
+      return { name, ability, cost, family };
+    };
+
+    // Pre-populate queue instantly so a card is shown immediately (0ms)
     let ideasQueue = [];
+    for (let i = 0; i < 5; i++) {
+      ideasQueue.push(generateRandomIdea());
+    }
+    ideasQueueRef.current = ideasQueue;
+    setCurrentIdea(ideasQueue[0]);
+
     let queueIndex = 0;
     let cycleCount = 0;
     let isPrefetching = false;
-    ideasQueueRef.current = [];
+    ideasQueueRef.current = ideasQueue;
     queueIndexRef.current = 0;
     cycleCountRef.current = 0;
     isPrefetchingRef.current = false;
@@ -189,36 +204,17 @@ const Stage2Enhance = ({
               family: r.family
             }));
             
-            if (isBackground) {
-              ideasQueue = mappedResults;
-              ideasQueueRef.current = mappedResults;
-              queueIndex = 0;
+            ideasQueue = mappedResults;
+            ideasQueueRef.current = mappedResults;
+            if (!isBackground) {
+              setCurrentIdea(mappedResults[0]);
               queueIndexRef.current = 0;
-              cycleCount = 0;
-              cycleCountRef.current = 0;
-              setCurrentIdea(ideasQueue[0]);
-              isPrefetching = false;
-              isPrefetchingRef.current = false;
-            } else {
-              ideasQueue = mappedResults;
-              ideasQueueRef.current = mappedResults;
-              setCurrentIdea(ideasQueue[0]);
             }
           }
         } catch (e) {
           console.error('Failed to get RAG recommendations:', e);
         }
-      }
-      
-      const generateRandomIdea = () => {
-        const name = CARD_NAMES[Math.floor(Math.random() * CARD_NAMES.length)];
-        const ability = CARD_ABILITIES[Math.floor(Math.random() * CARD_ABILITIES.length)];
-        const cost = Math.floor(Math.random() * 6) + 1;
-        const family = FAMILIES[Math.floor(Math.random() * FAMILIES.length)];
-        return { name, ability, cost, family };
-      };
-
-      if (ideasQueue.length === 0) {
+      } else {
         try {
           const ragCards = [];
           for (let i = 0; i < 5; i++) {
@@ -234,18 +230,14 @@ const Stage2Enhance = ({
           if (ragCards.length > 0) {
             ideasQueue = ragCards;
             ideasQueueRef.current = ideasQueue;
-            setCurrentIdea(ideasQueue[0]);
-            return;
+            if (!isBackground) {
+              setCurrentIdea(ragCards[0]);
+              queueIndexRef.current = 0;
+            }
           }
         } catch (err) {
           console.error("Failed to prefetch random RAG cards for Stage 2:", err);
         }
-
-        for (let i = 0; i < 5; i++) {
-          ideasQueue.push(generateRandomIdea());
-        }
-        ideasQueueRef.current = ideasQueue;
-        setCurrentIdea(ideasQueue[0]);
       }
     };
 
@@ -272,7 +264,8 @@ const Stage2Enhance = ({
       }, intervalMs);
     };
 
-    fetchRecommendations().then(() => tick(3500));
+    fetchRecommendations();
+    tick(3500);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
