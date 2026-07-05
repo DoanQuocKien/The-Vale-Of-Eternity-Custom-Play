@@ -11,8 +11,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "neu:dev": "concurrently \"vite\" \"npx neu run -- --url=http://127.0.0.1:3000 --window-enable-inspector\"",
-    "neu:build": "vite build && npx neu build",
-    "neu:release": "vite build && npx neu build --release"
+    "neu:build": "node scripts/build.js",
+    "neu:release": "node scripts/build.js --release"
   },
   "dependencies": {
     "@neutralinojs/lib": "^3.12.0",
