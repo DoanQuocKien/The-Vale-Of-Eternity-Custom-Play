@@ -232,11 +232,14 @@ export const getBackgroundPath = (family) => {
 export function getTimingIcon(line) {
   const cleanLine = line.trim();
   if (cleanLine.startsWith('⚡')) {
-    return { icon: './img/Effect/InstantEffect.png', text: cleanLine.substring(1).trim() };
-  } else if (cleanLine.startsWith('♾️')) {
-    return { icon: './img/Effect/PermanentEffect.png', text: cleanLine.substring(2).trim() };
-  } else if (cleanLine.startsWith('⏳')) {
-    return { icon: './img/Effect/ResolutionEffect.png', text: cleanLine.substring(2).trim() };
+    return { icon: './img/Effect/InstantEffect.png', text: cleanLine.slice(1).trim() };
+  }
+  if (cleanLine.startsWith('♾️') || cleanLine.startsWith('♾')) {
+    const prefixLen = cleanLine.startsWith('♾️') ? 2 : 1;
+    return { icon: './img/Effect/PermanentEffect.png', text: cleanLine.slice(prefixLen).trim() };
+  }
+  if (cleanLine.startsWith('⏳')) {
+    return { icon: './img/Effect/ResolutionEffect.png', text: cleanLine.slice(2).trim() };
   }
   return { icon: null, text: cleanLine };
 }
@@ -259,11 +262,15 @@ export function parseEffectText(text, tokens = [], families = []) {
         if (lowerName === 'card') {
           return `<img src="./img/Layout/Backside.png" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);" />`;
         }
-        if (parts.length === 2 && parts[0] === 'Score') {
-          return `<span style="display:inline-block; position:relative; width:1.5em; height:1.5em; vertical-align:middle; margin:0 0.1em;">
-                    <img src="./img/TextIcon/Score.png" style="width:100%; height:100%; object-fit:contain;" />
-                    <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900; color:white; -webkit-text-stroke: 0.5px black; font-size:0.8em; margin-top:2px;">${parts[1]}</span>
-                  </span>`;
+        if (parts[0].toLowerCase() === 'score') {
+          if (parts.length === 2) {
+            return `<span style="display:inline-block; position:relative; width:1.5em; height:1.5em; vertical-align:middle; margin:0 0.1em;">
+                      <img src="./img/TextIcon/Score.png" style="width:100%; height:100%; object-fit:contain;" />
+                      <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900; color:white; -webkit-text-stroke: 0.5px black; font-size:0.8em; margin-top:2px;">${parts[1]}</span>
+                    </span>`;
+          } else {
+            return `<img src="./img/TextIcon/Score.png" style="height: 1.5em; vertical-align: middle; margin: 0 0.1em;" />`;
+          }
         }
 
         // Check if this matches a custom family name (case-insensitive, underscores == spaces)
@@ -285,16 +292,17 @@ export function parseEffectText(text, tokens = [], families = []) {
         }
 
         const pathMap = {
-          'Stone1': './img/TextIcon/Stone1.png',
-          'Stone3': './img/TextIcon/Stone3.png',
-          'Stone6': './img/TextIcon/Stone6.png',
-          'Fire': './img/TextIcon/Fire.png',
-          'Water': './img/TextIcon/Water.png',
-          'Earth': './img/TextIcon/Earth.png',
-          'Wind': './img/TextIcon/Wind.png',
-          'Dragon': './img/TextIcon/Dragon.png',
+          'stone1': './img/TextIcon/Stone1.png',
+          'stone3': './img/TextIcon/Stone3.png',
+          'stone6': './img/TextIcon/Stone6.png',
+          'fire': './img/TextIcon/Fire.png',
+          'water': './img/TextIcon/Water.png',
+          'earth': './img/TextIcon/Earth.png',
+          'wind': './img/TextIcon/Wind.png',
+          'dragon': './img/TextIcon/Dragon.png',
         };
-        return `<img src="${pathMap[parts[0]] || `./img/TextIcon/${parts[0]}.png`}" style="height: 1.5em; vertical-align: middle; margin: 0 0.1em;" />`;
+        const key = parts[0].toLowerCase();
+        return `<img src="${pathMap[key] || `./img/TextIcon/${parts[0]}.png`}" style="height: 1.5em; vertical-align: middle; margin: 0 0.1em;" />`;
       }).replace(/\\italic\((.*?)\)/g, '<i>$1</i>')
     }} />
   );
