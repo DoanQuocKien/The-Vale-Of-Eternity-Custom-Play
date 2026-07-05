@@ -9,14 +9,36 @@ async function getPythonCommand() {
     throw new Error('Neutralinojs not initialized');
   }
   
+  // 1. Check for compiled vale_ai.exe in the production release bin/ directory
   try {
-    // Check if packaged sidecar exists in bin/
-    await window.Neutralino.filesystem.getStats(`${window.NL_PATH}/bin/vale_ai.exe`);
-    return `"${window.NL_PATH}/bin/vale_ai.exe"`;
-  } catch (e) {
-    // Fall back to python script in dev mode
-    return `python "electron/vale_ai.py"`;
-  }
+    const prodExePath = `${window.NL_PATH}/bin/vale_ai.exe`;
+    await window.Neutralino.filesystem.getStats(prodExePath);
+    return `"${prodExePath}"`;
+  } catch (e) {}
+
+  // 2. Check for compiled vale_ai.exe next to the binary (alternative production distribution)
+  try {
+    const devExePath = `${window.NL_PATH}/vale_ai.exe`;
+    await window.Neutralino.filesystem.getStats(devExePath);
+    return `"${devExePath}"`;
+  } catch (e) {}
+
+  // 3. Check for python script in production folder (where electron/ is copied next to the exe)
+  try {
+    const prodPyPath = `${window.NL_PATH}/electron/vale_ai.py`;
+    await window.Neutralino.filesystem.getStats(prodPyPath);
+    return `python "${prodPyPath}"`;
+  } catch (e) {}
+
+  // 4. Check for python script in development workspace (relative to window.NL_PATH /bin)
+  try {
+    const devPyPath = `${window.NL_PATH}/../electron/vale_ai.py`;
+    await window.Neutralino.filesystem.getStats(devPyPath);
+    return `python "${devPyPath}"`;
+  } catch (e) {}
+
+  // 5. Fallback to basic relative path in dev mode
+  return `python "electron/vale_ai.py"`;
 }
 
 // Convert base64 dataUrl to an ArrayBuffer
@@ -61,8 +83,8 @@ export async function runPythonImageProcess(subcommand, inputDataUrl, onProgress
   }
 
   const timestamp = Date.now();
-  const tempInPath = `./temp_${subcommand}_in_${timestamp}.png`;
-  const tempOutPath = `./temp_${subcommand}_out_${timestamp}.png`;
+  const tempInPath = `${window.NL_PATH}/temp_${subcommand}_in_${timestamp}.png`;
+  const tempOutPath = `${window.NL_PATH}/temp_${subcommand}_out_${timestamp}.png`;
 
   try {
     onProgress?.(10);
