@@ -53,6 +53,8 @@ const STAGES = ['import', 'deskew', 'process', 'tune', 'confirm'];
 const STAGE_LABELS = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Card'];
 const STAGE_LABELS_TOKEN = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Token'];
 const STAGE_LABELS_COMPONENT = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Component'];
+const STAGE_LABELS_BG = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Background'];
+const STAGE_LABELS_ICON = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Icon'];
 
 export default function ArtImporter({
   isOpen,
@@ -63,11 +65,13 @@ export default function ArtImporter({
   existingTransform = null,
   isTokenMode = false,
   isComponentMode = false,
+  isBgMode = false,
+  isIconMode = false,
   cardName = '',
   cardCost = 0,
   cardEffect = ''
 }) {
-  const isCustomMode = isTokenMode || isComponentMode;
+  const isCustomMode = isTokenMode || isComponentMode || isBgMode || isIconMode;
   const customFamilies = useAppStore(state => state.families);
 
   // Resolve the HSL hue for the current card's family — supports custom families
@@ -180,7 +184,7 @@ export default function ArtImporter({
         { label: 'Balance Lighting', done: false, active: false, pct: 0, skip: true },
         { label: 'Enhance Outlines', done: false, active: false, pct: 0, skip: true },
         { label: 'Smart Upscale', done: false, active: false, pct: 0, skip: true },
-        { label: 'Remove Background', done: false, active: false, pct: 0, skip: false },
+        { label: 'Remove Background', done: false, active: false, pct: 0, skip: isBgMode },
       ]);
       setStage(existingArt ? 4 : 0);
       setRawDataUrl(existingArt || null);
@@ -928,10 +932,10 @@ export default function ArtImporter({
         }}>
           <div>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              🎨 {isComponentMode ? 'Component Art Integrator' : isTokenMode ? 'Token Art Integrator' : 'Art Integrator'}
+              🎨 {isBgMode ? 'Background Art Integrator' : isIconMode ? 'Family Icon Integrator' : isComponentMode ? 'Component Art Integrator' : isTokenMode ? 'Token Art Integrator' : 'Art Integrator'}
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
-              {isComponentMode ? 'Scan, enhance, and place your custom art onto the component layer' : isTokenMode ? 'Scan, enhance, and place your custom art onto the token canvas' : 'Scan, enhance, and place your creature art onto the card'}
+              {isBgMode ? 'Scan, enhance, and crop your custom family background art' : isIconMode ? 'Scan, enhance, and crop your custom family emblem icon' : isComponentMode ? 'Scan, enhance, and place your custom art onto the component layer' : isTokenMode ? 'Scan, enhance, and place your custom art onto the token canvas' : 'Scan, enhance, and place your creature art onto the card'}
             </p>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}>
@@ -941,7 +945,7 @@ export default function ArtImporter({
 
         {/* Stage indicator */}
         <div style={{ display: 'flex', gap: '0.4rem', padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border-color)', overflowX: 'auto', flexShrink: 0, background: 'var(--bg-main)' }}>
-          {(isComponentMode ? STAGE_LABELS_COMPONENT : isTokenMode ? STAGE_LABELS_TOKEN : STAGE_LABELS).map((label, i) => (
+          {(isBgMode ? STAGE_LABELS_BG : isIconMode ? STAGE_LABELS_ICON : isComponentMode ? STAGE_LABELS_COMPONENT : isTokenMode ? STAGE_LABELS_TOKEN : STAGE_LABELS).map((label, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
               <button style={stepBtnStyle(stage === i)}>
                 {i < stage ? '✓ ' : ''}{label}
@@ -1096,6 +1100,8 @@ export default function ArtImporter({
             <Stage4Placement
               isComponentMode={isComponentMode}
               isTokenMode={isTokenMode}
+              isBgMode={isBgMode}
+              isIconMode={isIconMode}
               cardFamily={cardFamily}
               finalDataUrl={finalDataUrl}
               artTransform={artTransform}

@@ -328,7 +328,7 @@ export default function App() {
         )}
 
         {activeTab === 'families' && (
-          <FamilyDesigner />
+          <FamilyDesigner onShowArtImporter={handleShowArtImporter} />
         )}
       </div>
 
@@ -341,6 +341,8 @@ export default function App() {
         existingTransform={artImporterContext.existingTransform}
         isTokenMode={artImporterContext.isTokenMode}
         isComponentMode={artImporterContext.isComponentMode}
+        isBgMode={artImporterContext.isBgMode}
+        isIconMode={artImporterContext.isIconMode}
         cardName={artImporterContext.cardName || ''}
         cardCost={artImporterContext.cardCost || 0}
         cardEffect={artImporterContext.cardEffect || ''}

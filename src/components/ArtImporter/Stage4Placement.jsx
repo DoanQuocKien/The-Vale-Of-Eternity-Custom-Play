@@ -15,6 +15,8 @@ const SAFE_ZONE = {
 const Stage4Placement = ({
   isComponentMode,
   isTokenMode,
+  isBgMode = false,
+  isIconMode = false,
   cardFamily,
   finalDataUrl,
   artTransform,
@@ -117,7 +119,7 @@ const Stage4Placement = ({
               gap: '0.5rem'
             }}
           >
-            <Check size={16} /> {isComponentMode ? 'Apply to Component' : isTokenMode ? 'Apply to Token' : 'Apply to Card'}
+            <Check size={16} /> {isBgMode ? 'Apply Background' : isIconMode ? 'Apply Icon' : isComponentMode ? 'Apply to Component' : isTokenMode ? 'Apply to Token' : 'Apply to Card'}
           </button>
         </div>
       </div>
@@ -141,11 +143,31 @@ const Stage4Placement = ({
       >
         {/* Card Background (bottom) */}
         {!isCustomMode && (
-          <img src={bgSrc} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
+          isBgMode && finalDataUrl ? (
+            <img
+              src={finalDataUrl}
+              alt="Card Background"
+              onMouseDown={handleArtMouseDown}
+              style={{
+                position: 'absolute',
+                left: `${artTransform.x}%`,
+                top: `${artTransform.y}%`,
+                width: `${artTransform.scale}%`,
+                transform: `translate(-50%, -50%) rotate(${artTransform.rotation}deg)`,
+                objectFit: 'cover',
+                zIndex: 1,
+                pointerEvents: 'all',
+                userSelect: 'none',
+              }}
+              draggable={false}
+            />
+          ) : (
+            <img src={bgSrc} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
+          )
         )}
 
-        {/* Art layer (middle) */}
-        {finalDataUrl && (
+        {/* Art layer (middle) — omitted for bgMode or iconMode center badge */}
+        {finalDataUrl && !isBgMode && !isIconMode && (
           <img
             src={finalDataUrl}
             alt="Card art"
@@ -163,6 +185,37 @@ const Stage4Placement = ({
             }}
             draggable={false}
           />
+        )}
+
+        {/* Icon Mode Center Preview Badge */}
+        {isIconMode && finalDataUrl && (
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: '47.7%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.5rem',
+            pointerEvents: 'none'
+          }}>
+            <img
+              src={finalDataUrl}
+              alt="Custom Icon Preview"
+              style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                border: '2px solid white',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                objectFit: 'contain',
+                background: 'rgba(255,255,255,0.05)'
+              }}
+            />
+            <span style={{ fontSize: '9px', fontWeight: 'bold', color: 'white', textShadow: '0 1px 3px black' }}>Emblem Preview</span>
+          </div>
         )}
 
         {/* Card Layout Border (above art) */}
@@ -184,7 +237,25 @@ const Stage4Placement = ({
 
         {/* Family Emblem - Top-Left */}
         {!isCustomMode && (
-          customFamily && !customFamily.icon ? (
+          isIconMode && finalDataUrl ? (
+            <img
+              src={finalDataUrl}
+              alt="Custom Emblem TL"
+              style={{
+                position: 'absolute',
+                left: '8.45%',
+                top: '6.46%',
+                width: '11.91cqw',
+                height: '11.91cqw',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 3.5,
+                borderRadius: '50%',
+                border: '1.5px solid white',
+                boxSizing: 'border-box',
+                pointerEvents: 'none'
+              }}
+            />
+          ) : customFamily && !customFamily.icon ? (
             <div style={{
               position: 'absolute',
               left: '8.45%',
@@ -230,7 +301,25 @@ const Stage4Placement = ({
 
         {/* Family Emblem - Bottom-Right */}
         {!isCustomMode && (
-          customFamily && !customFamily.icon ? (
+          isIconMode && finalDataUrl ? (
+            <img
+              src={finalDataUrl}
+              alt="Custom Emblem BR"
+              style={{
+                position: 'absolute',
+                left: '90.97%',
+                top: '93.54%',
+                width: '9.84cqw',
+                height: '9.84cqw',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 3.5,
+                borderRadius: '50%',
+                border: '1.5px solid white',
+                boxSizing: 'border-box',
+                pointerEvents: 'none'
+              }}
+            />
+          ) : customFamily && !customFamily.icon ? (
             <div style={{
               position: 'absolute',
               left: '90.97%',

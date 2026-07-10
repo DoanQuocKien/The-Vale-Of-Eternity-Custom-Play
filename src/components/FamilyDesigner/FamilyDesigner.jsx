@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useAppStore.js';
 import { Plus, Trash2, Edit3, ImagePlus, Check, X, ShieldAlert, Sparkles, Paintbrush } from 'lucide-react';
 import DrawingModal from './DrawingModal.jsx';
 
-export default function FamilyDesigner() {
+export default function FamilyDesigner({ onShowArtImporter }) {
   const families = useAppStore(state => state.families);
   const activePackId = useAppStore(state => state.activePackId);
   const saveFamily = useAppStore(state => state.saveFamily);
@@ -63,10 +63,25 @@ export default function FamilyDesigner() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      if (type === 'icon') {
-        setIcon(event.target.result);
+      if (onShowArtImporter) {
+        onShowArtImporter({
+          existingArt: event.target.result,
+          family: name || 'Water',
+          isBgMode: type === 'bg',
+          isIconMode: type === 'icon'
+        }, (finalArt) => {
+          if (type === 'icon') {
+            setIcon(finalArt);
+          } else {
+            setBgArt(finalArt);
+          }
+        });
       } else {
-        setBgArt(event.target.result);
+        if (type === 'icon') {
+          setIcon(event.target.result);
+        } else {
+          setBgArt(event.target.result);
+        }
       }
     };
     reader.readAsDataURL(file);
