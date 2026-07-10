@@ -125,10 +125,16 @@ def upscale_image(input_path, output_path):
 
 # ── 3. SHADOW BALANCE (CLAHE + Bilateral) ──
 def balance_lighting(input_path, output_path):
-    img = cv2.imread(input_path)
+    # Open with PIL to preserve alpha channel (cv2.imread drops alpha)
+    pil_img = Image.open(input_path).convert("RGBA")
+    alpha_channel = np.array(pil_img)[:, :, 3]  # Save alpha before processing
+
+    # Work on RGB channels only via OpenCV
+    img_rgb = np.array(pil_img.convert("RGB"))
+    img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
     
     # Convert to LAB space to isolate luminance channel (preserves colors perfectly)
-    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    lab = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB)
     l, a, b = cv2.split(lab)
     
     # Apply CLAHE to balance shadows and highlights dynamically
@@ -142,12 +148,22 @@ def balance_lighting(input_path, output_path):
     # Bilateral smoothing to denoise shadow areas while keeping sharp edges
     smoothed = cv2.bilateralFilter(balanced, 7, 50, 50)
     
-    cv2.imwrite(output_path, smoothed)
+    # Restore original alpha channel and save as PNG
+    smoothed_rgb = cv2.cvtColor(smoothed, cv2.COLOR_BGR2RGB)
+    result = np.dstack((smoothed_rgb, alpha_channel))
+    Image.fromarray(result, 'RGBA').save(output_path)
     print("Balance lighting completed.", flush=True)
 
 # ── 4. LINE ART ENHANCEMENT (XDoG) ──
 def enhance_lines(input_path, output_path):
-    img = cv2.imread(input_path)
+    # Open with PIL to preserve alpha channel (cv2.imread drops alpha)
+    pil_img = Image.open(input_path).convert("RGBA")
+    alpha_channel = np.array(pil_img)[:, :, 3]  # Save alpha before processing
+
+    # Work on RGB channels only via OpenCV
+    img_rgb = np.array(pil_img.convert("RGB"))
+    img = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = gray.astype(np.float32) / 255.0
     
@@ -182,7 +198,10 @@ def enhance_lines(input_path, output_path):
     color_mask = cv2.cvtColor(xdog_img, cv2.COLOR_GRAY2BGR)
     enhanced = cv2.multiply(img, color_mask, scale=1.0/255.0)
     
-    cv2.imwrite(output_path, enhanced)
+    # Restore original alpha channel and save as PNG
+    enhanced_rgb = cv2.cvtColor(enhanced, cv2.COLOR_BGR2RGB)
+    result = np.dstack((enhanced_rgb, alpha_channel))
+    Image.fromarray(result, 'RGBA').save(output_path)
     print("Line enhancement completed.", flush=True)
 
 # ── 5. LOCAL RAG RECOMMENDATION ENGINE (Rules-Augmented Retrieval - RAR) ──

@@ -41,20 +41,19 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   const [newFoldType, setNewFoldType] = useState('horizontal');
   const [newFoldPos, setNewFoldPos] = useState('');
 
-  const isInitialCompLoad = useRef(true);
+  // Track what was last loaded so we can distinguish sync-writes from real edits
+  const loadedCompValuesRef = useRef({ name: '', bleedMm: 3, foldLines: [] });
 
-  // Reset the initial load flag when switching components
+  // Set unsaved changes only when values actually differ from what was loaded
   useEffect(() => {
-    isInitialCompLoad.current = true;
-  }, [activeComponent?.id]);
-
-  // Set unsaved changes on user interaction
-  useEffect(() => {
-    if (isInitialCompLoad.current) {
-      isInitialCompLoad.current = false;
-      return;
+    const loaded = loadedCompValuesRef.current;
+    const hasChanged =
+      compName !== loaded.name ||
+      compBleed !== loaded.bleedMm ||
+      JSON.stringify(foldLines) !== JSON.stringify(loaded.foldLines);
+    if (hasChanged) {
+      setHasUnsavedChanges(true);
     }
-    setHasUnsavedChanges(true);
   }, [compName, compBleed, foldLines]);
 
   // Layer stack states
@@ -176,9 +175,17 @@ export default function ComponentDesigner({ onShowArtImporter }) {
   // Sync state and initialize canvases when activeComponent changes
   useEffect(() => {
     if (activeComponent) {
-      setCompName(activeComponent.name || '');
-      setCompBleed(activeComponent.bleedMm ?? 3);
-      setFoldLines(activeComponent.foldLines || []);
+      const name = activeComponent.name || '';
+      const bleedMm = activeComponent.bleedMm ?? 3;
+      const foldLinesData = activeComponent.foldLines || [];
+
+      // Record what was loaded so the dirty-check effect can compare against it
+      loadedCompValuesRef.current = { name, bleedMm, foldLines: foldLinesData };
+
+      setCompName(name);
+      setCompBleed(bleedMm);
+      setFoldLines(foldLinesData);
+      setHasUnsavedChanges(false);
 
       const layers = activeComponent.layers || [];
       if (layers.length > 0) {
@@ -205,9 +212,11 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       panRef.current = initPan;
       setUndoList([]);
     } else {
+      loadedCompValuesRef.current = { name: '', bleedMm: 3, foldLines: [] };
       setCompName('');
       setActiveLayerId(null);
       setFoldLines([]);
+      setHasUnsavedChanges(false);
     }
   }, [activeComponent?.id]);
 

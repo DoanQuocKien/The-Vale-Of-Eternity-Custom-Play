@@ -24,14 +24,30 @@ import { removeBackground } from '../../services/bgRemoval.service.js';
 import { upscaleImage } from '../../services/upscale.service.js';
 import { runPythonImageProcess } from '../../utils/pythonRunner.js';
 
-// Family palette hue angles (HSL degrees) for color tinting
+// Family palette hue angles (HSL degrees) for color tinting — default families
 const FAMILY_HUES = {
   Fire: 15,
   Water: 200,
   Earth: 120,
-  Wind: 175,
+  Wind: 330,
   Dragon: 280,
 };
+
+// Convert a hex color string to HSL hue (0-360)
+function hexToHue(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  if (delta === 0) return 0;
+  let h = 0;
+  if (max === r) h = ((g - b) / delta) % 6;
+  else if (max === g) h = (b - r) / delta + 2;
+  else h = (r - g) / delta + 4;
+  return Math.round(h * 60 + 360) % 360;
+}
 
 const STAGES = ['import', 'deskew', 'process', 'tune', 'confirm'];
 const STAGE_LABELS = ['1. Import', '2. Scan & Deskew', '3. AI Process', '4. Color Tune', '5. Place on Card'];
@@ -52,6 +68,18 @@ export default function ArtImporter({
   cardEffect = ''
 }) {
   const isCustomMode = isTokenMode || isComponentMode;
+  const customFamilies = useAppStore(state => state.families);
+
+  // Resolve the HSL hue for the current card's family — supports custom families
+  const getCardFamilyHue = () => {
+    if (FAMILY_HUES[cardFamily] !== undefined) return FAMILY_HUES[cardFamily];
+    const custom = customFamilies.find(f => f.id === cardFamily || f.name === cardFamily);
+    if (custom?.primaryColor) {
+      try { return hexToHue(custom.primaryColor); } catch {}
+    }
+    return 200; // fallback: Water blue
+  };
+
   const [stage, setStage] = useState(0); // 0..4
   const [rawDataUrl, setRawDataUrl] = useState(existingArt || null);
   const [deskewedDataUrl, setDeskewedDataUrl] = useState(null);
@@ -139,9 +167,21 @@ export default function ArtImporter({
   // Creation mode state
   const [isCreateMode, setIsCreateMode] = useState(false);
 
+  // Cancellation ref: set to true when importer closes mid-processing
+  const cancelledRef = useRef(false);
+
   // Reset on open
   useEffect(() => {
     if (isOpen) {
+      // Force-reset processing state in case a previous pipeline was abandoned mid-run
+      cancelledRef.current = false;
+      setProcessing(false);
+      setProgressSteps([
+        { label: 'Balance Lighting', done: false, active: false, pct: 0, skip: true },
+        { label: 'Enhance Outlines', done: false, active: false, pct: 0, skip: true },
+        { label: 'Smart Upscale', done: false, active: false, pct: 0, skip: true },
+        { label: 'Remove Background', done: false, active: false, pct: 0, skip: false },
+      ]);
       setStage(existingArt ? 4 : 0);
       setRawDataUrl(existingArt || null);
       setDeskewedDataUrl(existingArt || null);
@@ -165,6 +205,9 @@ export default function ArtImporter({
           rotation: 0,
         });
       }
+    } else {
+      // Importer is closing — cancel any in-flight pipeline
+      cancelledRef.current = true;
     }
   }, [isOpen, existingArt, existingTransform]);
 
@@ -333,17 +376,28 @@ export default function ArtImporter({
   const runProcessingPipeline = async () => {
     if (!deskewedDataUrl) return;
     setProcessing(true);
+    cancelledRef.current = false;
     
     const steps = progressSteps;
     let currentDataUrl = deskewedDataUrl;
+
+    // Helper: run a step with a 120-second timeout to prevent indefinite hangs
+    const runWithTimeout = (promise, label) => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out after 120s`)), 120000))
+      ]);
+    };
 
     try {
       // Step 1: Shadow Balance
       if (!steps[0].skip) {
         markStep(0, { active: true, done: false }, 0);
-        currentDataUrl = await runPythonImageProcess('balance-lighting', currentDataUrl, (pct) => {
-          markStep(0, { active: true }, pct);
-        });
+        currentDataUrl = await runWithTimeout(
+          runPythonImageProcess('balance-lighting', currentDataUrl, (pct) => markStep(0, { active: true }, pct)),
+          'Balance Lighting'
+        );
+        if (cancelledRef.current) return;
         markStep(0, { active: false, done: true }, 100);
       } else {
         markStep(0, { active: false, done: true, pct: 100 });
@@ -352,9 +406,11 @@ export default function ArtImporter({
       // Step 2: Line Art Enhancement
       if (!steps[1].skip) {
         markStep(1, { active: true, done: false }, 0);
-        currentDataUrl = await runPythonImageProcess('enhance-lines', currentDataUrl, (pct) => {
-          markStep(1, { active: true }, pct);
-        });
+        currentDataUrl = await runWithTimeout(
+          runPythonImageProcess('enhance-lines', currentDataUrl, (pct) => markStep(1, { active: true }, pct)),
+          'Enhance Outlines'
+        );
+        if (cancelledRef.current) return;
         markStep(1, { active: false, done: true }, 100);
       } else {
         markStep(1, { active: false, done: true, pct: 100 });
@@ -363,9 +419,11 @@ export default function ArtImporter({
       // Step 3: AI Upscale (ESRGAN)
       if (!steps[2].skip) {
         markStep(2, { active: true, done: false }, 0);
-        currentDataUrl = await upscaleImage(currentDataUrl, (pct) => {
-          markStep(2, { active: true }, pct);
-        });
+        currentDataUrl = await runWithTimeout(
+          upscaleImage(currentDataUrl, (pct) => markStep(2, { active: true }, pct)),
+          'Smart Upscale'
+        );
+        if (cancelledRef.current) return;
         markStep(2, { active: false, done: true }, 100);
       } else {
         markStep(2, { active: false, done: true, pct: 100 });
@@ -374,22 +432,27 @@ export default function ArtImporter({
       // Step 4: AI Background Removal (RMBG-1.4)
       if (!steps[3].skip) {
         markStep(3, { active: true, done: false }, 0);
-        currentDataUrl = await removeBackground(currentDataUrl, (pct) => {
-          markStep(3, { active: true }, pct);
-        });
+        currentDataUrl = await runWithTimeout(
+          removeBackground(currentDataUrl, (pct) => markStep(3, { active: true }, pct)),
+          'Remove Background'
+        );
+        if (cancelledRef.current) return;
         markStep(3, { active: false, done: true }, 100);
       } else {
         markStep(3, { active: false, done: true, pct: 100 });
       }
 
+      if (cancelledRef.current) return;
       setProcessedDataUrl(currentDataUrl);
       setFinalDataUrl(currentDataUrl);
       setProcessing(false);
       setStage(3); // advance to color tuning
 
     } catch (err) {
-      setProcessing(false);
-      alert('Processing error: ' + err.message);
+      if (!cancelledRef.current) {
+        setProcessing(false);
+        alert('Processing error: ' + err.message);
+      }
     }
   };
 
@@ -413,7 +476,7 @@ export default function ArtImporter({
       const enhanced = applyColorEnhancement(canvas, {
         vibrance: tuning.vibrance,
         familyTint: tuning.familyTint,
-        familyHue: FAMILY_HUES[cardFamily] || 200,
+        familyHue: getCardFamilyHue(),
         brightness: tuning.brightness,
         contrast: tuning.contrast,
         hueRotate: tuning.hueRotate,
@@ -421,7 +484,7 @@ export default function ArtImporter({
       setTunedDataUrl(canvasToDataUrl(enhanced));
       setFinalDataUrl(canvasToDataUrl(enhanced));
     }, 200);
-  }, [tuning, processedDataUrl, stage, cardFamily, isCreateMode]);
+  }, [tuning, processedDataUrl, stage, cardFamily, customFamilies, isCreateMode]);
 
   useEffect(() => {
     if (stage === 3 && processedDataUrl && !tunedDataUrl) {

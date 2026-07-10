@@ -302,7 +302,14 @@ export const useAppStore = create((set, get) => ({
       updatedAt: Date.now()
     };
     if (!familyToSave.id) {
-      familyToSave.id = 'family-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      // Generate a stable, deterministic ID from the family name so the same family
+      // always maps to the same ID (avoids duplicates and broken card references)
+      const slug = (familyToSave.name || 'custom')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      familyToSave.id = 'family-' + slug;
       familyToSave.createdAt = Date.now();
     }
     await dbSaveFamily(familyToSave);
