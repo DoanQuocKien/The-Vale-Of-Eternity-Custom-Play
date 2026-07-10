@@ -7,6 +7,7 @@ const CardLibrary = ({ onEditCard }) => {
   const explorerCards = useAppStore(state => state.explorerCards);
   const saveCard = useAppStore(state => state.saveCard);
   const deleteCard = useAppStore(state => state.deleteCard);
+  const families = useAppStore(state => state.families);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFamily, setFilterFamily] = useState('All');
@@ -163,45 +164,53 @@ const CardLibrary = ({ onEditCard }) => {
             No cards found matching filters in this pack. Click "Create Card" or save a card to get started!
           </div>
         ) : (
-          filtered.map(c => (
-            <div
-              key={c.id}
-              className="glass-panel animate-fade-in"
-              style={{
-                padding: '1rem',
-                borderRadius: 'var(--radius-md)',
-                borderLeft: `4px solid var(--family-${c.family.toLowerCase()})`,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                position: 'relative',
-                minHeight: '180px',
-                transition: 'transform var(--transition-fast), border-color var(--transition-fast)'
-              }}
-            >
-              {/* Badge header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                <span style={{
-                  fontFamily: 'var(--font-price)',
-                  fontSize: '1.2rem',
-                  color: getPriceColor('priceTL', c.family, c.layout),
-                  textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                  lineHeight: 1
-                }}>
-                  {c.cost}
-                </span>
-                <span style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  color: `var(--family-${c.family.toLowerCase()})`,
-                  background: `rgba(${c.family === 'Fire' ? '239, 68, 68' : c.family === 'Water' ? '56, 189, 248' : c.family === 'Earth' ? '74, 222, 128' : c.family === 'Wind' ? '45, 212, 191' : '192, 132, 252'}, 0.15)`,
-                  padding: '0.15rem 0.35rem',
-                  borderRadius: '4px'
-                }}>
-                  {c.family}
-                </span>
-              </div>
+          filtered.map(c => {
+            const customFamily = families.find(fam => fam.id === c.family || fam.name === c.family);
+            const familyName = customFamily ? customFamily.name : c.family;
+            const familyColor = customFamily ? customFamily.primaryColor : `var(--family-${c.family.toLowerCase()})`;
+            const familyBg = customFamily 
+              ? customFamily.primaryColor + '26' 
+              : `rgba(${c.family === 'Fire' ? '239, 68, 68' : c.family === 'Water' ? '56, 189, 248' : c.family === 'Earth' ? '74, 222, 128' : c.family === 'Wind' ? '236, 72, 153' : '192, 132, 252'}, 0.15)`;
+
+            return (
+              <div
+                key={c.id}
+                className="glass-panel animate-fade-in"
+                style={{
+                  padding: '1rem',
+                  borderRadius: 'var(--radius-md)',
+                  borderLeft: `4px solid ${familyColor}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  position: 'relative',
+                  minHeight: '180px',
+                  transition: 'transform var(--transition-fast), border-color var(--transition-fast)'
+                }}
+              >
+                {/* Badge header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                  <span style={{
+                    fontFamily: 'var(--font-price)',
+                    fontSize: '1.2rem',
+                    color: getPriceColor('priceTL', c.family, c.layout),
+                    textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                    lineHeight: 1
+                  }}>
+                    {c.cost}
+                  </span>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: familyColor,
+                    background: familyBg,
+                    padding: '0.15rem 0.35rem',
+                    borderRadius: '4px'
+                  }}>
+                    {familyName}
+                  </span>
+                </div>
 
               {/* Name */}
               <h4 style={{
@@ -313,7 +322,8 @@ const CardLibrary = ({ onEditCard }) => {
                 </button>
               </div>
             </div>
-          ))
+          );
+        })
         )}
       </div>
     </div>

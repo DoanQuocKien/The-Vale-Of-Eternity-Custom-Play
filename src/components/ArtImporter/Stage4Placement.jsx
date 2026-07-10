@@ -1,6 +1,7 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 import { getBackgroundPath } from '../../utils/constants.jsx';
+import { useAppStore } from '../../store/useAppStore.js';
 
 const SAFE_ZONE = {
   xMin: 18.5,  // %
@@ -25,6 +26,16 @@ const Stage4Placement = ({
   confirmCanvasRef
 }) => {
   const isCustomMode = isTokenMode || isComponentMode;
+  const families = useAppStore(state => state.families);
+  const customFamily = families.find(f => f.id === cardFamily || f.name === cardFamily);
+
+  const bgSrc = customFamily
+    ? (customFamily.bgArt || getBackgroundPath('Water'))
+    : getBackgroundPath(cardFamily);
+
+  const familyColor = customFamily
+    ? customFamily.primaryColor
+    : `var(--family-${cardFamily.toLowerCase()})`;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '0.7fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
@@ -121,7 +132,7 @@ const Stage4Placement = ({
           borderRadius: '14px',
           overflow: 'hidden',
           boxShadow: '0 12px 30px rgba(0,0,0,0.5)',
-          border: isCustomMode ? '2px solid rgba(255,255,255,0.1)' : `2px solid var(--family-${cardFamily.toLowerCase()})`,
+          border: isCustomMode ? '2px solid rgba(255,255,255,0.1)' : `2px solid ${familyColor}`,
           background: '#0b0f19',
           userSelect: 'none',
           margin: '0 auto',
@@ -130,7 +141,7 @@ const Stage4Placement = ({
       >
         {/* Card Background (bottom) */}
         {!isCustomMode && (
-          <img src={getBackgroundPath(cardFamily)} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
+          <img src={bgSrc} alt="Card Background" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
         )}
 
         {/* Art layer (middle) */}
@@ -173,10 +184,8 @@ const Stage4Placement = ({
 
         {/* Family Emblem - Top-Left */}
         {!isCustomMode && (
-          <img
-            src={`./img/TextIcon/${cardFamily}.png`}
-            alt={`${cardFamily} Emblem TL`}
-            style={{
+          customFamily && !customFamily.icon ? (
+            <div style={{
               position: 'absolute',
               left: '8.45%',
               top: '6.46%',
@@ -185,19 +194,44 @@ const Stage4Placement = ({
               transform: 'translate(-50%, -50%)',
               zIndex: 3.5,
               borderRadius: '50%',
-              border: '1.5px solid rgba(0, 0, 0, 0.3)',
-              boxSizing: 'border-box',
+              border: '1.5px solid white',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+              background: customFamily.primaryColor,
+              color: 'white',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '5cqw',
               pointerEvents: 'none'
-            }}
-          />
+            }}>
+              {customFamily.name.charAt(0).toUpperCase()}
+            </div>
+          ) : (
+            <img
+              src={customFamily?.icon || `./img/TextIcon/${cardFamily}.png`}
+              alt={`${cardFamily} Emblem TL`}
+              style={{
+                position: 'absolute',
+                left: '8.45%',
+                top: '6.46%',
+                width: '11.91cqw',
+                height: '11.91cqw',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 3.5,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(0, 0, 0, 0.3)',
+                boxSizing: 'border-box',
+                pointerEvents: 'none'
+              }}
+            />
+          )
         )}
 
         {/* Family Emblem - Bottom-Right */}
         {!isCustomMode && (
-          <img
-            src={`./img/TextIcon/${cardFamily}.png`}
-            alt={`${cardFamily} Emblem BR`}
-            style={{
+          customFamily && !customFamily.icon ? (
+            <div style={{
               position: 'absolute',
               left: '90.97%',
               top: '93.54%',
@@ -206,11 +240,38 @@ const Stage4Placement = ({
               transform: 'translate(-50%, -50%)',
               zIndex: 3.5,
               borderRadius: '50%',
-              border: '1.5px solid rgba(0, 0, 0, 0.3)',
-              boxSizing: 'border-box',
+              border: '1.5px solid white',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+              background: customFamily.primaryColor,
+              color: 'white',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '4.5cqw',
               pointerEvents: 'none'
-            }}
-          />
+            }}>
+              {customFamily.name.charAt(0).toUpperCase()}
+            </div>
+          ) : (
+            <img
+              src={customFamily?.icon || `./img/TextIcon/${cardFamily}.png`}
+              alt={`${cardFamily} Emblem BR`}
+              style={{
+                position: 'absolute',
+                left: '90.97%',
+                top: '93.54%',
+                width: '9.84cqw',
+                height: '9.84cqw',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 3.5,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(0, 0, 0, 0.3)',
+                boxSizing: 'border-box',
+                pointerEvents: 'none'
+              }}
+            />
+          )
         )}
 
         {/* Safe zone overlay guide */}

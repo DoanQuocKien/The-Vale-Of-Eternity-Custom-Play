@@ -10,6 +10,11 @@ function runCommand(cmd) {
 }
 
 try {
+  // 0. Automatically kill running instance of the app to avoid file locking (EPERM / Access Denied)
+  execSync('taskkill /F /T /IM vale-of-eternity-win_x64.exe', { stdio: 'ignore' });
+} catch (e) {}
+
+try {
   // 1. Build Vite production assets
   runCommand('npm run build');
 

@@ -536,6 +536,7 @@ const CardEditor = ({ onShowArtImporter }) => {
   const resolvedSelected = getResolvedElementLayout(selectedElement, backgroundFamily, layout);
 
   const customFamily = families.find(fam => fam.id === backgroundFamily || fam.name === backgroundFamily);
+  const familyName = customFamily ? customFamily.name : backgroundFamily;
 
   const rawPriceColorTL = getPriceColor('priceTL', backgroundFamily, layout);
   const rawPriceColorBR = getPriceColor('priceBR', backgroundFamily, layout);
@@ -1715,14 +1716,14 @@ const CardEditor = ({ onShowArtImporter }) => {
             ) : ['priceTL', 'priceBR'].includes(selectedElement) ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
-                  <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>
+                  <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{familyName}</strong> family only.</span>
                 </div>
 
                 {/* Single Shared Color Control for both tags */}
                 <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
                     <span>Shared Cost Tags Color</span>
-                    <span>{backgroundFamily} Theme</span>
+                    <span>{familyName} Theme</span>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <input
@@ -1881,7 +1882,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                       {['credit'].includes(selectedElement) && (
                         <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.1)', padding: '0.4rem 0.6rem', borderRadius: '4px', borderLeft: '2px solid #38bdf8' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{backgroundFamily}</strong> family only.</span>
+                          <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>ℹ️ Calibrating for <strong style={{ color: 'white' }}>{familyName}</strong> family only.</span>
                         </div>
                       )}
 

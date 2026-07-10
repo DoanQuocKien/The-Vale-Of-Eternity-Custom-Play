@@ -9,3 +9,7 @@ resources/bin/*.exe
 neutralino.log
 resources.neu
 vale-of-eternity-*
+web-dist/
+.tmp/
+temp_*
+

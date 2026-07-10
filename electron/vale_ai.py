@@ -206,10 +206,6 @@ def enhance_lines(input_path, output_path):
 
 # ── 5. LOCAL RAG RECOMMENDATION ENGINE (Rules-Augmented Retrieval - RAR) ──
 
-# Ensure sentence-transformers is installed for true local semantic RAG
-install_and_import('sentence_transformers')
-from sentence_transformers import SentenceTransformer, util
-
 _model = None
 
 # Family-grouped names for semantic synthesis aligned with game mechanics
@@ -876,6 +872,8 @@ def recommend_cards(card_json_str):
     print("Loading local semantic RAG embedding model...", file=sys.stderr, flush=True)
     global _model
     if _model is None:
+        install_and_import('sentence_transformers')
+        from sentence_transformers import SentenceTransformer
         _model = SentenceTransformer('all-MiniLM-L6-v2')
     model = _model
     
@@ -1031,6 +1029,8 @@ def run_server(port=8009):
     print(f"Pre-loading RAG model on port {port}...", flush=True)
     global _model
     if _model is None:
+        install_and_import('sentence_transformers')
+        from sentence_transformers import SentenceTransformer
         _model = SentenceTransformer('all-MiniLM-L6-v2')
     print("Model loaded. Starting server...", flush=True)
     with socketserver.TCPServer(("", port), AIHandler) as httpd:

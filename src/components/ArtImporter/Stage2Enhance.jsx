@@ -504,7 +504,10 @@ const Stage2Enhance = ({
                 borderRadius: '5px',
                 letterSpacing: '0.04em'
               }}>
-                {currentIdea.family}
+                {(() => {
+                  const customFam = customFamilies.find(f => f.id === currentIdea.family || f.name === currentIdea.family);
+                  return customFam ? customFam.name : currentIdea.family;
+                })()}
               </span>
               <div style={{
                 width: '22px',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { dbGetPacks, dbGetTokens, dbGetCards } from '../../services/db.js';
+import { useAppStore } from '../../store/useAppStore.js';
 
 // Built-in game icons from public/img
 const BUILTIN_ICONS = [
@@ -261,7 +262,11 @@ const LibraryDrawer = ({ onCancel, onPickItem, onRenderCard }) => {
                           {card.name}
                         </strong>
                         <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>
-                          {card.family} • {card._packName}
+                          {(() => {
+                            const families = useAppStore.getState().families || [];
+                            const customFamily = families.find(f => f.id === card.family || f.name === card.family);
+                            return customFamily ? customFamily.name : card.family;
+                          })()} • {card._packName}
                         </span>
                       </div>
                       <span style={{ fontSize: '0.6rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
