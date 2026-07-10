@@ -1,6 +1,55 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
+export function convertCqwToPxRecursively(element, containerWidth) {
+  const propsToConvert = [
+    'fontSize', 'width', 'height', 'margin', 'marginBottom', 'marginTop', 'marginLeft', 'marginRight',
+    'padding', 'paddingBottom', 'paddingTop', 'paddingLeft', 'paddingRight',
+    'borderRadius', 'borderWidth', 'borderLeftWidth', 'borderRightWidth', 'borderTopWidth', 'borderBottomWidth',
+    'left', 'top', 'right', 'bottom', 'lineHeight'
+  ];
+
+  const restoredElements = [];
+
+  function traverse(node) {
+    if (node.nodeType === 1) { // Node.ELEMENT_NODE
+      const originalStyles = {};
+      let changed = false;
+
+      propsToConvert.forEach(prop => {
+        const val = node.style[prop];
+        if (val && typeof val === 'string' && val.includes('cqw')) {
+          originalStyles[prop] = val;
+          const cqwNum = parseFloat(val);
+          if (!isNaN(cqwNum)) {
+            const pxNum = (cqwNum * containerWidth) / 100;
+            node.style[prop] = `${pxNum}px`;
+            changed = true;
+          }
+        }
+      });
+
+      if (changed) {
+        restoredElements.push({ node, originalStyles });
+      }
+    }
+
+    for (let i = 0; i < node.childNodes.length; i++) {
+      traverse(node.childNodes[i]);
+    }
+  }
+
+  traverse(element);
+
+  return () => {
+    restoredElements.forEach(({ node, originalStyles }) => {
+      Object.keys(originalStyles).forEach(prop => {
+        node.style[prop] = originalStyles[prop];
+      });
+    });
+  };
+}
+
 /**
  * Save a jsPDF document.
  * - In Electron: writes the PDF buffer to the user's Downloads folder via IPC,
@@ -131,12 +180,17 @@ export async function generatePdfFromElements({
           `File ${chunkIdx + 1}/${chunks.length} — Capturing "${chunkCards[i].name}" (${i + 1}/${chunkTotal})...`
         );
 
+        const containerWidth = cardElement.getBoundingClientRect().width || 744;
+        const restore = convertCqwToPxRecursively(cardElement, containerWidth);
+
         const canvas = await html2canvas(cardElement, {
           scale: 3.0,
           useCORS: true,
           backgroundColor: null,
           logging: false
         });
+
+        restore();
 
         const imgData = canvas.toDataURL('image/png');
         const x = xStart + col * (cardWidth + gapX);

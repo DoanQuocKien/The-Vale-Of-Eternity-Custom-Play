@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/useAppStore.js';
 import { DEFAULT_LAYOUT } from '../../utils/constants.jsx';
 import { Plus, FileText, Trash2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { convertCqwToPxRecursively } from '../../utils/pdfUtils.js';
 import { drawShape } from '../../utils/canvasUtils.js';
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
@@ -133,12 +134,17 @@ export default function ComponentDesigner({ onShowArtImporter }) {
         if (!cardRenderRef.current) throw new Error('Render container not available');
         await new Promise(r => setTimeout(r, 600));
 
+        const containerWidth = cardRenderRef.current.getBoundingClientRect().width || 744;
+        const restore = convertCqwToPxRecursively(cardRenderRef.current, containerWidth);
+
         const canvas = await html2canvas(cardRenderRef.current, {
           scale: 3.0,
           useCORS: true,
           backgroundColor: null,
           logging: false
         });
+        
+        restore();
         
         const dataUrl = canvas.toDataURL('image/png');
         handlePickLibraryItem(dataUrl);
@@ -1442,7 +1448,7 @@ export default function ComponentDesigner({ onShowArtImporter }) {
       {/* Hidden Card Preview for rendering cards to library image */}
       {renderingCard && (
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={cardRenderRef} style={{ width: '240px', height: '333px' }}>
+          <div ref={cardRenderRef} style={{ width: '744px', height: '1039px' }}>
             <CardPreview card={renderingCard} defaultLayout={DEFAULT_LAYOUT} />
           </div>
         </div>
