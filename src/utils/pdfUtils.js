@@ -61,15 +61,30 @@ export function convertCqwToPxRecursively(element, containerWidth) {
  * @returns {Promise<string|null>} Absolute path (Electron only) or null (browser)
  */
 async function savePdf(pdf, fileName) {
+  // IMPORTANT: Neutralino.filesystem.writeBinaryFile internally converts ArrayBuffer
+  // to base64 via character-by-character string concatenation (O(n²)), which completely
+  // freezes the app for large PDF files (20-50MB for high-res card packs).
+  // Instead, we use Chromium's native Blob URL download which has no size limits.
   if (typeof window !== 'undefined' && window.Neutralino) {
     try {
+      // Trigger native Chromium download — instant, no WebSocket IPC involved
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+      // Get likely saved path for post-export actions (CMYK convert, open folder)
       const downloadsDir = await window.Neutralino.os.getPath('downloads');
       const savedPath = `${downloadsDir}/${fileName}`;
-      const buffer = pdf.output('arraybuffer');
-      await window.Neutralino.filesystem.writeBinaryFile(savedPath, buffer);
+      console.log(`[pdfUtils savePdf] Downloaded as: ${savedPath}`);
       return savedPath;
     } catch (err) {
-      console.error('[Neutralino savePdf] Failed:', err);
+      console.error('[pdfUtils savePdf] Failed:', err);
       throw err;
     }
   }
@@ -106,9 +121,11 @@ export async function generatePdfFromElements({
   onFileCount,
 }) {
   const total = cards.length;
+  console.log('[pdfUtils] generatePdfFromElements called:', { totalCards: total, totalElements: elements.length, includeBackside, pageSize, cardsPerFile });
   onProgress(0, total, 'Preparing cards...');
 
   await document.fonts.ready;
+  console.log('[pdfUtils] Fonts ready, waiting 1200ms...');
   await new Promise(resolve => setTimeout(resolve, 1200));
 
   let backsideImg = null;
@@ -172,7 +189,10 @@ export async function generatePdfFromElements({
 
         const globalIdx = chunkCardIndices[i];
         const cardElement = chunkElements[i];
-        if (!cardElement) continue;
+        if (!cardElement) {
+          console.warn(`[pdfUtils] Card element at index ${i} is null/undefined, skipping`);
+          continue;
+        }
 
         onProgress(
           globalIdx,
@@ -183,12 +203,22 @@ export async function generatePdfFromElements({
         const containerWidth = cardElement.getBoundingClientRect().width || 744;
         const restore = convertCqwToPxRecursively(cardElement, containerWidth);
 
-        const canvas = await html2canvas(cardElement, {
-          scale: 3.0,
-          useCORS: true,
-          backgroundColor: null,
-          logging: false
-        });
+        console.log(`[pdfUtils] Capturing card ${i}: containerWidth=${containerWidth}`);
+
+        let canvas;
+        try {
+          canvas = await html2canvas(cardElement, {
+            scale: 3.0,
+            useCORS: true,
+            backgroundColor: null,
+            logging: false
+          });
+          console.log(`[pdfUtils] html2canvas success for card ${i}: canvas ${canvas.width}x${canvas.height}`);
+        } catch (h2cErr) {
+          console.error(`[pdfUtils] html2canvas FAILED for card ${i}:`, h2cErr);
+          restore();
+          throw h2cErr;
+        }
 
         restore();
 

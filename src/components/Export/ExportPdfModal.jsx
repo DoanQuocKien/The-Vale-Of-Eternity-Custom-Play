@@ -44,6 +44,27 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
     setCmykError('');
     setCmykOutputPaths([]);
 
+    // Debug: Check refs state
+    const validRefs = refs.current.filter(el => el != null);
+    console.log('[PDF Export] Starting export:', {
+      totalCards: cards.length,
+      totalRefs: refs.current.length,
+      validRefs: validRefs.length,
+      firstRefDimensions: validRefs[0] ? {
+        width: validRefs[0].getBoundingClientRect().width,
+        height: validRefs[0].getBoundingClientRect().height,
+        offsetWidth: validRefs[0].offsetWidth,
+        offsetHeight: validRefs[0].offsetHeight,
+      } : 'NO VALID REFS',
+      isDesktop: IS_DESKTOP,
+    });
+
+    if (validRefs.length === 0) {
+      alert('Error: Card preview elements are not mounted. Please try closing and re-opening the export dialog.');
+      setIsGenerating(false);
+      return;
+    }
+
     try {
       const paths = await generatePdfFromElements({
         elements: refs.current,
@@ -61,6 +82,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
         },
         onFileCount: (n) => setFileCount(n),
       });
+      console.log('[PDF Export] generatePdfFromElements returned:', paths);
       setIsGenerating(false);
       // In Desktop, stay open and show post-export actions
       if (IS_DESKTOP && paths && paths.length > 0) {
@@ -70,7 +92,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
         onClose();
       }
     } catch (err) {
-      console.error(err);
+      console.error('[PDF Export] Error:', err);
       alert('Error generating PDF: ' + err.message);
       setIsGenerating(false);
     }
