@@ -141,10 +141,10 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
           alt="Art"
           style={{
             position: 'absolute',
-            left: `${artImageData.transform?.x || 50}%`,
-            top: `${artImageData.transform?.y || 50}%`,
-            width: `${artImageData.transform?.scale || 60}%`,
-            transform: `translate(-50%, -50%) rotate(${artImageData.transform?.rotation || 0}deg)`,
+            left: `${artImageData.transform?.x ?? 50}%`,
+            top: `${artImageData.transform?.y ?? 47.7}%`,
+            width: `${artImageData.transform?.scale ?? 60}%`,
+            transform: `translate(-50%, -50%) rotate(${artImageData.transform?.rotation ?? 0}deg)`,
             zIndex: 1,
             pointerEvents: 'none'
           }}
@@ -181,7 +181,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
               width: `${overlaySize * aspect}cqw`,
               height: `${overlaySize}cqw`,
               transform: 'translate(-50%, -50%)',
-              zIndex: 1,
+              zIndex: 3,
               pointerEvents: 'none'
             }}
           >
@@ -207,6 +207,7 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
         fontSize: `${cardLayout.name.fontSize}cqw`,
         fontFamily: 'var(--font-card-name)',
         color: cardLayout.name.color,
+        fontWeight: 'normal',
         textAlign: 'center',
         transform: 'translate(0, -50%)',
         zIndex: 1,
