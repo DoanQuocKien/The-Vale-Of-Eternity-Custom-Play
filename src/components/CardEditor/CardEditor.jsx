@@ -21,6 +21,8 @@ const CardEditor = ({ onShowArtImporter }) => {
   const setActivePackId = useAppStore(state => state.setActivePackId);
   const saveCard = useAppStore(state => state.saveCard);
   const createNewPack = useAppStore(state => state.createNewPack);
+  const saveLayoutTemplate = useAppStore(state => state.saveLayoutTemplate);
+  const deleteLayoutTemplate = useAppStore(state => state.deleteLayoutTemplate);
   const activeCard = useAppStore(state => state.activeCard);
   const setActiveCard = useAppStore(state => state.setActiveCard);
   const tokens = useAppStore(state => state.tokens);
@@ -1543,14 +1545,275 @@ const CardEditor = ({ onShowArtImporter }) => {
         {/* Section 2: Element Properties Calibration Sidebar */}
         {sidebarTab === 'calibration' && (
           <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.25rem', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
               <Settings size={16} /> Layout & Typography Calibration
             </h3>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              Select an element on the card to fine-tune its position, size, and styling properties.
-            </p>
 
-            <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '1rem', background: 'var(--bg-surface-elevated)', padding: '0.2rem', borderRadius: 'var(--radius-sm)' }}>
+            {/* Pack Layout Templates Section */}
+            {(() => {
+              const activePack = packs.find(p => p.id === activePackId);
+              const templates = activePack?.layoutTemplates || {};
+              const currentEffectLines = cardEffectText.split('\n').filter(l => l.trim()).length || 1;
+              const matchingVariant = `${currentEffectLines}-box`;
+              const templateKeys = Object.keys(templates);
+
+              return (
+                <div style={{
+                  background: 'var(--bg-surface-elevated)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.85rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.6rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#c4b5fd', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      📋 Pack Layout Templates
+                    </span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      Variant for {currentEffectLines} line{currentEffectLines > 1 ? 's' : ''}: <strong style={{ color: '#a78bfa' }}>{matchingVariant}</strong>
+                    </span>
+                  </div>
+
+                  {templateKeys.length === 0 ? (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      No layout templates saved for this pack yet. Save current layout as template below.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                      {templateKeys.map(key => {
+                        const isMatch = key === matchingVariant;
+                        return (
+                          <div
+                            key={key}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.2rem',
+                              background: isMatch ? 'rgba(124, 58, 237, 0.25)' : 'var(--bg-main)',
+                              border: isMatch ? '1px solid #7c3aed' : '1px solid var(--border-color)',
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '0.15rem 0.4rem',
+                              fontSize: '0.72rem',
+                              color: isMatch ? '#c4b5fd' : 'var(--text-secondary)'
+                            }}
+                          >
+                            <button
+                              onClick={() => {
+                                setLayout(templates[key]);
+                                setHasUnsavedChanges(true);
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'inherit',
+                                fontSize: 'inherit',
+                                fontWeight: isMatch ? 700 : 500,
+                                cursor: 'pointer',
+                                padding: 0
+                              }}
+                              title={`Apply "${key}" layout template`}
+                            >
+                              {isMatch ? '★ ' : ''}{key}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (window.confirm(`Delete layout template "${key}"?`)) {
+                                  await deleteLayoutTemplate(activePackId, key);
+                                }
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--color-danger)',
+                                cursor: 'pointer',
+                                fontSize: '0.65rem',
+                                padding: '0 0.1rem',
+                                marginLeft: '0.2rem'
+                              }}
+                              title={`Delete template "${key}"`}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem' }}>
+                    <button
+                      onClick={async () => {
+                        await saveLayoutTemplate(activePackId, matchingVariant, layout);
+                        alert(`Saved current layout as "${matchingVariant}" template for this pack!`);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '0.35rem 0.5rem',
+                        background: 'rgba(99, 102, 241, 0.12)',
+                        border: '1px solid rgba(99, 102, 241, 0.3)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        color: 'var(--color-primary)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      💾 Save as {matchingVariant} Template
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await saveLayoutTemplate(activePackId, 'default', layout);
+                        alert('Saved current layout as default template for this pack!');
+                      }}
+                      style={{
+                        padding: '0.35rem 0.5rem',
+                        background: 'var(--bg-main)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Save Default
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Quick Edit Content Panel for selected element */}
+            <div style={{
+              background: 'rgba(99, 102, 241, 0.06)',
+              border: '1px solid rgba(99, 102, 241, 0.2)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.75rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.4rem'
+            }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                ✏️ Edit Content: <span style={{ color: 'white' }}>
+                  {selectedElement === 'name' ? 'Title / Name' :
+                   ['priceTL', 'priceBR'].includes(selectedElement) ? 'Summoning Cost' :
+                   selectedElement === 'credit' ? 'Artist Credit' :
+                   ['effect', 'effectIcon'].includes(selectedElement) ? 'Effect Text' : 'Token Overlays'}
+                </span>
+              </div>
+
+              {selectedElement === 'name' && (
+                <input
+                  type="text"
+                  value={cardName}
+                  onChange={(e) => { setCardName(e.target.value); setHasUnsavedChanges(true); }}
+                  placeholder="Card Name"
+                  style={{
+                    width: '100%',
+                    padding: '0.35rem 0.5rem',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.82rem',
+                    color: 'white'
+                  }}
+                />
+              )}
+
+              {['priceTL', 'priceBR'].includes(selectedElement) && (
+                <input
+                  type="number"
+                  min="0"
+                  max="99"
+                  value={cardCost}
+                  onChange={(e) => { setCardCost(e.target.value); setHasUnsavedChanges(true); }}
+                  placeholder="Card Cost"
+                  style={{
+                    width: '100%',
+                    padding: '0.35rem 0.5rem',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.82rem',
+                    color: 'white'
+                  }}
+                />
+              )}
+
+              {selectedElement === 'credit' && (
+                <input
+                  type="text"
+                  value={cardCredit}
+                  onChange={(e) => { setCardCredit(e.target.value); setHasUnsavedChanges(true); }}
+                  placeholder="Artist Credit"
+                  style={{
+                    width: '100%',
+                    padding: '0.35rem 0.5rem',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.82rem',
+                    color: 'white'
+                  }}
+                />
+              )}
+
+              {['effect', 'effectIcon'].includes(selectedElement) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <textarea
+                    value={cardEffectText}
+                    onChange={(e) => { setCardEffectText(e.target.value); setHasUnsavedChanges(true); }}
+                    rows="2"
+                    placeholder="Effect text..."
+                    style={{
+                      width: '100%',
+                      padding: '0.35rem 0.5rem',
+                      background: 'var(--bg-surface-elevated)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.8rem',
+                      fontFamily: 'monospace',
+                      color: 'white',
+                      resize: 'vertical'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                    {[
+                      { label: '⚡', tag: '⚡ ' },
+                      { label: '♾️', tag: '♾️ ' },
+                      { label: '⏳', tag: '⏳ ' },
+                      { label: '⚡ Icon', tag: '\\icon(instant)' },
+                      { label: '♾️ Icon', tag: '\\icon(permanent)' },
+                      { label: '⏳ Icon', tag: '\\icon(active)' }
+                    ].map(t => (
+                      <button
+                        key={t.label}
+                        onClick={() => insertTextTag(t.tag)}
+                        style={{
+                          padding: '0.1rem 0.35rem',
+                          background: 'var(--bg-main)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.65rem',
+                          cursor: 'pointer',
+                          color: 'var(--text-secondary)'
+                        }}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '0.5rem', background: 'var(--bg-surface-elevated)', padding: '0.2rem', borderRadius: 'var(--radius-sm)' }}>
               {[
                 { id: 'price', label: 'Cost' },
                 { id: 'name', label: 'Title' },
@@ -2095,7 +2358,7 @@ const CardEditor = ({ onShowArtImporter }) => {
                       <input
                         type="range"
                         min="1"
-                        max="15"
+                        max="20"
                         step="0.1"
                         value={layout.effectIcon?.size ?? layout.effect?.iconSize ?? 6.0}
                         onChange={(e) => {
@@ -2235,7 +2498,7 @@ const CardEditor = ({ onShowArtImporter }) => {
         {sidebarTab === 'calibration' && (
           <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem' }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem', color: '#f472b6', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Download size={16} /> 3. Layout JSON Configuration
+              <Download size={16} /> Layout Config (Import / Export)
             </h3>
 
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>

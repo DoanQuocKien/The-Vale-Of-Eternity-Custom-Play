@@ -8,9 +8,9 @@ export default function FamilyDesigner({ onShowArtImporter }) {
   const activePackId = useAppStore(state => state.activePackId);
   const saveFamily = useAppStore(state => state.saveFamily);
   const deleteFamily = useAppStore(state => state.deleteFamily);
-  const cards = useAppStore(state => state.cards);
+  const explorerCards = useAppStore(state => state.explorerCards);
   const saveCard = useAppStore(state => state.saveCard);
-  const loadCards = useAppStore(state => state.loadCards);
+  const loadExplorerCards = useAppStore(state => state.loadExplorerCards);
 
   // Editor states
   const [editingFamily, setEditingFamily] = useState(null);
@@ -101,6 +101,7 @@ export default function FamilyDesigner({ onShowArtImporter }) {
 
     const isRename = editingFamily && editingFamily.name && editingFamily.name !== name.trim();
     const oldName = editingFamily?.name;
+    const oldId = editingFamily?.id;
 
     const payload = {
       ...editingFamily,
@@ -113,10 +114,10 @@ export default function FamilyDesigner({ onShowArtImporter }) {
 
     const saved = await saveFamily(payload);
 
-    if (isRename && oldName) {
+    if (isRename && (oldName || oldId)) {
       // Find all cards matching old family name or ID and update them
-      const updatedCards = cards.filter(c => c.family === oldName || c.family === saved.id);
-      for (const card of updatedCards) {
+      const targetCards = (explorerCards || []).filter(c => c.family === oldName || c.family === oldId || c.family === saved.id);
+      for (const card of targetCards) {
         const updatedCard = { ...card, family: saved.id };
         
         // Update layout calibrations keys
@@ -125,17 +126,25 @@ export default function FamilyDesigner({ onShowArtImporter }) {
           for (const key of Object.keys(newLayout)) {
             if (newLayout[key] && newLayout[key].families) {
               const fams = { ...newLayout[key].families };
-              if (fams[oldName]) {
+              if (oldName && fams[oldName]) {
                 fams[saved.id] = fams[oldName];
-                delete fams[oldName];
+                if (oldName !== saved.id) delete fams[oldName];
+              }
+              if (oldId && fams[oldId]) {
+                fams[saved.id] = fams[oldId];
+                if (oldId !== saved.id) delete fams[oldId];
               }
               newLayout[key] = { ...newLayout[key], families: fams };
             }
             if (newLayout[key] && newLayout[key].colors) {
               const cols = { ...newLayout[key].colors };
-              if (cols[oldName]) {
+              if (oldName && cols[oldName]) {
                 cols[saved.id] = cols[oldName];
-                delete cols[oldName];
+                if (oldName !== saved.id) delete cols[oldName];
+              }
+              if (oldId && cols[oldId]) {
+                cols[saved.id] = cols[oldId];
+                if (oldId !== saved.id) delete cols[oldId];
               }
               newLayout[key] = { ...newLayout[key], colors: cols };
             }
@@ -145,7 +154,7 @@ export default function FamilyDesigner({ onShowArtImporter }) {
 
         await saveCard(updatedCard);
       }
-      await loadCards(activePackId);
+      await loadExplorerCards(activePackId);
     }
 
     selectFamily(saved);

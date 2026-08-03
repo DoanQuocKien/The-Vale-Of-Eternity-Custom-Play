@@ -178,8 +178,8 @@ const CardPreview = React.forwardRef(({ card, defaultLayout }, ref) => {
               position: 'absolute',
               left: `${cx}%`,
               top: `${cy}%`,
-              width: `${overlaySize}cqw`,
-              height: `${overlaySize / aspect}cqw`,
+              width: `${overlaySize * aspect}cqw`,
+              height: `${overlaySize}cqw`,
               transform: 'translate(-50%, -50%)',
               zIndex: 1,
               pointerEvents: 'none'

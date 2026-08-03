@@ -320,5 +320,39 @@ export const useAppStore = create((set, get) => ({
   deleteFamily: async (familyId) => {
     await dbDeleteFamily(familyId);
     await get().loadFamilies(get().activePackId);
+  },
+
+  saveLayoutTemplate: async (packId, variantKey, layoutObj) => {
+    const packs = get().packs;
+    const pack = packs.find(p => p.id === packId);
+    if (!pack) return;
+    const existingTemplates = pack.layoutTemplates || {};
+    const updatedPack = {
+      ...pack,
+      layoutTemplates: {
+        ...existingTemplates,
+        [variantKey]: layoutObj
+      },
+      updatedAt: Date.now()
+    };
+    await dbSavePack(updatedPack);
+    await get().loadPacks();
+    return updatedPack;
+  },
+
+  deleteLayoutTemplate: async (packId, variantKey) => {
+    const packs = get().packs;
+    const pack = packs.find(p => p.id === packId);
+    if (!pack) return;
+    const existingTemplates = { ...(pack.layoutTemplates || {}) };
+    delete existingTemplates[variantKey];
+    const updatedPack = {
+      ...pack,
+      layoutTemplates: existingTemplates,
+      updatedAt: Date.now()
+    };
+    await dbSavePack(updatedPack);
+    await get().loadPacks();
+    return updatedPack;
   }
 }));

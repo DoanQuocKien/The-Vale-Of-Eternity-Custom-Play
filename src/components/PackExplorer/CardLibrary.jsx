@@ -44,7 +44,8 @@ const CardLibrary = ({ onEditCard }) => {
   const filtered = explorerCards.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.effect.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFamily = filterFamily === 'All' || c.family === filterFamily;
+    const matchesFamily = filterFamily === 'All' || c.family === filterFamily ||
+      families.some(f => (f.id === filterFamily || f.name === filterFamily) && (c.family === f.id || c.family === f.name));
     const matchesCost = filterCost === 'All' || c.cost === filterCost;
     return matchesSearch && matchesFamily && matchesCost;
   }).sort((a, b) => {
@@ -103,6 +104,9 @@ const CardLibrary = ({ onEditCard }) => {
             <option value="All">All Families</option>
             {['Fire', 'Water', 'Earth', 'Wind', 'Dragon'].map(f => (
               <option key={f} value={f}>{f}</option>
+            ))}
+            {families.map(fam => (
+              <option key={fam.id} value={fam.id}>{fam.name}</option>
             ))}
           </select>
         </div>
