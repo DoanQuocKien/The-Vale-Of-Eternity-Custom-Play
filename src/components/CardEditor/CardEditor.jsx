@@ -1013,99 +1013,103 @@ const CardEditor = ({ onShowArtImporter }) => {
             </div>
 
             {/* Core Card Actions Toolbar */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <button
-                onClick={() => {
-                  if (hasUnsavedChanges) {
-                    if (!window.confirm('You have unsaved changes. Discard and create a new card?')) return;
-                  } else if (!window.confirm('Clear editing context and start creating a new card?')) {
-                    return;
-                  }
-                  setActiveCard(null);
-                  setHasUnsavedChanges(false);
-                }}
-                style={{
-                  padding: '0.5rem',
-                  background: 'rgba(99, 102, 241, 0.12)',
-                  border: '1px solid rgba(99, 102, 241, 0.3)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  color: 'var(--text-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.3rem',
-                  transition: 'all 0.2s'
-                }}
-                title="Create a new card from scratch"
-              >
-                ➕ New Card
-              </button>
-              <button
-                onClick={generateRandomCard}
-                style={{
-                  padding: '0.5rem',
-                  background: 'var(--bg-surface-elevated)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  color: 'var(--text-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.3rem',
-                  transition: 'all 0.2s'
-                }}
-                title="Generate a random card"
-              >
-                🎲 Random Card
-              </button>
-
-              <button
-                onClick={() => handleSaveCard(false)}
-                style={{
-                  padding: '0.55rem',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                  borderRadius: 'var(--radius-sm)',
-                  color: '#10b981',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.3rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                💾 Save / Overwrite
-              </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.25rem' }}>
               <button
                 onClick={() => handleSaveCard(true)}
                 style={{
-                  padding: '0.55rem',
+                  width: '100%',
+                  padding: '0.6rem',
                   background: 'linear-gradient(135deg, var(--color-primary), #8b5cf6)',
                   border: 'none',
                   borderRadius: 'var(--radius-sm)',
                   color: 'white',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.3rem',
-                  boxShadow: '0 4px 10px rgba(99, 102, 241, 0.15)',
+                  gap: '0.35rem',
+                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
                   transition: 'all 0.2s'
                 }}
               >
-                ✨ Save as New
+                ✨ Save as New Card
               </button>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
+                <button
+                  onClick={() => handleSaveCard(false)}
+                  style={{
+                    padding: '0.45rem 0.3rem',
+                    background: 'rgba(16, 185, 129, 0.12)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: '#10b981',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.2rem',
+                    transition: 'all 0.2s'
+                  }}
+                  title="Overwrite existing card"
+                >
+                  💾 Save Overwrite
+                </button>
+                <button
+                  onClick={() => {
+                    if (hasUnsavedChanges) {
+                      if (!window.confirm('You have unsaved changes. Discard and create a new card?')) return;
+                    } else if (!window.confirm('Clear editing context and start creating a new card?')) {
+                      return;
+                    }
+                    setActiveCard(null);
+                    setHasUnsavedChanges(false);
+                  }}
+                  style={{
+                    padding: '0.45rem 0.3rem',
+                    background: 'rgba(99, 102, 241, 0.12)',
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.2rem',
+                    transition: 'all 0.2s'
+                  }}
+                  title="Create a new card from scratch"
+                >
+                  ➕ New Card
+                </button>
+                <button
+                  onClick={generateRandomCard}
+                  style={{
+                    padding: '0.45rem 0.3rem',
+                    background: 'var(--bg-surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.2rem',
+                    transition: 'all 0.2s'
+                  }}
+                  title="Generate a random card"
+                >
+                  🎲 Random Card
+                </button>
+              </div>
             </div>
 
             {hasUnsavedChanges && (
@@ -1383,14 +1387,14 @@ const CardEditor = ({ onShowArtImporter }) => {
                   }}
                 >
                   <ImagePlus size={16} />
-                  Add Custom Artwork (Sketch, Upload, Webcam)
+                  Import / Create Artwork
                 </button>
               )}
             </div>
 
             <div style={{ marginBottom: '0.5rem' }}>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>
-                Effect Description (Split timing with newline `\n`)
+                Effect Text (each line = new effect box)
               </label>
               <textarea
                 value={cardEffectText}
@@ -1813,11 +1817,11 @@ const CardEditor = ({ onShowArtImporter }) => {
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '0.5rem', background: 'var(--bg-surface-elevated)', padding: '0.2rem', borderRadius: 'var(--radius-sm)' }}>
+            <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '0.25rem', background: 'var(--bg-surface-elevated)', padding: '0.2rem', borderRadius: 'var(--radius-sm)' }}>
               {[
                 { id: 'price', label: 'Cost' },
                 { id: 'name', label: 'Title' },
-                { id: 'effect', label: 'Effect Box' },
+                { id: 'effect', label: 'Effect' },
                 { id: 'credit', label: 'Credit' },
                 { id: 'tokens', label: 'Tokens' }
               ].map(tab => {
@@ -1849,6 +1853,41 @@ const CardEditor = ({ onShowArtImporter }) => {
                 );
               })}
             </div>
+
+            {['effect', 'effectIcon'].includes(selectedElement) && (
+              <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.5rem', justifyContent: 'center' }}>
+                <button
+                  onClick={() => setSelectedElement('effect')}
+                  style={{
+                    padding: '0.2rem 0.6rem',
+                    background: selectedElement === 'effect' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+                    border: selectedElement === 'effect' ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    color: selectedElement === 'effect' ? 'var(--color-primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📦 Effect Box
+                </button>
+                <button
+                  onClick={() => setSelectedElement('effectIcon')}
+                  style={{
+                    padding: '0.2rem 0.6rem',
+                    background: selectedElement === 'effectIcon' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+                    border: selectedElement === 'effectIcon' ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    color: selectedElement === 'effectIcon' ? 'var(--color-primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ⚡ Timing Icon
+                </button>
+              </div>
+            )}
 
 
             {selectedElement === 'tokens' ? (

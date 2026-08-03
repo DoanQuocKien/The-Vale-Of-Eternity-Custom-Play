@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { X, Download, AlertTriangle, Printer, CheckCircle, Loader } from 'lucide-react';
 import { generatePdfFromElements } from '../../utils/pdfUtils.js';
 import CardPreview from '../CardEditor/CardPreview.jsx';
@@ -101,6 +102,7 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
   };
 
   return (
+    <>
     <div style={{
       position: 'fixed',
       inset: 0,
@@ -497,28 +499,39 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
           </>
         )}
 
-        {/* Hidden area to render cards for html2canvas */}
-        {cards.length > 0 && (
-          <div style={{
-            position: 'absolute',
-            left: '-9999px',
-            top: '-9999px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px'
-          }}>
-            {cards.map((card, idx) => (
-              <CardPreview
-                key={card.id || idx}
-                ref={el => refs.current[idx] = el}
-                card={card}
-                defaultLayout={defaultLayout}
-              />
-            ))}
-          </div>
-        )}
+        {/* Hidden card previews are rendered via portal at body level to avoid html2canvas
+             capture failures caused by the modal's backdrop-filter / fixed stacking context */}
       </div>
     </div>
+
+    {/* Portal: hidden cards rendered directly on body so html2canvas can capture them cleanly */}
+    {cards.length > 0 && ReactDOM.createPortal(
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          top: 0,
+          width: '744px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          zIndex: -1,
+          pointerEvents: 'none'
+        }}
+      >
+        {cards.map((card, idx) => (
+          <CardPreview
+            key={card.id || idx}
+            ref={el => refs.current[idx] = el}
+            card={card}
+            defaultLayout={defaultLayout}
+          />
+        ))}
+      </div>,
+      document.body
+    )}
+  </>
   );
 };
 
