@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Download, Plus, Minus, Printer, CheckCircle, Loader } from 'lucide-react';
 import { generatePdfForTokens } from '../../utils/pdfUtils.js';
 
@@ -22,6 +22,17 @@ const ExportTokensPdfModal = ({ isOpen, onClose, tokens, packName }) => {
   const [cmykStatus, setCmykStatus] = useState(null);
   const [cmykError, setCmykError] = useState('');
   const [cmykOutputPath, setCmykOutputPath] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsGenerating(false);
+      setStatusText('');
+      setSavedPath(null);
+      setCmykStatus(null);
+      setCmykError('');
+      setCmykOutputPath('');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

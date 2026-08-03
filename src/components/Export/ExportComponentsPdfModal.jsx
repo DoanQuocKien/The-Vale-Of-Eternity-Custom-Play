@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Download, Plus, Minus, Printer, Layout, Grid, CheckCircle, Loader } from 'lucide-react';
 import { generatePdfForComponents } from '../../utils/pdfUtils.js';
 
@@ -26,6 +26,19 @@ const ExportComponentsPdfModal = ({ isOpen, onClose, components, packName }) => 
   const [cmykStatus, setCmykStatus] = useState(null);
   const [cmykError, setCmykError] = useState('');
   const [cmykOutputPath, setCmykOutputPath] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsGenerating(false);
+      setProgressVal(0);
+      setProgressTotal(0);
+      setStatusText('');
+      setSavedPath(null);
+      setCmykStatus(null);
+      setCmykError('');
+      setCmykOutputPath('');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

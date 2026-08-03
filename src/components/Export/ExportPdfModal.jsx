@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Download, AlertTriangle, Printer, CheckCircle, Loader } from 'lucide-react';
 import { generatePdfFromElements } from '../../utils/pdfUtils.js';
@@ -27,6 +27,20 @@ const ExportPdfModal = ({ isOpen, onClose, cards, defaultLayout, packName }) => 
   const [cmykOutputPaths, setCmykOutputPaths] = useState([]);
 
   const refs = useRef([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsGenerating(false);
+      setStatusText('');
+      setProgress(0);
+      setTotal(0);
+      setFileCount(null);
+      setSavedPaths([]);
+      setCmykStatus(null);
+      setCmykError('');
+      setCmykOutputPaths([]);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
