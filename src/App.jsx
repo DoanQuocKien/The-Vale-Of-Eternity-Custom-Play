@@ -28,9 +28,11 @@ export default function App() {
 
   const [tokensPdfExportIsOpen, setTokensPdfExportIsOpen] = useState(false);
   const [tokensPdfExportPackName, setTokensPdfExportPackName] = useState('');
+  const [tokensPdfExportItems, setTokensPdfExportItems] = useState(null); // null = use all
 
   const [componentsPdfExportIsOpen, setComponentsPdfExportIsOpen] = useState(false);
   const [componentsPdfExportPackName, setComponentsPdfExportPackName] = useState('');
+  const [componentsPdfExportItems, setComponentsPdfExportItems] = useState(null); // null = use all
 
   const initializeApp = useAppStore(state => state.initializeApp);
   const setActiveCard = useAppStore(state => state.setActiveCard);
@@ -67,13 +69,15 @@ export default function App() {
     setPdfExportIsOpen(true);
   };
 
-  const handleOpenTokensPdfExport = (packName) => {
+  const handleOpenTokensPdfExport = (packName, selectedItems = null) => {
     setTokensPdfExportPackName(packName);
+    setTokensPdfExportItems(selectedItems);
     setTokensPdfExportIsOpen(true);
   };
 
-  const handleOpenComponentsPdfExport = (packName) => {
+  const handleOpenComponentsPdfExport = (packName, selectedItems = null) => {
     setComponentsPdfExportPackName(packName);
+    setComponentsPdfExportItems(selectedItems);
     setComponentsPdfExportIsOpen(true);
   };
 
@@ -359,14 +363,14 @@ export default function App() {
       <ExportTokensPdfModal
         isOpen={tokensPdfExportIsOpen}
         onClose={() => setTokensPdfExportIsOpen(false)}
-        tokens={tokens}
+        tokens={tokensPdfExportItems !== null ? tokensPdfExportItems : tokens}
         packName={tokensPdfExportPackName}
       />
 
       <ExportComponentsPdfModal
         isOpen={componentsPdfExportIsOpen}
         onClose={() => setComponentsPdfExportIsOpen(false)}
-        components={useAppStore.getState().components}
+        components={componentsPdfExportItems !== null ? componentsPdfExportItems : useAppStore.getState().components}
         packName={componentsPdfExportPackName}
       />
     </>

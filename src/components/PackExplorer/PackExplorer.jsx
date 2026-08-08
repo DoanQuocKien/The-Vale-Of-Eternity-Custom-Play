@@ -19,8 +19,26 @@ const PackExplorer = ({
   const explorerCards = useAppStore(state => state.explorerCards);
   const tokens = useAppStore(state => state.tokens);
   const components = useAppStore(state => state.components);
+  const packs = useAppStore(state => state.packs);
+  const activePackId = useAppStore(state => state.activePackId);
 
   const [subTab, setSubTab] = useState('cards'); // 'cards' | 'tokens' | 'components'
+
+  const activePack = packs.find(p => p.id === activePackId);
+  const activePackName = activePack ? activePack.name : 'Pack';
+
+  // Handlers for "Print Selected" from each library — pass the selected subset to the export modal
+  const handlePrintSelectedCards = (selectedCards) => {
+    onOpenPdfExport(selectedCards, activePackName);
+  };
+
+  const handlePrintSelectedTokens = (selectedTokens) => {
+    onOpenTokensPdfExport(activePackName, selectedTokens);
+  };
+
+  const handlePrintSelectedComponents = (selectedComps) => {
+    onOpenComponentsPdfExport(activePackName, selectedComps);
+  };
 
   return (
     <div className="animate-fade-in" style={{
@@ -82,51 +100,21 @@ const PackExplorer = ({
           {subTab === 'cards' ? (
             <button
               onClick={() => onEditCard(null)}
-              style={{
-                padding: '0.35rem 0.75rem',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(99, 102, 241, 0.15)',
-                border: '1px solid var(--color-primary)',
-                color: 'var(--text-primary)',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-sm)', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid var(--color-primary)', color: 'var(--text-primary)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
             >
               <span>➕ Create Card</span>
             </button>
           ) : subTab === 'tokens' ? (
             <button
               onClick={() => onEditToken(null)}
-              style={{
-                padding: '0.35rem 0.75rem',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(167, 139, 250, 0.15)',
-                border: '1px solid #a78bfa',
-                color: 'var(--text-primary)',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-sm)', background: 'rgba(167, 139, 250, 0.15)', border: '1px solid #a78bfa', color: 'var(--text-primary)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
             >
               <span>➕ Create Token</span>
             </button>
           ) : (
             <button
               onClick={() => onEditComponent(null)}
-              style={{
-                padding: '0.35rem 0.75rem',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(129, 140, 248, 0.15)',
-                border: '1px solid #818cf8',
-                color: 'var(--text-primary)',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-sm)', background: 'rgba(129, 140, 248, 0.15)', border: '1px solid #818cf8', color: 'var(--text-primary)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
             >
               <span>➕ Create Component</span>
             </button>
@@ -134,9 +122,24 @@ const PackExplorer = ({
         </div>
 
         {/* Selected Library View */}
-        {subTab === 'cards' && <CardLibrary onEditCard={onEditCard} />}
-        {subTab === 'tokens' && <TokenLibrary onEditToken={onEditToken} />}
-        {subTab === 'components' && <ComponentLibrary onEditComponent={onEditComponent} />}
+        {subTab === 'cards' && (
+          <CardLibrary
+            onEditCard={onEditCard}
+            onPrintSelected={handlePrintSelectedCards}
+          />
+        )}
+        {subTab === 'tokens' && (
+          <TokenLibrary
+            onEditToken={onEditToken}
+            onPrintSelected={handlePrintSelectedTokens}
+          />
+        )}
+        {subTab === 'components' && (
+          <ComponentLibrary
+            onEditComponent={onEditComponent}
+            onPrintSelected={handlePrintSelectedComponents}
+          />
+        )}
       </div>
     </div>
   );

@@ -354,5 +354,93 @@ export const useAppStore = create((set, get) => ({
     await dbSavePack(updatedPack);
     await get().loadPacks();
     return updatedPack;
+  },
+
+  // ── Copy-to-Pack actions ────────────────────────────────────────────────────
+
+  /**
+   * Copy a card to another pack, including any tokens referenced in its
+   * tokenOverlays. New IDs are generated; originals are untouched.
+   */
+  copyCardToPack: async (card, targetPackId) => {
+    const tokenOverlays = card.tokenOverlays || [];
+    const uniqueTokenIds = [...new Set(tokenOverlays.map(ov => ov.tokenId).filter(Boolean))];
+
+    // Copy each referenced token and build an ID mapping old → new
+    const tokenIdMap = {};
+    const sourceTokens = get().tokens;
+    for (const tokenId of uniqueTokenIds) {
+      const tok = sourceTokens.find(t => t.id === tokenId);
+      if (!tok) continue;
+      const newTokenId = 'token-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      const newToken = {
+        ...tok,
+        id: newTokenId,
+        packId: targetPackId,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      await dbSaveToken(newToken);
+      tokenIdMap[tokenId] = newTokenId;
+    }
+
+    // Remap overlay IDs in the card copy
+    const newOverlays = tokenOverlays.map(ov => ({
+      ...ov,
+      instanceId: 'instance-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      tokenId: tokenIdMap[ov.tokenId] ?? ov.tokenId
+    }));
+
+    const newCard = {
+      ...card,
+      id: 'card-' + Date.now(),
+      packId: targetPackId,
+      tokenOverlays: newOverlays,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    await dbSaveCard(newCard);
+
+    if (get().activePackId === targetPackId) {
+      await get().loadExplorerCards(targetPackId);
+      await get().loadTokens(targetPackId);
+    }
+    return newCard;
+  },
+
+  /**
+   * Copy a single token to another pack. Original is untouched.
+   */
+  copyTokenToPack: async (token, targetPackId) => {
+    const newToken = {
+      ...token,
+      id: 'token-' + Date.now(),
+      packId: targetPackId,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    await dbSaveToken(newToken);
+    if (get().activePackId === targetPackId) {
+      await get().loadTokens(targetPackId);
+    }
+    return newToken;
+  },
+
+  /**
+   * Copy a board component to another pack. Original is untouched.
+   */
+  copyComponentToPack: async (comp, targetPackId) => {
+    const newComp = {
+      ...comp,
+      id: 'component-' + Date.now(),
+      packId: targetPackId,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    await dbSaveComponent(newComp);
+    if (get().activePackId === targetPackId) {
+      await get().loadComponents(targetPackId);
+    }
+    return newComp;
   }
 }));
