@@ -8,6 +8,7 @@ import ArtImporter from './components/ArtImporter/ArtImporter.jsx';
 import TokenDesigner from './components/TokenDesigner/TokenDesigner.jsx';
 import ComponentDesigner from './components/ComponentDesigner/ComponentDesigner.jsx';
 import FamilyDesigner from './components/FamilyDesigner/FamilyDesigner.jsx';
+import RulebookDesigner from './components/RulebookDesigner/RulebookDesigner.jsx';
 import { useAppStore } from './store/useAppStore.js';
 import { RefreshCw } from 'lucide-react';
 import { startAIServer } from './utils/pythonRunner.js';
@@ -294,6 +295,22 @@ export default function App() {
           >
             Family Designer
           </button>
+          <button
+            onClick={() => handleTabChange('rulebooks')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: activeTab === 'rulebooks' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'rulebooks' ? '3px solid var(--color-primary)' : '3px solid transparent',
+              color: activeTab === 'rulebooks' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
+          >
+            Rulebook Maker
+          </button>
         </div>
 
         {activeTab === 'editor' && (
@@ -333,6 +350,10 @@ export default function App() {
 
         {activeTab === 'families' && (
           <FamilyDesigner onShowArtImporter={handleShowArtImporter} />
+        )}
+
+        {activeTab === 'rulebooks' && (
+          <RulebookDesigner />
         )}
       </div>
 

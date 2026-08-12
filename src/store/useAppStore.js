@@ -15,6 +15,9 @@ import {
   dbGetFamilies,
   dbSaveFamily,
   dbDeleteFamily,
+  dbGetRulebooks,
+  dbSaveRulebook,
+  dbDeleteRulebook,
   DEFAULT_PACK_ID,
   seedDefaultData
 } from '../services/db.js';
@@ -34,11 +37,13 @@ export const useAppStore = create((set, get) => ({
   tokens: [],
   components: [],
   families: [],
+  rulebooks: [],
 
   // Editor State
   activeCard: null,
   activeToken: null,
   activeComponent: null,
+  activeRulebook: null,
 
   // Actions
   initializeApp: async () => {
@@ -65,6 +70,7 @@ export const useAppStore = create((set, get) => ({
     await get().loadTokens(packId);
     await get().loadComponents(packId);
     await get().loadFamilies(packId);
+    await get().loadRulebooks(packId);
   },
 
   loadExplorerCards: async (packId) => {
@@ -355,6 +361,39 @@ export const useAppStore = create((set, get) => ({
     await get().loadPacks();
     return updatedPack;
   },
+
+  // ─── Rulebooks ────────────────────────────────────────────────────────
+  loadRulebooks: async (packId) => {
+    const idToLoad = packId || get().activePackId;
+    if (!idToLoad) return [];
+    const rulebooks = await dbGetRulebooks(idToLoad);
+    const sorted = rulebooks.sort((a, b) => b.createdAt - a.createdAt);
+    set({ rulebooks: sorted });
+    return sorted;
+  },
+
+  saveRulebook: async (rulebook) => {
+    const rulebookToSave = {
+      ...rulebook,
+      updatedAt: Date.now()
+    };
+    if (!rulebookToSave.createdAt) rulebookToSave.createdAt = Date.now();
+    if (!rulebookToSave.id) rulebookToSave.id = 'rulebook-' + Date.now();
+
+    await dbSaveRulebook(rulebookToSave);
+
+    if (get().activePackId === rulebookToSave.packId) {
+      await get().loadRulebooks(get().activePackId);
+    }
+    return rulebookToSave;
+  },
+
+  deleteRulebook: async (rulebookId) => {
+    await dbDeleteRulebook(rulebookId);
+    await get().loadRulebooks(get().activePackId);
+  },
+
+  setActiveRulebook: (rulebook) => set({ activeRulebook: rulebook }),
 
   // ── Copy-to-Pack actions ────────────────────────────────────────────────────
 

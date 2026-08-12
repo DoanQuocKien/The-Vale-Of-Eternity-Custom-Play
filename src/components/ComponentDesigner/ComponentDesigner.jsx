@@ -875,6 +875,13 @@ export default function ComponentDesigner({ onShowArtImporter }) {
     };
 
     const saved = await saveComponent(newComp);
+    
+    // Pre-initialize drawing canvas to prevent render crashes
+    const drawCvs = drawingCanvasRef.current || document.createElement('canvas');
+    drawCvs.width = Math.round(saved.widthMm * 11.811);
+    drawCvs.height = Math.round(saved.heightMm * 11.811);
+    drawingCanvasRef.current = drawCvs;
+
     setActiveComponent(saved);
     setShowNewModal(false);
   };

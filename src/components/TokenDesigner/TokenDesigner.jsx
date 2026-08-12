@@ -332,6 +332,12 @@ export default function TokenDesigner({ onShowArtImporter }) {
   const [isPanningState, setIsPanningState] = useState(false);
   const lastPanPos = useRef({ x: 0, y: 0 });
 
+  // Drawing refs
+  const isDrawing = useRef(false);
+  const isDrawingShape = useRef(false);
+  const startPosRef = useRef(null);
+  const lastDrawingPos = useRef({ x: 0, y: 0 });
+
   // Uploaded Image Layer transforms
   const [transformX, setTransformX] = useState(0);
   const [transformY, setTransformY] = useState(0);
@@ -439,7 +445,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
     const drawCtx = drawCvs.getContext('2d');
     drawCtx.clearRect(0, 0, drawCvs.width, drawCvs.height);
 
-    if (token.drawingDataUrl) {
+    if (token?.drawingDataUrl) {
       const img = new Image();
       img.onload = () => {
         drawCtx.drawImage(img, 0, 0);
@@ -456,7 +462,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
     const uploadCtx = uploadCvs.getContext('2d');
     uploadCtx.clearRect(0, 0, uploadCvs.width, uploadCvs.height);
 
-    if (token.artImageData?.dataUrl) {
+    if (token?.artImageData?.dataUrl) {
       const img = new Image();
       img.onload = () => {
         uploadCvs.width = img.width;
@@ -498,7 +504,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
 
     // 2. Uploaded image
     const uploadCvs = uploadedCanvasRef.current;
-    if (uploadCvs && uploadCvs.width > 10 && activeToken?.artImageData?.dataUrl) {
+    if (uploadCvs && uploadCvs.width > 10 && uploadCvs.height > 10 && activeToken?.artImageData?.dataUrl) {
       ctx.save();
       ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
       ctx.translate(canvas.width / 2 + transformX, canvas.height / 2 + transformY);
@@ -994,6 +1000,7 @@ export default function TokenDesigner({ onShowArtImporter }) {
       drawingDataUrl: null,
     };
     const saved = await saveToken(newToken);
+    initBackingCanvases(saved);
     setActiveToken(saved);
   };
 

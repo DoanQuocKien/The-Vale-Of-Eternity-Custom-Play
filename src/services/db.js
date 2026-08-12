@@ -1,7 +1,7 @@
 import { MOCK_PRESETS, DEFAULT_LAYOUT } from '../utils/constants.jsx';
 
 const DB_NAME = 'ValeOfEternityDB';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 export function openDB() {
   return new Promise((resolve, reject) => {
@@ -26,6 +26,10 @@ export function openDB() {
       if (!db.objectStoreNames.contains('families')) {
         const familyStore = db.createObjectStore('families', { keyPath: 'id' });
         familyStore.createIndex('packId', 'packId', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('rulebooks')) {
+        const rulebookStore = db.createObjectStore('rulebooks', { keyPath: 'id' });
+        rulebookStore.createIndex('packId', 'packId', { unique: false });
       }
     };
     request.onsuccess = (e) => resolve(e.target.result);
@@ -60,7 +64,7 @@ export function dbSavePack(pack) {
 export function dbDeletePack(packId) {
   return openDB().then(db => {
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['packs', 'cards', 'tokens', 'components', 'families'], 'readwrite');
+      const transaction = db.transaction(['packs', 'cards', 'tokens', 'components', 'families', 'rulebooks'], 'readwrite');
       
       // Delete pack
       transaction.objectStore('packs').delete(packId);
@@ -103,9 +107,21 @@ export function dbDeletePack(packId) {
 
       // Delete all custom families in that pack
       const familyStore = transaction.objectStore('families');
-      const familyIndex = familyStore.index('packId');
-      const familyRequest = familyIndex.openCursor(IDBKeyRange.only(packId));
-      familyRequest.onsuccess = (e) => {
+      const famIndex = familyStore.index('packId');
+      const famReq = famIndex.openCursor(IDBKeyRange.only(packId));
+      famReq.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+
+      // Delete all rulebooks in that pack
+      const rulebookStore = transaction.objectStore('rulebooks');
+      const rulebookIndex = rulebookStore.index('packId');
+      const rulebookReq = rulebookIndex.openCursor(IDBKeyRange.only(packId));
+      rulebookReq.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
           cursor.delete();
@@ -292,6 +308,44 @@ export function dbDeleteFamily(familyId) {
       const transaction = db.transaction('families', 'readwrite');
       const store = transaction.objectStore('families');
       const request = store.delete(familyId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+// ─── Rulebook Store ────────────────────────────────────────────────────────
+export function dbGetRulebooks(packId) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('rulebooks', 'readonly');
+      const store = transaction.objectStore('rulebooks');
+      const index = store.index('packId');
+      const request = index.getAll(IDBKeyRange.only(packId));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+export function dbSaveRulebook(rulebook) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('rulebooks', 'readwrite');
+      const store = transaction.objectStore('rulebooks');
+      const request = store.put(rulebook);
+      request.onsuccess = () => resolve(rulebook);
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+export function dbDeleteRulebook(rulebookId) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('rulebooks', 'readwrite');
+      const store = transaction.objectStore('rulebooks');
+      const request = store.delete(rulebookId);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
