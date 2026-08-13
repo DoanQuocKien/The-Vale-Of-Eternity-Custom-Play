@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, Type, Image as ImageIcon, Sparkles, Bold, Italic, Underline, Strikethrough } from 'lucide-react';
 import RulebookImagePicker from './RulebookImagePicker.jsx';
 import { useAppStore } from '../../store/useAppStore.js';
+import { parseEffectText } from '../../utils/constants.jsx';
 
 const FONT_OPTIONS = [
   { label: 'Default (Sans-Serif)', value: 'var(--font-family)' },
@@ -102,7 +103,7 @@ export default function CellEditor({ cell, onSave, onClose }) {
         backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 1000,
         display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}>
-        <div className="glass-panel" style={{ width: '580px', maxWidth: '95vw', maxHeight: '90vh', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto' }}>
+        <div className="glass-panel" style={{ width: '620px', maxWidth: '95vw', maxHeight: '90vh', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0, color: 'white' }}>Edit Cell</h3>
@@ -115,13 +116,13 @@ export default function CellEditor({ cell, onSave, onClose }) {
               onClick={() => setContent({ ...content, type: 'text' })}
               style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', padding: '0.5rem', background: content.type === 'text' ? 'rgba(99,102,241,0.2)' : 'var(--bg-surface-elevated)', border: content.type === 'text' ? '1px solid var(--color-primary)' : '1px solid var(--border-color)', color: content.type === 'text' ? 'var(--color-primary)' : 'var(--text-secondary)', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
             >
-              <Type size={16} /> Text
+              <Type size={16} /> Text Mode
             </button>
             <button 
               onClick={() => setContent({ ...content, type: 'image' })}
               style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', padding: '0.5rem', background: content.type === 'image' ? 'rgba(99,102,241,0.2)' : 'var(--bg-surface-elevated)', border: content.type === 'image' ? '1px solid var(--color-primary)' : '1px solid var(--border-color)', color: content.type === 'image' ? 'var(--color-primary)' : 'var(--text-secondary)', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
             >
-              <ImageIcon size={16} /> Image
+              <ImageIcon size={16} /> Image Mode
             </button>
           </div>
 
@@ -334,44 +335,141 @@ export default function CellEditor({ cell, onSave, onClose }) {
             </div>
           )}
 
+          {/* Image Mode with Live Preview & Full Caption Customization */}
           {content.type === 'image' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <div style={{ width: '120px', height: '120px', background: 'var(--bg-main)', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              
+              {/* LIVE PREVIEW BOX */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700 }}>Live Cell Preview</span>
+                <div style={{
+                  width: '100%', height: '180px', background: '#ffffff',
+                  border: '1px solid var(--border-color)', borderRadius: '6px',
+                  padding: '12px', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+                }}>
                   {content.imageDataUrl ? (
-                    <img src={content.imageDataUrl} alt="preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                    <>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 0, overflow: 'hidden' }}>
+                        <img 
+                          src={content.imageDataUrl} 
+                          alt="preview" 
+                          style={{ 
+                            width: `${content.imageScalePercent || 100}%`,
+                            maxHeight: '100%',
+                            objectFit: 'contain'
+                          }} 
+                        />
+                      </div>
+                      {content.captionText && (
+                        <div style={{
+                          fontFamily: content.captionFontFamily || 'inherit',
+                          fontSize: `${content.captionFontSize || 9}pt`,
+                          fontWeight: content.captionFontWeight || 'normal',
+                          fontStyle: content.captionFontStyle || 'normal',
+                          textAlign: content.captionTextAlign || 'center',
+                          color: content.captionColor || '#1a1a1a',
+                          marginTop: '4px',
+                          width: '100%',
+                          flexShrink: 0
+                        }}>
+                          {parseEffectText(content.captionText, tokens, families)}
+                        </div>
+                      )}
+                    </>
                   ) : (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No Image</span>
-                  )}
-                </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <button onClick={() => setShowImagePicker(true)} style={{ padding: '0.5rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
-                    {content.imageDataUrl ? 'Change Image' : 'Pick Image'}
-                  </button>
-                  {content.imageSource && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      Selected: <strong>{content.imageSource.name}</strong> ({content.imageSource.type})
-                    </div>
+                    <span style={{ fontSize: '0.85rem', color: '#9ca3af' }}>No Image Selected</span>
                   )}
                 </div>
               </div>
 
+              {/* Image Picker Button */}
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <button onClick={() => setShowImagePicker(true)} style={{ flex: 1, padding: '0.6rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+                  {content.imageDataUrl ? '📷 Change Image Source' : '📷 Pick Image from Pack'}
+                </button>
+                {content.imageSource && (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Selected: <strong>{content.imageSource.name}</strong> ({content.imageSource.type})
+                  </span>
+                )}
+              </div>
+
+              {/* Scale Slider */}
               <div>
                 <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                  <span>Scale</span>
+                  <span>Image Scale</span>
                   <span>{content.imageScalePercent || 100}%</span>
                 </label>
-                <input type="range" min="10" max="300" value={content.imageScalePercent || 100} onChange={e => setContent({ ...content, imageScalePercent: Number(e.target.value) })} style={{ width: '100%' }} />
+                <input type="range" min="10" max="200" value={content.imageScalePercent || 100} onChange={e => setContent({ ...content, imageScalePercent: Number(e.target.value) })} style={{ width: '100%' }} />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Caption (Optional)</label>
-                <input type="text" value={content.captionText || ''} onChange={e => setContent({ ...content, captionText: e.target.value })} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'white', padding: '0.5rem', borderRadius: '4px' }} placeholder="Image caption..." />
+              {/* Caption Settings Section */}
+              <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'white', fontWeight: 700 }}>Caption Settings</span>
+                
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Caption Text (Supports \icon(...) markup)</label>
+                  <input 
+                    type="text" 
+                    value={content.captionText || ''} 
+                    onChange={e => setContent({ ...content, captionText: e.target.value })} 
+                    style={{ width: '100%', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', color: 'white', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }} 
+                    placeholder="Type image caption here..." 
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 140px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Font Family</label>
+                    <select
+                      value={content.captionFontFamily || 'var(--font-family)'}
+                      onChange={e => setContent({ ...content, captionFontFamily: e.target.value })}
+                      style={{ width: '100%', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', color: 'white', padding: '0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}
+                    >
+                      {FONT_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ flex: '1 1 80px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Size (pt)</label>
+                    <input type="number" value={content.captionFontSize || 9} onChange={e => setContent({ ...content, captionFontSize: Number(e.target.value) })} style={{ width: '100%', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', color: 'white', padding: '0.4rem', borderRadius: '4px', fontSize: '0.8rem' }} />
+                  </div>
+
+                  <div style={{ flex: '1 1 90px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Weight</label>
+                    <select value={content.captionFontWeight || 'normal'} onChange={e => setContent({ ...content, captionFontWeight: e.target.value })} style={{ width: '100%', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', color: 'white', padding: '0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                      <option value="normal">Normal</option>
+                      <option value="bold">Bold</option>
+                    </select>
+                  </div>
+
+                  <div style={{ flex: '1 1 90px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Style</label>
+                    <select value={content.captionFontStyle || 'normal'} onChange={e => setContent({ ...content, captionFontStyle: e.target.value })} style={{ width: '100%', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', color: 'white', padding: '0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                      <option value="normal">Normal</option>
+                      <option value="italic">Italic</option>
+                    </select>
+                  </div>
+
+                  <div style={{ flex: '1 1 90px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Align</label>
+                    <select value={content.captionTextAlign || 'center'} onChange={e => setContent({ ...content, captionTextAlign: e.target.value })} style={{ width: '100%', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', color: 'white', padding: '0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                      <option value="center">Center</option>
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </div>
+
+                  <div style={{ flex: '0 0 50px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Color</label>
+                    <input type="color" value={content.captionColor || '#1a1a1a'} onChange={e => setContent({ ...content, captionColor: e.target.value })} style={{ width: '100%', height: '30px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }} />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Caption Font Size (pt)</label>
-                <input type="number" value={content.captionFontSize || 9} onChange={e => setContent({ ...content, captionFontSize: Number(e.target.value) })} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'white', padding: '0.5rem', borderRadius: '4px' }} />
-              </div>
+
             </div>
           )}
 

@@ -133,20 +133,32 @@ export default function BlockEditor({ block, rulebook, mmToPx, onChange, onDelet
                   {parseEffectText(content.text, tokens, families)}
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'center', width: '100%', overflow: 'hidden' }}>
                   {content.imageDataUrl ? (
                     <>
-                      <img 
-                        src={content.imageDataUrl} 
-                        alt="cell-img" 
-                        style={{ 
-                          maxWidth: '100%', 
-                          maxHeight: content.captionText ? '90%' : '100%',
-                          transform: `scale(${content.imageScalePercent / 100})` 
-                        }} 
-                      />
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 0, overflow: 'hidden' }}>
+                        <img 
+                          src={content.imageDataUrl} 
+                          alt="cell-img" 
+                          style={{ 
+                            width: `${content.imageScalePercent || 100}%`,
+                            maxHeight: '100%',
+                            objectFit: 'contain'
+                          }} 
+                        />
+                      </div>
                       {content.captionText && (
-                        <div style={{ fontSize: `${content.captionFontSize}pt`, marginTop: '4px', color: '#1a1a1a', textAlign: 'center' }}>
+                        <div style={{
+                          fontFamily: content.captionFontFamily || 'inherit',
+                          fontSize: `${content.captionFontSize || 9}pt`,
+                          fontWeight: content.captionFontWeight || 'normal',
+                          fontStyle: content.captionFontStyle || 'normal',
+                          textAlign: content.captionTextAlign || 'center',
+                          color: content.captionColor || '#1a1a1a',
+                          marginTop: '4px',
+                          width: '100%',
+                          flexShrink: 0
+                        }}>
                           {parseEffectText(content.captionText, tokens, families)}
                         </div>
                       )}
