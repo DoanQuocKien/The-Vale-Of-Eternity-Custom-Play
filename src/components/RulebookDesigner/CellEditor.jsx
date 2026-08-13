@@ -373,7 +373,8 @@ export default function CellEditor({ cell, onSave, onClose }) {
                           color: content.captionColor || '#1a1a1a',
                           marginTop: '4px',
                           width: '100%',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          whiteSpace: 'pre-wrap',
                         }}>
                           {parseEffectText(content.captionText, tokens, families)}
                         </div>

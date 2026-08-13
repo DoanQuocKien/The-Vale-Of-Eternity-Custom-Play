@@ -318,6 +318,8 @@ export function parseEffectText(text, tokens = [], families = []) {
       .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
       .replace(/\*(.*?)\*/g, '<i>$1</i>')
       .replace(/__(.*?)__/g, '<u>$1</u>')
+      .replace(/\\n/g, '<br />')
+      .replace(/\n/g, '<br />')
     }} />
   );
 }

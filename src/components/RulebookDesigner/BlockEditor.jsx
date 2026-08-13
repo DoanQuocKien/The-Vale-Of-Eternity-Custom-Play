@@ -129,6 +129,7 @@ export default function BlockEditor({ block, rulebook, mmToPx, onChange, onDelet
                   textAlign: content.textAlign,
                   color: content.color,
                   lineHeight: 1.4,
+                  whiteSpace: 'pre-wrap',
                 }}>
                   {parseEffectText(content.text, tokens, families)}
                 </div>
@@ -159,7 +160,8 @@ export default function BlockEditor({ block, rulebook, mmToPx, onChange, onDelet
                           color: content.captionColor || '#1a1a1a',
                           marginTop: '4px',
                           width: '100%',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          whiteSpace: 'pre-wrap',
                         }}>
                           {parseEffectText(content.captionText, tokens, families)}
                         </div>
