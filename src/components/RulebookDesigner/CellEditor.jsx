@@ -355,8 +355,10 @@ export default function CellEditor({ cell, onSave, onClose }) {
                           src={content.imageDataUrl} 
                           alt="preview" 
                           style={{ 
-                            width: `${content.imageScalePercent || 100}%`,
+                            maxWidth: `${content.imageScalePercent || 100}%`,
                             maxHeight: '100%',
+                            width: 'auto',
+                            height: 'auto',
                             objectFit: 'contain'
                           }} 
                         />

@@ -141,8 +141,10 @@ export default function BlockEditor({ block, rulebook, mmToPx, onChange, onDelet
                           src={content.imageDataUrl} 
                           alt="cell-img" 
                           style={{ 
-                            width: `${content.imageScalePercent || 100}%`,
+                            maxWidth: `${content.imageScalePercent || 100}%`,
                             maxHeight: '100%',
+                            width: 'auto',
+                            height: 'auto',
                             objectFit: 'contain'
                           }} 
                         />

@@ -29,7 +29,7 @@ export default function RulebookImagePicker({ onCancel, onPick }) {
   const [capturingCardId, setCapturingCardId] = useState(null);
   const [search, setSearch] = useState('');
 
-  const cardRefs = useRef({});
+  const offscreenCardRefs = useRef({});
 
   useEffect(() => {
     async function loadAll() {
@@ -78,7 +78,7 @@ export default function RulebookImagePicker({ onCancel, onPick }) {
 
   const handlePickCard = async (card) => {
     setCapturingCardId(card.id);
-    const cardEl = cardRefs.current[card.id];
+    const cardEl = offscreenCardRefs.current[card.id];
     let dataUrl = null;
 
     if (cardEl) {
@@ -135,6 +135,19 @@ export default function RulebookImagePicker({ onCancel, onPick }) {
       backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1100,
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
+      {/* Hidden Offscreen Container for Clean Full Card Captures (Unscaled 744x1039) */}
+      <div style={{ position: 'fixed', top: -9999, left: -9999, pointerEvents: 'none', zIndex: -100 }}>
+        {items.cards.map((card) => (
+          <div key={`offscreen-${card.id}`} style={{ width: '744px', height: '1039px' }}>
+            <CardPreview 
+              ref={el => offscreenCardRefs.current[card.id] = el}
+              card={card} 
+              defaultLayout={DEFAULT_LAYOUT} 
+            />
+          </div>
+        ))}
+      </div>
+
       <div className="glass-panel" style={{ width: '850px', maxWidth: '92vw', height: '82vh', display: 'flex', flexDirection: 'column' }}>
         
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -197,17 +210,16 @@ export default function RulebookImagePicker({ onCancel, onPick }) {
                     onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
                     onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
                   >
-                    {/* Scale CardPreview (744x1039) to fit container (approx 130x181) */}
+                    {/* Visual Card Preview Tile */}
                     <div style={{ width: '130px', height: '181px', position: 'relative', overflow: 'hidden', borderRadius: '6px', background: '#000' }}>
                       <div style={{
                         width: '744px',
                         height: '1039px',
-                        transform: 'scale(0.1747)', // 130 / 744
+                        transform: 'scale(0.1747)',
                         transformOrigin: 'top left',
                         pointerEvents: 'none'
                       }}>
                         <CardPreview 
-                          ref={el => cardRefs.current[card.id] = el}
                           card={card} 
                           defaultLayout={DEFAULT_LAYOUT} 
                         />
