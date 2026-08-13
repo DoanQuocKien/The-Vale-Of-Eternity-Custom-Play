@@ -245,11 +245,28 @@ export function getTimingIcon(line) {
 }
 
 export function parseEffectText(text, tokens = [], families = []) {
+  if (!text || typeof text !== 'string') return text || null;
+
   return (
     <span dangerouslySetInnerHTML={{
       __html: text.replace(/\\icon\((.*?)\)/g, (match, iconName) => {
         const parts = iconName.split(',').map(s => s.trim());
         const lowerName = parts[0].toLowerCase();
+
+        // Handle Score icon variations (e.g. \icon(Score), \icon(Score, 2), \icon(Score2), \icon(Score 2))
+        const scoreMatch = iconName.match(/^score[\s,]*(\d+)?$/i);
+        if (scoreMatch || lowerName === 'score') {
+          const scoreValue = (scoreMatch && scoreMatch[1]) || (parts.length > 1 ? parts[1].trim() : '');
+          if (scoreValue) {
+            return `<span style="display:inline-block; position:relative; width:1.35em; height:1.35em; vertical-align:-0.22em; margin:0 0.12em; line-height:1;">
+                      <img src="./img/TextIcon/Score.png" style="width:100%; height:100%; object-fit:contain; display:block;" />
+                      <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'TitanOne', 'NorseBold', sans-serif; font-weight:900; color:#ffffff; font-size:0.7em; text-shadow: 0 0 2px #000, 0 1px 2px #000, 1px 1px 2px #000; line-height:1; pointer-events:none;">${scoreValue}</span>
+                    </span>`;
+          } else {
+            return `<img src="./img/TextIcon/Score.png" style="height: 1.3em; width: auto; vertical-align: middle; margin: 0 0.12em; object-fit: contain;" />`;
+          }
+        }
+
         if (lowerName === 'instant') {
           return `<img src="./img/Effect/InstantEffect.png" style="height: 1.3em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain;" />`;
         }
@@ -261,17 +278,6 @@ export function parseEffectText(text, tokens = [], families = []) {
         }
         if (lowerName === 'card') {
           return `<img src="./img/Layout/Backside.png" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);" />`;
-        }
-        if (lowerName === 'score') {
-          const scoreValue = parts.length > 1 ? parts[1].trim() : '';
-          if (scoreValue) {
-            return `<span style="display:inline-block; position:relative; width:1.4em; height:1.4em; vertical-align:-0.25em; margin:0 0.15em; line-height:1;">
-                      <img src="./img/TextIcon/Score.png" style="width:100%; height:100%; object-fit:contain; display:block;" />
-                      <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'TitanOne', 'NorseBold', sans-serif; font-weight:900; color:white; -webkit-text-stroke: 0.6px #000; font-size:0.75em; text-shadow: 0 1px 2px rgba(0,0,0,0.8); line-height:1; pointer-events:none;">${scoreValue}</span>
-                    </span>`;
-          } else {
-            return `<img src="./img/TextIcon/Score.png" style="height: 1.3em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain;" />`;
-          }
         }
 
         // Check if this matches a custom family name (case-insensitive, underscores == spaces)
