@@ -262,14 +262,15 @@ export function parseEffectText(text, tokens = [], families = []) {
         if (lowerName === 'card') {
           return `<img src="./img/Layout/Backside.png" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);" />`;
         }
-        if (parts[0].toLowerCase() === 'score') {
-          if (parts.length === 2) {
-            return `<span style="display:inline-block; position:relative; width:1.5em; height:1.5em; vertical-align:middle; margin:0 0.1em;">
-                      <img src="./img/TextIcon/Score.png" style="width:100%; height:100%; object-fit:contain;" />
-                      <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900; color:white; -webkit-text-stroke: 0.5px black; font-size:0.8em; margin-top:2px;">${parts[1]}</span>
+        if (lowerName === 'score') {
+          const scoreValue = parts.length > 1 ? parts[1].trim() : '';
+          if (scoreValue) {
+            return `<span style="display:inline-block; position:relative; width:1.4em; height:1.4em; vertical-align:-0.25em; margin:0 0.15em; line-height:1;">
+                      <img src="./img/TextIcon/Score.png" style="width:100%; height:100%; object-fit:contain; display:block;" />
+                      <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'TitanOne', 'NorseBold', sans-serif; font-weight:900; color:white; -webkit-text-stroke: 0.6px #000; font-size:0.75em; text-shadow: 0 1px 2px rgba(0,0,0,0.8); line-height:1; pointer-events:none;">${scoreValue}</span>
                     </span>`;
           } else {
-            return `<img src="./img/TextIcon/Score.png" style="height: 1.5em; vertical-align: middle; margin: 0 0.1em;" />`;
+            return `<img src="./img/TextIcon/Score.png" style="height: 1.3em; width: auto; vertical-align: middle; margin: 0 0.15em; object-fit: contain;" />`;
           }
         }
 
