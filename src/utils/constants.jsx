@@ -303,7 +303,21 @@ export function parseEffectText(text, tokens = [], families = []) {
         };
         const key = parts[0].toLowerCase();
         return `<img src="${pathMap[key] || `./img/TextIcon/${parts[0]}.png`}" style="height: 1.5em; vertical-align: middle; margin: 0 0.1em;" />`;
-      }).replace(/\\italic\((.*?)\)/g, '<i>$1</i>')
+      })
+      .replace(/\\bolditalic\((.*?)\)/g, '<b><i>$1</i></b>')
+      .replace(/\\bi\((.*?)\)/g, '<b><i>$1</i></b>')
+      .replace(/\\bold\((.*?)\)/g, '<b>$1</b>')
+      .replace(/\\b\((.*?)\)/g, '<b>$1</b>')
+      .replace(/\\italic\((.*?)\)/g, '<i>$1</i>')
+      .replace(/\\i\((.*?)\)/g, '<i>$1</i>')
+      .replace(/\\underline\((.*?)\)/g, '<u>$1</u>')
+      .replace(/\\u\((.*?)\)/g, '<u>$1</u>')
+      .replace(/\\strike\((.*?)\)/g, '<s>$1</s>')
+      .replace(/\\color\((.*?),(.*?)\)/g, '<span style="color:$1">$2</span>')
+      .replace(/\*\*\*(.*?)\*\*\*/g, '<b><i>$1</i></b>')
+      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+      .replace(/\*(.*?)\*/g, '<i>$1</i>')
+      .replace(/__(.*?)__/g, '<u>$1</u>')
     }} />
   );
 }

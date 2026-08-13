@@ -121,8 +121,11 @@ export default function BlockEditor({ block, rulebook, mmToPx, onChange, onDelet
             >
               {content.type === 'text' ? (
                 <div style={{ 
+                  fontFamily: content.fontFamily || 'inherit',
                   fontSize: `${content.fontSize}pt`,
                   fontWeight: content.fontWeight,
+                  fontStyle: content.fontStyle || 'normal',
+                  textDecoration: content.textDecoration || 'none',
                   textAlign: content.textAlign,
                   color: content.color,
                   lineHeight: 1.4,

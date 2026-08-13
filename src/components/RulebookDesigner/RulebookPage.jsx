@@ -33,7 +33,7 @@ export default function RulebookPage({ page, rulebook, widthMm, heightMm, onChan
       columnGapMm: 4,
       heightMm: 60,
       cells: [
-        { columnIndex: 0, content: { type: 'text', text: 'New text block...', fontSize: 11, fontWeight: 'normal', textAlign: 'left', color: '#1a1a1a' } }
+        { columnIndex: 0, content: { type: 'text', text: 'New text block...', fontSize: 11, fontFamily: 'inherit', fontWeight: 'normal', textAlign: 'left', color: '#1a1a1a' } }
       ]
     };
     onChange({ blocks: [...page.blocks, newBlock] });
@@ -49,27 +49,30 @@ export default function RulebookPage({ page, rulebook, widthMm, heightMm, onChan
   };
 
   return (
-    <div style={{
-      width: `${wPx}px`,
-      height: `${hPx}px`,
-      ...bgStyle,
-      position: 'relative',
-      boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
-      margin: '0 auto',
-      overflow: 'hidden',
-    }}>
+    <div 
+      className="rulebook-page-canvas"
+      data-page-id={page.id}
+      style={{
+        width: `${wPx}px`,
+        height: `${hPx}px`,
+        ...bgStyle,
+        position: 'relative',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+        margin: '0 auto',
+        overflow: 'hidden',
+      }}
+    >
       <div style={{
         position: 'absolute',
         top: `${marginPx}px`,
         left: `${marginPx}px`,
         right: `${marginPx}px`,
         bottom: `${marginPx}px`,
-        // Outline the margin for visual help in editor
         border: '1px dashed rgba(100,100,100,0.2)',
         display: 'flex',
         flexDirection: 'column',
       }}>
-        {page.blocks.map((block, index) => (
+        {page.blocks.map((block) => (
           <BlockEditor 
             key={block.id} 
             block={block} 
@@ -82,9 +85,10 @@ export default function RulebookPage({ page, rulebook, widthMm, heightMm, onChan
 
         {/* Add block area */}
         <div 
+          className="hide-on-export"
           onClick={handleAddBlock}
           style={{
-            flex: 1, // fill remaining space
+            flex: 1,
             minHeight: '60px',
             border: '2px dashed var(--color-primary)',
             borderRadius: '4px',
